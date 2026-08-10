@@ -12,6 +12,11 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // The Mesa design system is vendored reference material, not project
+    // source. Its marketing UI kit ships JSX with components resolved at use
+    // site, so linting it reports 44 errors about a kit this project never
+    // imports — noise that would train everyone to ignore a red lint run.
+    ".claude/**",
   ]),
 ]);
 
