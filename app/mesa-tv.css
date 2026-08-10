@@ -1,0 +1,123 @@
+/* ============================================================
+   MESA DESIGN SYSTEM — TV WALL EXTENSION
+   ============================================================
+
+   ⚠️ THIS FILE IS NOT CORE BRAND.
+
+   The Mesa design system (.claude/skills/mesa-design/) was drawn for marketing
+   collateral — social posts, reels, ads — on known artboards at arm's length.
+   This wall is a 1920x1080 frame read from across a corridor. Everything here
+   is an ADDITION for that context. Core tokens live in `colors_and_type.css`
+   and are never redefined here, with the two deliberate exceptions noted below.
+
+   Rules for this file:
+   - No new hues. Every colour is an existing brand token.
+   - Class rules that set a colour go in the `@layer components` block at the
+     bottom, never at the top level, or they beat every Tailwind `text-*`
+     utility on the same element.
+   ============================================================ */
+
+:root {
+  /* ========= PAGE SURFACE =========
+
+     **The page is white.** Set by the user for this wall, and it matches the
+     call the admin dashboard reached independently: rendered full-bleed, Soft
+     Mint reads as a tint over everything rather than as a brand colour, and the
+     whole screen looks green.
+
+     White is not a new colour — `--white` is a core token, and this only
+     changes which surface token the page uses. Mint becomes the *elevated*
+     step, which is the relationship `--bg-elevated` already describes; it
+     simply inverts which of the two is the field and which is the object.
+
+     Every foreground token in the system was measured against Soft Mint. White
+     is lighter, so each one gains contrast here rather than losing it. */
+  --bg: var(--white);
+  --bg-elevated: var(--soft-mint);
+
+  /* ========= FONT STACKS =========
+
+     Point the system's own stacks at the self-hosted variable faces loaded in
+     `layout.tsx`. The families themselves are unchanged — Manrope for sans,
+     Source Serif 4 standing in for New York, exactly as the design system
+     specifies.
+
+     **The self-hosted face comes first, ahead of `local("New York")`**, which
+     is the opposite of what a marketing artboard would want. On a wall the
+     priority is that every screen renders identically: if one laptop has New
+     York installed and another doesn't, two TVs side by side would set the same
+     headline in two different serifs, and nobody would think to check. */
+  --font-serif: var(--font-mesa-display), 'New York', ui-serif, Georgia, serif;
+  --font-sans: var(--font-mesa-body), ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
+    Helvetica, Arial, sans-serif;
+
+  /* ========= VIEWING-DISTANCE TYPE =========
+
+     The system's scale tops out at `--t-display-1`, 96px. On a 1920px frame
+     that is 5% of the width — correct for a marketing artboard, far too small
+     for a wall read at six metres.
+
+     **These are `vw`-based, not fixed px**, so the frame composes identically
+     whether the laptop drives the TV at 1920 or the window is smaller during
+     development. `clamp()` keeps them sane on a laptop screen; the max only
+     binds above 1920.
+
+     Values are `font` shorthands like the system's own tokens, so weight,
+     size, leading and family travel together and there is exactly one place
+     per step where the size lives. */
+
+  /* The Flea countdown. The single largest thing on the wall. */
+  --t-tv-countdown: 700 clamp(96px, 19vw, 420px) / 0.9 var(--font-serif);
+  --t-tv-countdown-unit: 600 clamp(16px, 2.2vw, 48px) / 1 var(--font-sans);
+
+  /* Podium figures, by rank. First place is the only one that gets display size. */
+  --t-tv-figure-1: 700 clamp(40px, 5.6vw, 120px) / 1 var(--font-serif);
+  --t-tv-figure-2: 700 clamp(28px, 3.4vw, 72px) / 1 var(--font-serif);
+  --t-tv-figure-3: 600 clamp(20px, 2.1vw, 44px) / 1 var(--font-sans);
+
+  /* Venture names. */
+  --t-tv-name-1: 600 clamp(24px, 3.1vw, 66px) / 1.1 var(--font-serif);
+  --t-tv-name-2: 600 clamp(16px, 1.9vw, 40px) / 1.15 var(--font-serif);
+
+  /* Rank, written in words ("1st"), and the team ID beneath a name. */
+  --t-tv-rank: 700 clamp(14px, 1.5vw, 32px) / 1 var(--font-sans);
+  --t-tv-teamid: 500 clamp(11px, 1vw, 21px) / 1.2 var(--font-mono);
+
+  /* Notification cards. */
+  --t-tv-hero-headline: 700 clamp(32px, 4.4vw, 94px) / 1.05 var(--font-serif);
+  --t-tv-hero-value: 700 clamp(28px, 3.6vw, 78px) / 1 var(--font-serif);
+  --t-tv-card-context: 700 clamp(11px, 1vw, 21px) / 1.2 var(--font-sans);
+  --t-tv-card-name: 600 clamp(16px, 1.8vw, 38px) / 1.15 var(--font-sans);
+
+  /* Ambient chrome: the microsecond ticker and the as-of stamp. Deliberately
+     the smallest type on the wall — present, never competing. */
+  --t-tv-ticker: 500 clamp(11px, 0.95vw, 20px) / 1 var(--font-mono);
+
+  --track-tv-tight: -0.02em;
+}
+
+@layer components {
+  /* Class rules live here, not at the top level, so Tailwind utilities can
+     still override them. See the `.overline` note in globals.css for what
+     happens otherwise. */
+
+  .tv-frame {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .tv-ticker {
+    font: var(--t-tv-ticker);
+    color: var(--fg-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Tabular figures everywhere a number can change in place, so digits do not
+     jitter horizontally as they tick. */
+  .tv-figure {
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--track-tv-tight);
+  }
+}

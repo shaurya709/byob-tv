@@ -1,0 +1,22 @@
+<!doctype html>
+<!-- @dsCard group="Spacing" name="Elevation / shadows" subtitle="Cool-tinted rgba(11,46,42); plus frosted-glass shadow" viewport="700x180" -->
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>html,body{margin:0;padding:0;background:var(--bg);font-family:var(--font-sans);}
+.card{padding:22px 26px;width:700px;box-sizing:border-box;}
+.eyebrow{font:var(--t-overline);text-transform:uppercase;letter-spacing:.12em;color:var(--fg3);margin-bottom:18px;}
+.row{display:flex;gap:20px;}
+.cell{flex:1;text-align:center;}
+.sq{background:#fff;width:100%;height:76px;border-radius:14px;}
+.lbl{font:var(--t-caption);font-family:var(--font-mono);color:var(--fg3);margin-top:10px;}
+</style></head><body>
+<div class="card">
+  <div class="eyebrow">Elevation · cool-tinted shadows</div>
+  <div class="row">
+    <div class="cell"><div class="sq" style="box-shadow:var(--shadow-sm)"></div><div class="lbl">shadow-sm</div></div>
+    <div class="cell"><div class="sq" style="box-shadow:var(--shadow-md)"></div><div class="lbl">shadow-md</div></div>
+    <div class="cell"><div class="sq" style="box-shadow:var(--shadow-lg)"></div><div class="lbl">shadow-lg</div></div>
+    <div class="cell"><div class="sq" style="box-shadow:var(--shadow-glass);background:rgba(17,64,59,0.12);backdrop-filter:blur(18px)"></div><div class="lbl">shadow-glass</div></div>
+  </div>
+</div>
+</body></html>

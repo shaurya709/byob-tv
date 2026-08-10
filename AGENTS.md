@@ -1,0 +1,94 @@
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->
+
+# BYOB Campus TV Wall
+
+Two pages displayed on TVs across Mesa campus during BYOB Cohort 2026, driven from a
+laptop over HDMI inside a slideshow rotation someone else runs.
+
+**This is a display system, not a dashboard.** Nobody interacts with it. It runs
+unattended for weeks. The bar: on a wall nobody is actively watching, a bug that renders
+convincingly can run for weeks.
+
+The design is in `docs/DESIGN.md`. Read it before any slice of work.
+
+## Commands
+
+```bash
+npm run dev          # local dev
+npm run typecheck    # tsc --noEmit
+npm run test         # vitest run
+npm run build        # next build
+```
+
+## Non-negotiable
+
+- **No backend.** No API routes, no serverless functions, no database, no auth. Two
+  public published-CSV URLs, fetched from the browser. If a change needs a server, stop.
+- **This project never writes to `BYOB_MASTER`.** It reads two published CSVs over plain
+  HTTP with no credentials. There is no token, no service account, no Apps Script here.
+- **Never hardcode a hex.** `.claude/skills/mesa-design/colors_and_type.css` is the only
+  file that may contain one. TV-specific additions go in `app/mesa-tv.css`, marked as an
+  extension, deriving from existing brand tokens — no new hues.
+- **No filler content.** Empty is a valid state. The wall being quiet is what makes it
+  loud when something happens. No spinners, ever — first paint reads cached CSV.
+- **No trigger types beyond the 15 in the design.** The list was deliberately narrowed.
+- **No slideshow or rotation logic.** External system.
+
+## Domain
+
+- 42 workbooks, `SLE-C401`–`SLE-C442`. Team IDs come from `Team Links` col A, rows 6–47.
+- **Logged (proof-backed) revenue is the only figure used.** `Daily Team Summary` col B,
+  which is `SUMIFS('Daily Dump'!$N:$N, 'Daily Dump'!$D:$D, "Sale")`. Column N is already
+  proof-gated upstream (proof = `Yes` AND units ≥ 1). Summing `Amount` (col I) instead
+  would count unproven and zero-unit sales and silently disagree with every existing
+  rollup. Verified revenue is not used anywhere in this project.
+- Ranking: **logged revenue desc → units desc → team ID asc**, matching the admin
+  dashboard's `compareTieBreak`. Rank is computed client-side, so the sort is the single
+  authority on order.
+- Challenge weeks 1–8, anchored **20 July 2026** (not the 21st). Mesa Flea: 6 September
+  2026, 10:00 IST assumed. Capital repayment: 30 September 2026.
+- A team with an empty `venture_name` never fires a trigger. The wall does not celebrate
+  `SLE-C407`.
+- Currency: `Intl.NumberFormat('en-IN')` — `₹1,04,500`, not `₹104,500`.
+
+## Traps that report nothing
+
+All of these render convincingly and pass typecheck, lint and tests. Verify by reading
+`getComputedStyle` / `getBoundingClientRect` back from a real browser at **1920×1080**,
+not by reading source.
+
+- **Tailwind v4 utilities lose to unlayered CSS.** The design system's `.overline`,
+  `.small`, `.caption` and `h1`–`h4` each set a colour, so unlayered they beat every
+  `text-*` utility. `globals.css` imports the system with `layer(components)` for this
+  reason. Class rules in `mesa-tv.css` go inside its `@layer components` block.
+- **`.overline` is also a real Tailwind utility** (`text-decoration-line: overline`), and
+  utilities beat the components layer. `globals.css` carries an unlayered override.
+  Before using any design-system class name, check it against `overline`, `underline`,
+  `truncate`, `container`, `block`, `inline`, `table`, `grid`, `flex`, `hidden`,
+  `visible`, `fixed`, `static`, `sticky`, `capitalize`, `uppercase`, `lowercase`,
+  `italic`, `antialiased`.
+- **A non-existent Tailwind step emits no rule and no warning.** `opacity-16` does
+  nothing. Use a real step or an explicit arbitrary value, then confirm the computed one.
+- **Motion `layout` transforms are ignored by `<tr>`.** Reordering rows must use grid
+  rows with ARIA table roles. Measured in the dashboard: 30 animation frames with the
+  transform present and the row at exactly one position throughout.
+- **Google's published CSV carries a UTF-8 BOM and CRLF endings.** `﻿team_id` is not
+  `team_id`. papaparse handles both; a hand-rolled parser does not.
+- **`cache: 'no-store'` on both fetches.** Without it the browser HTTP cache serves one
+  body for the life of a page that never manually reloads, and the wall freezes silently.
+- **A revoked sheet returns an HTML login page with HTTP 200.** Status codes pass it;
+  only the parsed-row gate catches it.
+
+## Working style
+
+Detective, not decorator: theory of the crime, then evidence, then fix. Surgical changes,
+one at a time. Commit after every completed slice — git is the rollback path. The user is
+non-technical but builds automations, and wants honest pushback over agreeableness.

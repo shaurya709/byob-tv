@@ -1,0 +1,295 @@
+/* ============================================================
+   MESA SCHOOL OF BUSINESS — Colors & Type
+   Core design tokens. Include in any artifact:
+   <link rel="stylesheet" href="colors_and_type.css" />
+   ============================================================ */
+
+/* ---------- Font faces ---------- */
+/* Body/UI: Manrope — 7 weights (uploaded by brand) */
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/Manrope-ExtraLight.ttf") format("truetype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/Manrope-Light.ttf") format("truetype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/Manrope-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/Manrope-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/Manrope-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/Manrope-Bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Manrope";
+  src: url("fonts/Manrope-ExtraBold.ttf") format("truetype");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Display/Headers: New York — Apple's proprietary serif.
+   Not distributable standalone. Falls back to ui-serif on
+   Apple devices; elsewhere uses Source Serif 4 (close match).
+   See README > "Font substitution note". */
+@font-face {
+  font-family: "MesaSerif";
+  src: local("New York"),
+       local("New York Extra Large"),
+       local("ui-serif"),
+       url("https://fonts.gstatic.com/s/sourceserif4/v8/vEFy2_tTDB4M7-auWDN0ahZJW3IX2ih5nk3AucvUHf6OAVIJmeUDygwjihdqrhxXD-wGvjU.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "MesaSerif";
+  src: local("New York Bold"),
+       local("New York"),
+       url("https://fonts.gstatic.com/s/sourceserif4/v8/vEFy2_tTDB4M7-auWDN0ahZJW3IX2ih5nk3AucvUHf6OAVIJmeUDygwjihdqrhxXD-wGvjU.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "MesaSerif";
+  src: local("New York Italic"),
+       local("New York"),
+       url("https://fonts.gstatic.com/s/sourceserif4/v8/vEFI2_tTDB4M7-auWDN0ahZJW3IX2ih5nk3AucvUHf6OAVIJmeUDygsRhAfO69Rp7IosIVCEkyHng5g.woff2") format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "MesaSerif";
+  src: local("New York Bold Italic"),
+       local("New York"),
+       url("https://fonts.gstatic.com/s/sourceserif4/v8/vEFI2_tTDB4M7-auWDN0ahZJW3IX2ih5nk3AucvUHf6OAVIJmeUDygsRhAfO69Rp7IosIVCEkyHng5g.woff2") format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* ---------- Base tokens ---------- */
+:root {
+  /* ========= BRAND PALETTE ========= */
+
+  /* Primary */
+  --midnight-charcoal: #112121;  /* darkest neutral, primary dark bg */
+  --soft-mint:         #E4F3E7;  /* primary light bg */
+  --bright-green:      #6ED190;  /* primary accent / CTA */
+  --tangerine-glow:    #F6AF65;  /* secondary accent / warmth */
+
+  /* Secondary */
+  --deep-forest-green: #11403B;  /* logomark, deep surfaces */
+  --deep-teal:         #0B2E2A;  /* deepest brand surface */
+
+  /* Tints & shades */
+  --charcoal-900:      #0C1919;  /* deeper than midnight */
+  --charcoal-700:      #1E3636;  /* elevated dark surface */
+  --mint-300:          #AFCBB5;  /* muted mint */
+  --green-600:         #43AF68;  /* deeper bright green */
+  --green-200:         #AFF2C6;  /* light bright green */
+  --tangerine-600:     #CB853C;  /* deeper tangerine */
+  --tangerine-200:     #FAC995;  /* light tangerine */
+  --white:             #FFFFFF;
+
+  /* ========= SEMANTIC — LIGHT MODE (soft-mint surface) ========= */
+  --bg:                var(--soft-mint);
+  --bg-elevated:       #F2F8F4;          /* slightly lifted mint */
+  --bg-inverse:        var(--midnight-charcoal);
+  --surface-glass:     rgba(17, 64, 59, 0.08);  /* frosted glass fill */
+  --surface-glass-strong: rgba(17, 64, 59, 0.14);
+
+  --fg1:               var(--midnight-charcoal); /* primary text */
+  --fg2:               var(--deep-forest-green); /* secondary text */
+  --fg3:               #466A64;                  /* tertiary / meta */
+  --fg-muted:          #6E8883;
+  --fg-inverse:        var(--white);
+
+  --accent:            var(--bright-green);
+  --accent-warm:       var(--tangerine-glow);
+  --accent-fg:         var(--midnight-charcoal); /* text on accent fills */
+
+  --border:            rgba(17, 33, 33, 0.12);
+  --border-strong:     rgba(17, 33, 33, 0.24);
+  --border-mint:       var(--mint-300);
+
+  /* ========= STROKE WIDTHS ========= */
+  --stroke-photo:      10px;   /* white stroke around photo cut-outs, minimum */
+  --stroke-thin:       1.5px;
+  --stroke-med:        2px;
+  --stroke-thick:      3px;
+
+  /* ========= RADII ========= */
+  --radius-xs:    6px;
+  --radius-sm:    10px;
+  --radius-md:    16px;   /* default card */
+  --radius-lg:    24px;
+  --radius-xl:    32px;
+  --radius-pill:  999px;
+
+  /* ========= SPACING (4px baseline) ========= */
+  --s-1:   4px;
+  --s-2:   8px;
+  --s-3:   12px;
+  --s-4:   16px;
+  --s-5:   20px;
+  --s-6:   24px;
+  --s-8:   32px;
+  --s-10:  40px;
+  --s-12:  48px;
+  --s-16:  64px;
+  --s-20:  80px;
+  --s-24:  96px;
+
+  /* ========= SHADOWS / ELEVATION ========= */
+  /* Shadows are subtle; the brand leans on frosted glass + flat fills */
+  --shadow-sm: 0 1px 2px rgba(11, 46, 42, 0.06), 0 1px 3px rgba(11, 46, 42, 0.05);
+  --shadow-md: 0 4px 12px rgba(11, 46, 42, 0.08), 0 2px 4px rgba(11, 46, 42, 0.04);
+  --shadow-lg: 0 12px 32px rgba(11, 46, 42, 0.14), 0 4px 8px rgba(11, 46, 42, 0.06);
+  --shadow-glass: 0 8px 24px rgba(11, 46, 42, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+
+  /* ========= BLUR ========= */
+  --blur-glass: 18px;
+
+  /* ========= MOTION ========= */
+  --ease-out:     cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-in-out:  cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-fast:     150ms;
+  --dur-med:      250ms;
+  --dur-slow:     400ms;
+
+  /* ========= TYPE FAMILIES ========= */
+  --font-serif:    "MesaSerif", "New York", ui-serif, "Source Serif 4", Georgia, serif;
+  --font-sans:     "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono:     ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  /* ========= TYPE SCALE ========= */
+  /* Display / Headers — serif */
+  --t-display-1: 700 96px/0.98 var(--font-serif);
+  --t-display-2: 700 72px/1.02 var(--font-serif);
+  --t-h1:        700 56px/1.05 var(--font-serif);
+  --t-h2:        600 40px/1.12 var(--font-serif);
+  --t-h3:        600 28px/1.22 var(--font-serif);
+  --t-h4:        600 22px/1.3  var(--font-serif);
+
+  /* Body / UI — sans */
+  --t-lead:      400 20px/1.5  var(--font-sans);
+  --t-body:      400 16px/1.55 var(--font-sans);
+  --t-body-md:   500 16px/1.55 var(--font-sans);
+  --t-small:     400 14px/1.5  var(--font-sans);
+  --t-caption:   500 12px/1.4  var(--font-sans);
+  --t-overline:  700 11px/1.2  var(--font-sans);    /* uppercase, tracked */
+  --t-button:    600 15px/1 var(--font-sans);
+
+  /* Letter-spacing */
+  --track-tight:    -0.02em;   /* display headings */
+  --track-snug:     -0.01em;   /* h1–h3 */
+  --track-normal:   0;
+  --track-wide:     0.04em;
+  --track-overline: 0.12em;    /* UPPERCASE overlines */
+}
+
+/* ---------- DARK MODE SURFACE ---------- */
+/* Apply .theme-dark to any container to flip foreground/surface tokens */
+.theme-dark {
+  --bg:            var(--midnight-charcoal);
+  --bg-elevated:   var(--charcoal-700);
+  --bg-inverse:    var(--soft-mint);
+  --surface-glass: rgba(228, 243, 231, 0.06);
+  --surface-glass-strong: rgba(228, 243, 231, 0.12);
+  --fg1:           var(--white);
+  --fg2:           var(--mint-300);
+  --fg3:           #8FA7A2;
+  --fg-muted:      #6E8883;
+  --fg-inverse:    var(--midnight-charcoal);
+  --border:        rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.22);
+}
+
+/* ---------- DEEP TEAL SURFACE (alternate dark) ---------- */
+.theme-teal {
+  --bg:            var(--deep-teal);
+  --bg-elevated:   var(--deep-forest-green);
+  --surface-glass: rgba(228, 243, 231, 0.08);
+  --fg1:           var(--white);
+  --fg2:           var(--green-200);
+  --fg3:           var(--mint-300);
+  --fg-inverse:    var(--deep-teal);
+  --border:        rgba(255, 255, 255, 0.10);
+  --border-strong: rgba(255, 255, 255, 0.22);
+}
+
+/* ---------- SEMANTIC ELEMENT DEFAULTS ---------- */
+html, body {
+  background: var(--bg);
+  color: var(--fg1);
+  font: var(--t-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+h1, .h1 { font: var(--t-h1);     letter-spacing: var(--track-snug);  color: var(--fg1); margin: 0; text-wrap: balance; }
+h2, .h2 { font: var(--t-h2);     letter-spacing: var(--track-snug);  color: var(--fg1); margin: 0; text-wrap: balance; }
+h3, .h3 { font: var(--t-h3);     letter-spacing: var(--track-snug);  color: var(--fg1); margin: 0; text-wrap: balance; }
+h4, .h4 { font: var(--t-h4);     letter-spacing: var(--track-normal);color: var(--fg1); margin: 0; }
+
+.display-1 { font: var(--t-display-1); letter-spacing: var(--track-tight); color: var(--fg1); margin: 0; text-wrap: balance; }
+.display-2 { font: var(--t-display-2); letter-spacing: var(--track-tight); color: var(--fg1); margin: 0; text-wrap: balance; }
+
+.lead    { font: var(--t-lead);  color: var(--fg2); }
+p        { font: var(--t-body);  color: var(--fg2); margin: 0; text-wrap: pretty; }
+.small   { font: var(--t-small); color: var(--fg3); }
+.caption { font: var(--t-caption); color: var(--fg3); }
+.overline {
+  font: var(--t-overline);
+  color: var(--fg3);
+  text-transform: uppercase;
+  letter-spacing: var(--track-overline);
+}
+
+/* ---------- UTILITY: FROSTED GLASS ---------- */
+.glass {
+  background: var(--surface-glass);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(1.1);
+  backdrop-filter: blur(var(--blur-glass)) saturate(1.1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.glass-strong {
+  background: var(--surface-glass-strong);
+  -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(1.1);
+  backdrop-filter: blur(var(--blur-glass)) saturate(1.1);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+}

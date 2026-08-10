@@ -1,0 +1,28 @@
+<!doctype html>
+<!-- @dsCard group="Colors" name="Semantic fg · light" subtitle="fg1 / fg2 / fg3 / muted on Soft Mint" viewport="700x220" -->
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--fg1);font-family:var(--font-sans);}
+  .card{padding:20px 24px;width:700px;box-sizing:border-box;}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .t{padding:14px 16px;border-radius:12px;background:var(--surface-glass);border:1px solid var(--border);}
+  .k{font:var(--t-overline);text-transform:uppercase;letter-spacing:.12em;color:var(--fg3);margin-bottom:6px;}
+  .v{font:var(--t-body-md);}
+  .s{font:var(--t-caption);font-family:var(--font-mono);color:var(--fg3);margin-top:2px;}
+  .dark{background:#112121;color:#fff;}
+  .dark .k{color:#AFCBB5;}
+  .dark .s{color:#8FA7A2;}
+  .dark .t{background:rgba(228,243,231,0.06);border-color:rgba(255,255,255,.1);}
+  .eyebrow{font:var(--t-overline);text-transform:uppercase;letter-spacing:.12em;color:var(--fg3);margin-bottom:10px;}
+</style></head><body>
+<div class="card">
+  <div class="eyebrow">Semantic foreground · light surface</div>
+  <div class="grid">
+    <div class="t"><div class="k">fg1 · primary</div><div class="v" style="color:#112121">Learn to build, not to analyse.</div><div class="s">var(--fg1) · #112121</div></div>
+    <div class="t"><div class="k">fg2 · secondary</div><div class="v" style="color:#11403B">Twelve months. In-person.</div><div class="s">var(--fg2) · #11403B</div></div>
+    <div class="t"><div class="k">fg3 · tertiary</div><div class="v" style="color:#466A64">Cohort 02 · 2026 intake</div><div class="s">var(--fg3) · #466A64</div></div>
+    <div class="t"><div class="k">fg-muted</div><div class="v" style="color:#6E8883">Limited seats — apply early</div><div class="s">var(--fg-muted) · #6E8883</div></div>
+  </div>
+</div>
+</body></html>

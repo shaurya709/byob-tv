@@ -1,0 +1,30 @@
+<!doctype html>
+<!-- @dsCard group="UI Kit — Marketing" name="Template · Story/Reel 9:16" subtitle="1080×1920 full-size story/reel template" viewport="1280x720" -->
+<html><head><meta charset="utf-8"><title>Mesa · Story 9:16</title>
+<link rel="stylesheet" href="../../../colors_and_type.css">
+<style>
+  html,body{margin:0;padding:0;background:#1a1a1a;min-height:100vh;overflow:hidden;}
+  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;}
+  #fit{width:1080px;height:1920px;transform-origin:center center;transform:scale(1);box-shadow:0 20px 60px rgba(0,0,0,0.4);}
+</style></head>
+<body><div id="stage"><div id="fit"><div id="r"></div></div></div>
+<script>window.ASSET_BASE='../../../';</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script>
+  function fit(){
+    const pad=24, el=document.getElementById('fit');
+    if(!el) return;
+    const aw=window.innerWidth-pad*2, ah=window.innerHeight-pad*2;
+    const s=Math.min(aw/1080, ah/1920, 1);
+    el.style.transform='scale('+s+')';
+  }
+  window.addEventListener('resize', fit);
+  window.addEventListener('load', fit);
+  setInterval(fit, 500);
+</script>
+<script type="text/babel" src="../Components.jsx"></script>
+<script type="text/babel" src="../Templates.jsx"></script>
+<script type="text/babel">ReactDOM.createRoot(document.getElementById('r')).render(<StoryReel/>);</script>
+</body></html>

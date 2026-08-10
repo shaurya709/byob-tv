@@ -1,0 +1,111 @@
+<!doctype html>
+<!-- @dsCard group="UI Kit — Marketing" name="Marketing UI Kit" subtitle="Templates for 1:1, 9:16, 16:9, 4:5 — React components" viewport="1400x900" -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mesa Marketing Kit</title>
+<link rel="stylesheet" href="../../colors_and_type.css">
+<style>
+  body { margin:0; background: var(--soft-mint); font-family: var(--font-sans); color: var(--fg1); padding: 48px 0 80px; }
+  header { max-width: 1400px; margin: 0 auto 40px; padding: 0 32px; }
+  header h1 { font-family: var(--font-serif); font-weight:700; font-size:44px; letter-spacing:-.02em; margin:0 0 8px; }
+  header p { font-size:16px; color: var(--fg2); margin:0; max-width: 720px; }
+  .grid { max-width: 1400px; margin: 0 auto; padding: 0 32px; display:flex; flex-direction:column; gap:56px; }
+  .row { display:flex; gap:32px; flex-wrap: wrap; align-items:flex-start; }
+  .spec { display:flex; flex-direction:column; gap:10px; }
+  .spec .lbl { font-family: var(--font-sans); font-weight:700; text-transform:uppercase; letter-spacing:.12em; font-size:11px; color: var(--fg3); }
+  .spec .frame { box-shadow: var(--shadow-md); border-radius:12px; overflow:hidden; background:#fff; }
+  /* scale for previews */
+  .scale-300 > * { transform: scale(.278); transform-origin: top left; }   /* 1080→300 */
+  .scale-square  { width: 300px; height: 300px; }
+  .scale-story   { width: 170px; height: 302px; }   /* 1080x1920 → 170x302 */
+  .scale-yt      { width: 480px; height: 270px; }   /* 1920x1080 → 480x270 */
+  .scale-feed    { width: 240px; height: 300px; }   /* 1080x1350 → 240x300 */
+  .scale-evt169  { width: 420px; height: 236px; }   /* 1920x1080 → 420x236 */
+  .scale-evt11   { width: 236px; height: 236px; }   /* 1080x1080 → 236x236 */
+  .scale-evt916  { width: 170px; height: 302px; }   /* 1080x1920 → 170x302 */
+  .scale-square > *, .scale-yt > *, .scale-story > *, .scale-feed > *, .scale-evt169 > *, .scale-evt11 > *, .scale-evt916 > * { transform-origin: top left; }
+  .scale-square > *  { transform: scale(.278); }
+  .scale-story > *   { transform: scale(.1574); }
+  .scale-yt > *      { transform: scale(.25); }
+  .scale-feed > *    { transform: scale(.2222); }
+  .scale-evt169 > *  { transform: scale(.21875); }
+  .scale-evt11 > *   { transform: scale(.2185); }
+  .scale-evt916 > *  { transform: scale(.1574); }
+  section h2 { font-family: var(--font-serif); font-weight:600; font-size: 28px; letter-spacing:-.01em; margin: 0 0 8px; }
+  section .sublabel { color: var(--fg2); font-size:14px; margin:0 0 24px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Mesa Marketing Kit</h1>
+    <p>Templates + components for Mesa School of Business marketing collateral: social posts, stories/reels, YouTube, and paid ads. All templates render at their native logical pixel size and are composed from the shared <code>Components.jsx</code> library.</p>
+  </header>
+
+  <div class="grid" id="root"></div>
+
+<script>window.ASSET_BASE='../../';</script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="./Components.jsx"></script>
+<script type="text/babel" src="./Templates.jsx"></script>
+
+<script type="text/babel">
+function App() {
+  return (
+    <>
+      <section>
+        <h2>Social post · 1:1 · 1080×1080</h2>
+        <p className="sublabel">The default square post. Serif headline + brand mark accent, top-right logo, photo cut-out bottom-right.</p>
+        <div className="row">
+          <div className="spec"><div className="lbl">Light · Soft Mint</div><div className="frame scale-square"><SocialSquare/></div></div>
+          <div className="spec"><div className="lbl">Dark · Midnight Charcoal</div><div className="frame scale-square"><SocialSquare bg={C.charcoal} accent="tangerine" logoTone="dark"/></div></div>
+          <div className="spec"><div className="lbl">Quote card variant</div><div className="frame scale-square"><QuoteCard/></div></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Story / Reel · 9:16 · 1080×1920</h2>
+        <p className="sublabel">Vertical. Photo cut-out top, testimonial bottom, warm CTA.</p>
+        <div className="row">
+          <div className="spec"><div className="lbl">Deep Teal</div><div className="frame scale-story"><StoryReel/></div></div>
+          <div className="spec"><div className="lbl">Midnight Charcoal</div><div className="frame scale-story"><StoryReel bg={C.charcoal} accent="green"/></div></div>
+          <div className="spec"><div className="lbl">Forest Green</div><div className="frame scale-story"><StoryReel bg={C.forest} accent="tangerine" kicker="Applications open" headline={'\u201CBuild, don\u2019t just study.\u201D'} attribution="— Arjun · Cohort 01"/></div></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>YouTube / widescreen · 16:9 · 1920×1080</h2>
+        <p className="sublabel">Editorial split: headline-left, cut-out over tangerine right.</p>
+        <div className="row">
+          <div className="spec"><div className="lbl">Intake hero</div><div className="frame scale-yt"><YouTubeWide/></div></div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Feed ad · 4:5 · 1080×1350</h2>
+        <p className="sublabel">Bold dark hero with tangerine accent + frosted-glass sub-label.</p>
+        <div className="row">
+          <div className="spec"><div className="lbl">Charcoal hero</div><div className="frame scale-feed"><FeedAd45/></div></div>
+          <div className="spec"><div className="lbl">Teal hero</div><div className="frame scale-feed"><FeedAd45 bg={C.teal}/></div></div>
+          <div className="spec"><div className="lbl">Forest hero</div><div className="frame scale-feed"><FeedAd45 bg={C.forest} headline="One cohort. Zero textbooks."/></div></div>
+        </div>
+      </section>
+      <section>
+        <h2>Event thumbnails · speaker + credentials card</h2>
+        <p className="sublabel">Concentric ring backdrop, headline with highlighted speaker name, floating credentials card, cut-out headshot. Three aspect ratios.</p>
+        <div className="row">
+          <div className="spec"><div className="lbl">16:9 · YouTube / web hero</div><div className="frame scale-evt169"><EventThumb ratio="16:9"/></div></div>
+          <div className="spec"><div className="lbl">1:1 · Feed post</div><div className="frame scale-evt11"><EventThumb ratio="1:1"/></div></div>
+          <div className="spec"><div className="lbl">9:16 · Story / Short</div><div className="frame scale-evt916"><EventThumb ratio="9:16" showPlayBadge playCount="2.3 M"/></div></div>
+        </div>
+      </section>
+    </>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

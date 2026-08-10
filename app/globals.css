@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/* Mesa design system tokens — the single source of truth for colour, type scale,
+   spacing, radii, shadows and motion. Lives in the versioned skill at
+   .claude/skills/mesa-design/ so a fresh clone has it.
+
+   Never restate a hex value from this file anywhere else in the project. If a
+   component needs a brand colour it reads a token; if a token is missing, add it
+   to mesa-tv.css, don't inline a value.
+
+   ── Why `layer(components)` ──
+
+   The design system ships element and class rules — `.overline`, `.small`,
+   `.caption`, `h1`–`h4` — that each set a colour. Tailwind v4 puts its utilities
+   in a cascade layer, and **unlayered CSS beats layered CSS at any specificity**,
+   so an unlayered `.overline { color: var(--fg3) }` silently wins over a
+   `text-*` utility. The admin dashboard hit this three separate times; each time
+   the style simply didn't apply, nothing errored, and the result looked
+   deliberate. Putting these rules in `components` — which is what they are —
+   restores the expected precedence. Token definitions in `:root` are unaffected
+   by the layer. */
+@import "../.claude/skills/mesa-design/colors_and_type.css" layer(components);
+
+/* Viewing-distance type scale and the white page surface. Marked as an
+   extension, not core brand — see the file header. */
+@import "./mesa-tv.css";
+
+/* ── Tailwind v4 theme mapping ──
+
+   Radii are aliased by *use* (`--radius-card`, not `--radius-md`) because
+   `--radius-md: var(--radius-md)` self-references and silently breaks both the
+   token and the utility. */
+@theme inline {
+  --color-midnight-charcoal: var(--midnight-charcoal);
+  --color-soft-mint: var(--soft-mint);
+  --color-bright-green: var(--bright-green);
+  --color-tangerine-glow: var(--tangerine-glow);
+  --color-deep-forest-green: var(--deep-forest-green);
+  --color-deep-teal: var(--deep-teal);
+  --color-mint-300: var(--mint-300);
+  --color-green-600: var(--green-600);
+  --color-tangerine-600: var(--tangerine-600);
+  --color-tangerine-200: var(--tangerine-200);
+
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-fg1: var(--fg1);
+  --color-fg2: var(--fg2);
+  --color-fg3: var(--fg3);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-inverse: var(--fg-inverse);
+  --color-mesa-border: var(--border);
+  --color-mesa-border-strong: var(--border-strong);
+
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-mono);
+
+  --radius-chip: var(--radius-xs);
+  --radius-control: var(--radius-sm);
+  --radius-card: var(--radius-md);
+  --radius-hero: var(--radius-lg);
+  --radius-panel: var(--radius-xl);
+
+  --ease-mesa-out: var(--ease-out);
+  --ease-mesa-in-out: var(--ease-in-out);
+}
+
+/* ── Unlayered overrides ──
+
+   These must beat the design system's own layered rules, so they stay outside
+   any layer. Keep this block to element-level base styling only; anything that
+   sets a colour on a *class* belongs in mesa-tv.css's `@layer components` block,
+   or it will beat every Tailwind `text-*` utility on the same element. */
+
+html,
+body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg1);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* The wall is a fixed 1920x1080 frame with nothing to scroll to. A scrollbar
+   appearing here means something overflowed, which is a bug to fix rather than
+   to hide — but on an unattended display a stray scrollbar is also a permanent
+   visual artefact, so it is suppressed and the overflow is caught by the
+   measurement pass instead. */
+body {
+  overflow: hidden;
+}
+
+/* `.overline` is the design system's typographic label (11px, 700, caps,
+   tracked) AND a real Tailwind utility that sets `text-decoration-line:
+   overline`. Utilities beat the components layer, so without this every label
+   in the app draws a hairline above the text. In the dashboard that survived a
+   full styling pass, a green audit and two design-critic runs before anyone
+   measured it. */
+.overline {
+  text-decoration-line: none;
+}

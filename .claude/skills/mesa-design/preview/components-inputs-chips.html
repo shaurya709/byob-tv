@@ -1,0 +1,22 @@
+<!doctype html>
+<!-- @dsCard group="Components" name="Inputs & chips" subtitle="Text input focus · status chips · dark/line variants" viewport="700x120" -->
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>html,body{margin:0;padding:0;background:var(--bg);font-family:var(--font-sans);}
+.card{padding:22px 26px;width:700px;box-sizing:border-box;display:flex;gap:12px;flex-wrap:wrap;align-items:center;}
+.input{font:var(--t-body);padding:12px 14px;border-radius:10px;border:1px solid rgba(17,33,33,0.2);background:#fff;min-width:220px;color:#112121;outline:none;}
+.input:focus{border-color:#6ED190;box-shadow:0 0 0 3px rgba(110,209,144,0.25);}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;font-size:13px;font-weight:700;background:#AFF2C6;color:#11403B;}
+.chip.warm{background:#FAC995;color:#112121;}
+.chip.dark{background:#11403B;color:#E4F3E7;}
+.chip.line{background:transparent;border:1px solid rgba(17,33,33,0.32);color:#112121;}
+</style></head><body>
+<div class="card">
+  <input class="input" placeholder="your@email.com" value="aarav@example.com">
+  <input class="input" placeholder="Full name" style="min-width:160px" value="Aarav M.">
+  <span class="chip">Accepted</span>
+  <span class="chip warm">Waitlist</span>
+  <span class="chip dark">Cohort 02</span>
+  <span class="chip line">In-person</span>
+</div>
+</body></html>
