@@ -73,7 +73,9 @@
   /* Podium figures, by rank. First place is the only one that gets display size. */
   --t-tv-figure-1: 700 clamp(40px, 5.6vw, 120px) / 1 var(--font-serif);
   --t-tv-figure-2: 700 clamp(28px, 3.4vw, 72px) / 1 var(--font-serif);
-  --t-tv-figure-3: 600 clamp(20px, 2.1vw, 44px) / 1 var(--font-sans);
+  /* Ranks 4-10. Sized so seven tiles divide 1792px without the row overflowing
+     — the figure is the widest thing in each tile, so it sets the floor. */
+  --t-tv-figure-3: 600 clamp(16px, 1.6vw, 32px) / 1 var(--font-sans);
 
   /* Venture names. */
   --t-tv-name-1: 600 clamp(24px, 3.1vw, 66px) / 1.1 var(--font-serif);
@@ -119,5 +121,31 @@
   .tv-figure {
     font-variant-numeric: tabular-nums;
     letter-spacing: var(--track-tv-tight);
+  }
+
+  /* First place, and only first place.
+     Full-bleed flat brand colour is the design system's own hero treatment, and
+     Deep Forest Green is the logomark colour. Rank is carried by surface, size
+     and the written position all at once, so a greyscale crop still ranks. */
+  .tv-panel-forest {
+    background: var(--deep-forest-green);
+    color: var(--white);
+    border-radius: var(--radius-lg);
+  }
+
+  /* Second and third. Frosted glass rather than a solid fill — the system calls
+     this a brand signature — so they read as one step down without competing. */
+  .tv-card-glass {
+    background: var(--surface-glass);
+    -webkit-backdrop-filter: blur(var(--blur-glass)) saturate(1.1);
+    backdrop-filter: blur(var(--blur-glass)) saturate(1.1);
+    border: var(--stroke-thin) solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+
+  /* Ranks 4-10. Quieter again: a hairline rule, no fill. */
+  .tv-card-plain {
+    border: var(--stroke-thin) solid var(--border);
+    border-radius: var(--radius-md);
   }
 }
