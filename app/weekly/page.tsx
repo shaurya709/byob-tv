@@ -1,6 +1,9 @@
 'use client'
 
+import { useState } from 'react'
+
 import { BootKick } from '@/components/BootKick'
+import { DevKickTrigger } from '@/components/DevKickTrigger'
 import { WallHeader } from '@/components/WallHeader'
 import { COLUMN_LENGTH, WeeklyLeaderboard } from '@/components/WeeklyLeaderboard'
 import { WATCH_RANKS_WEEKLY } from '@/config'
@@ -26,7 +29,11 @@ const BOARD: BoardSpec = {
 
 export default function WeeklyPage() {
   const { snapshot, queueVersion } = useWallData(BOARD)
-  const kick = useKick(BOARD.name, queueVersion)
+  // The dev trigger writes to the same queue the detector writes to; this
+  // counter is only the nudge that tells `useKick` to look, exactly as
+  // `queueVersion` does. Adding to it keeps one drain and one reader.
+  const [devTicks, setDevTicks] = useState(0)
+  const kick = useKick(BOARD.name, queueVersion + devTicks)
 
   const week = snapshot === null ? null : openWeek(snapshot.cohort)
   const teams = competingTeams(snapshot?.teams ?? [])
@@ -56,6 +63,8 @@ export default function WeeklyPage() {
         </div>
         {kick !== null && <BootKick event={kick} teams={teams} perColumn={COLUMN_LENGTH} />}
       </div>
+
+      <DevKickTrigger teams={teams} week={week} onQueued={() => setDevTicks((n) => n + 1)} />
     </main>
   )
 }
