@@ -1,5 +1,5 @@
-import { ColumnHeading, VenturePill, type KickCue } from '@/components/VenturePill'
-import { timelineFor, type KickTimeline } from '@/lib/kickTimeline'
+import { ColumnHeading, LOGO, VenturePill, type KickCue } from '@/components/VenturePill'
+import { FACEOFF_GAP_PX, KNOCK_PX, timelineFor, type KickTimeline } from '@/lib/kickTimeline'
 import { rankByWeek } from '@/lib/ranking'
 import type { OvertakeEvent, Team, TeamId } from '@/lib/types'
 
@@ -58,17 +58,26 @@ function Column({
  * The choreography, in one place. The board reads the event and hands each row
  * its instruction; no row ever computes its own.
  *
- * ── What Beat B moves, and by how much ──
+ * ── What moves, and by how much ──
  *
- * The attacker rides up to **one row below the defender** — `(Δ − 1)` rows, not
- * Δ. The defender still holds its slot; taking it is Beat D's job, when the
- * defender is kicked out of it, and the attacker's final settle into that slot
- * comes from the held snapshot applying at the end of the sequence. For Δ=1 the
- * attacker is already adjacent and does not move at all.
+ * Beat B: the attacker rides up to **one row below the defender** — `(Δ − 1)`
+ * rows, not Δ — and the rows strictly between the contestants each slide down
+ * one, closing behind it. For Δ=1 the attacker is already adjacent and B moves
+ * nothing.
  *
- * The rows strictly between the two contestants each slide down exactly one
- * row, closing behind the attacker. Everyone else — including the defender —
- * holds still.
+ * Beat C: the attacker slides diagonally out of the stack — one logo width and
+ * a gap to the defender's left, one row up to the defender's y — to square off.
+ * The boot is the attacker's alone.
+ *
+ * Beat D: the defender is knocked a short shove sideways, then falls into the
+ * row the attacker vacated, while the attacker takes the defender's slot. Both
+ * end exactly on the grid positions the held snapshot assigns them, so the
+ * settle changes nothing visible.
+ *
+ * Every offset is relative to the row's own slot (defender) or Beat B's end
+ * (attacker): x in pixels — the constants are pixel constants — and y in row
+ * heights, which only the actor can convert, because only the actor measured
+ * its row.
  *
  * Rows are identified by their rank *as rendered*, which is the held snapshot's
  * order for the whole kick: the freeze in `useWallData` is what makes these
@@ -82,10 +91,27 @@ export function cueOf(
 ): KickCue | undefined {
   if (kick === null || timeline === null) return undefined
   if (teamId === kick.attacker) {
-    // Ends one row below the defender: `toRank + 1`, so the travel is Δ − 1.
-    return { role: 'attacker', rows: kick.toRank + 1 - kick.fromRank, timeline }
+    return {
+      role: 'attacker',
+      // Beat B ends one row below the defender: `toRank + 1`, so travel is Δ − 1.
+      rows: kick.toRank + 1 - kick.fromRank,
+      timeline,
+      boot: true,
+      // Logo centres one logo width plus the daylight apart, at the defender's y.
+      faceoffOffset: { xPx: -(LOGO + FACEOFF_GAP_PX), yRows: -1 },
+      // The swap ends in the defender's old slot: back to column x, same y.
+      slotSwapDestination: { xPx: 0, yRows: -1 },
+    }
   }
-  if (teamId === kick.defender) return { role: 'defender', rows: 0, timeline }
+  if (teamId === kick.defender) {
+    return {
+      role: 'defender',
+      rows: 0,
+      timeline,
+      knock: { xPx: KNOCK_PX, yRows: 0 },
+      fall: { xPx: 0, yRows: 1 },
+    }
+  }
   if (rank > kick.toRank && rank < kick.fromRank) return { rows: 1, timeline }
   return undefined
 }

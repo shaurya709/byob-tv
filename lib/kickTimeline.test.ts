@@ -24,18 +24,38 @@ describe('timelineFor', () => {
     }
   })
 
-  /** The C+D reserve sits between the climb's end and the uncollapse's start. */
-  it('holds the strike reserve between B and E', () => {
+  /**
+   * The strike-and-fall phases, as briefed: faceoff 150ms, windup 100ms, strike
+   * 100ms, knock 120ms, swap 280ms — 750ms between the climb's end and the
+   * uncollapse, whatever the climb size.
+   */
+  it('holds the five strike-and-fall phases between B and E, back to back', () => {
     for (const delta of [1, 3, 8]) {
       const { beats } = timelineFor(delta)
-      expect(beats.uncollapse[0] - beats.climb[1]).toBeCloseTo(0.55, 10)
+      const end = beats.climb[1]
+      expect(beats.faceoff).toEqual([end, end + 0.15])
+      expect(beats.windup[0]).toBeCloseTo(end + 0.15, 10)
+      expect(beats.windup[1]).toBeCloseTo(end + 0.25, 10)
+      expect(beats.strike[0]).toBeCloseTo(end + 0.25, 10)
+      expect(beats.strike[1]).toBeCloseTo(end + 0.35, 10)
+      expect(beats.knock[0]).toBeCloseTo(end + 0.35, 10)
+      expect(beats.knock[1]).toBeCloseTo(end + 0.47, 10)
+      expect(beats.swap[0]).toBeCloseTo(end + 0.47, 10)
+      expect(beats.swap[1]).toBeCloseTo(end + 0.75, 10)
+      expect(beats.uncollapse[0]).toBeCloseTo(end + 0.75, 10)
     }
   })
 
-  it('computes the totals the brief states: Δ=1 → 2.25s, Δ=3 → 2.37s, Δ=8 → 2.67s', () => {
-    expect(timelineFor(1).total).toBeCloseTo(2.25, 10)
-    expect(timelineFor(3).total).toBeCloseTo(2.37, 10)
-    expect(timelineFor(8).total).toBeCloseTo(2.67, 10)
+  /** The contact frame: the strike's end and the knock's start are one instant. */
+  it('makes cause and effect share the contact instant', () => {
+    const { beats } = timelineFor(3)
+    expect(beats.knock[0]).toBe(beats.strike[1])
+  })
+
+  it('computes the new totals: Δ=1 → 2.45s, Δ=3 → 2.57s, Δ=8 → 2.87s', () => {
+    expect(timelineFor(1).total).toBeCloseTo(2.45, 10)
+    expect(timelineFor(3).total).toBeCloseTo(2.57, 10)
+    expect(timelineFor(8).total).toBeCloseTo(2.87, 10)
   })
 })
 
@@ -48,8 +68,8 @@ describe('at', () => {
   })
 
   it('places stops as fractions of the beat, not of the timeline', () => {
-    const [start, end] = tl.beats.uncollapse
-    const [first, middle, last] = tl.at(tl.beats.uncollapse, 0.5)
+    const [start, end] = tl.beats.knock
+    const [first, middle, last] = tl.at(tl.beats.knock, 0.5)
     expect(first).toBeCloseTo(t(start), 10)
     expect(middle).toBeCloseTo(t(start + (end - start) * 0.5), 10)
     expect(last).toBeCloseTo(t(end), 10)
@@ -91,12 +111,17 @@ describe('the sequence', () => {
     }
   })
 
-  /**
-   * Only beats that exist are in the table. The C+D reserve is a gap between
-   * windows, not a window — a beat with no animation attached is a number that
-   * looks load bearing and is not.
-   */
-  it('carries no window for a beat that has not been built', () => {
-    expect(Object.keys(timelineFor(1).beats)).toEqual(['collapse', 'climb', 'uncollapse'])
+  /** Only beats that exist are in the table, in choreography order. */
+  it('carries exactly the built beats', () => {
+    expect(Object.keys(timelineFor(1).beats)).toEqual([
+      'collapse',
+      'climb',
+      'faceoff',
+      'windup',
+      'strike',
+      'knock',
+      'swap',
+      'uncollapse',
+    ])
   })
 })

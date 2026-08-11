@@ -4,7 +4,7 @@ import { cubicBezier, motion, type Easing } from 'motion/react'
 import { HOT_TODAY_MIN } from '@/config'
 import { VentureLogo } from '@/components/VentureLogo'
 import { formatRupees } from '@/lib/format'
-import type { KickTimeline } from '@/lib/kickTimeline'
+import { BOOT_HEIGHT_PX, KNOCK_DIP_PX, type KickTimeline } from '@/lib/kickTimeline'
 import type { Team } from '@/lib/types'
 
 /**
@@ -151,8 +151,9 @@ function windowOf(timeline: KickTimeline): number[] {
 }
 const EASE = [SWALLOW, 'linear', DISGORGE] as const
 
-/** The closed pill: the logo, and an even hair either side of it. */
-const LOGO = 30
+/** The closed pill: the logo, and an even hair either side of it. Exported for
+    the brain: the faceoff offset is measured in logo widths. */
+export const LOGO = 30
 const CLOSED_PAD = 4
 
 
@@ -297,7 +298,25 @@ export type KickCue = {
   rows: number
   /** The kick's clock, derived from the event's climb size. One per kick, shared. */
   timeline: KickTimeline
+  /** Attacker only: render the boot. Its windows and geometry are not per-event. */
+  boot?: true
+  /** Attacker: the faceoff slide's destination, relative to Beat B's end. */
+  faceoffOffset?: KickOffset
+  /** Attacker: the swap's destination — the defender's old slot — relative to Beat B's end. */
+  slotSwapDestination?: KickOffset
+  /** Defender: where the contact punches it, relative to its own slot. */
+  knock?: KickOffset
+  /** Defender: where it lands — the row below — which is also its snapshot slot. */
+  fall?: KickOffset
 }
+
+/**
+ * A choreography offset. Horizontal is in pixels, because it measures logo
+ * widths and gaps that are constants; vertical is in row heights, because the
+ * row height exists only in the browser and the brain never reads the DOM. The
+ * actor multiplies `yRows` by its own measured height.
+ */
+export type KickOffset = { xPx: number; yRows: number }
 
 /**
  * Beat B — the vertical ride, on the row's outer box so the rank travels with
@@ -329,7 +348,166 @@ export function rideMotion(rows: number, rest: Resting, timeline: KickTimeline) 
   }
 }
 
-const STILL = { animate: { y: 0 }, transition: { duration: 0 } } as const
+/** C's faceoff slide: accelerating out of the stack, decelerating into the square-up. */
+const FACEOFF = cubicBezier(0.32, 0.72, 0.28, 1)
+/** C's boot phases: accelerate into the cocked position; then ease-in only — contact at max speed. */
+const WINDUP = cubicBezier(0.34, 0, 0.68, 0.6)
+const SWING = cubicBezier(0.6, 0, 1, 0.5)
+/** D's impact shove: accelerates out under the hit. */
+const SHOVE = cubicBezier(0.3, 0, 0.6, 1)
+/** D's fall and the attacker's slot-taking: gravity in, a touch of landing out. */
+const GRAVITY = cubicBezier(0.4, 0, 0.7, 1)
+
+/**
+ * The attacker's whole ride, one animation per axis on the shared clock.
+ *
+ * y: hold, climb to one row below the defender (Beat B), then rise the last row
+ * during the faceoff and hold at the defender's y for the rest of the sequence.
+ * x: hold in column until the faceoff slides it out to the defender's left,
+ * hold there through the windup, the strike and the knock, then take the
+ * defender's vacated slot during the swap. Both axes end exactly on the grid
+ * position the held snapshot re-slots this row into, which is what makes the
+ * settle invisible.
+ */
+export function attackerRide(cue: KickCue, rest: Resting, timeline: KickTimeline) {
+  const { beats } = timeline
+  const climbY = cue.rows * rest.height
+  const face = cue.faceoffOffset ?? { xPx: 0, yRows: 0 }
+  const swap = cue.slotSwapDestination ?? { xPx: 0, yRows: 0 }
+  const xEase: Easing[] = ['linear', FACEOFF, 'linear', GRAVITY, 'linear']
+  const yEase: Easing[] = ['linear', CLIMB, FACEOFF, 'linear']
+  return {
+    animate: {
+      x: [0, 0, face.xPx, face.xPx, swap.xPx, swap.xPx],
+      y: [0, 0, climbY, climbY + face.yRows * rest.height, climbY + face.yRows * rest.height],
+    },
+    transition: {
+      duration: timeline.total,
+      x: {
+        duration: timeline.total,
+        times: [0, ...timeline.at(beats.faceoff), timeline.at(beats.swap)[0], timeline.at(beats.swap)[1], 1],
+        ease: xEase,
+      },
+      y: {
+        duration: timeline.total,
+        times: [0, timeline.at(beats.climb)[0], timeline.at(beats.climb)[1], timeline.at(beats.faceoff)[1], 1],
+        ease: yEase,
+      },
+    },
+  }
+}
+
+/**
+ * The defender's ride: nothing, nothing, then everything at once.
+ *
+ * Static through A, B and the whole of C — being hit is the first thing that
+ * moves it. The knock shoves it sideways with a dip-and-recover that never
+ * leaves the row; the swap drops it diagonally into the row the attacker
+ * vacated in Beat B, which is exactly the slot the held snapshot assigns it.
+ */
+export function defenderRide(cue: KickCue, rest: Resting, timeline: KickTimeline) {
+  const { beats } = timeline
+  const knock = cue.knock ?? { xPx: 0, yRows: 0 }
+  const fall = cue.fall ?? { xPx: 0, yRows: 0 }
+  const fallY = fall.yRows * rest.height
+  const xEase: Easing[] = ['linear', SHOVE, GRAVITY, 'linear']
+  const yEase: Easing[] = ['linear', SHOVE, SHOVE, GRAVITY, 'linear']
+  return {
+    animate: {
+      x: [0, 0, knock.xPx, fall.xPx, fall.xPx],
+      y: [0, 0, KNOCK_DIP_PX, 0, fallY, fallY],
+    },
+    transition: {
+      duration: timeline.total,
+      x: {
+        duration: timeline.total,
+        times: [0, ...timeline.at(beats.knock), timeline.at(beats.swap)[1], 1],
+        ease: xEase,
+      },
+      y: {
+        duration: timeline.total,
+        times: [0, ...timeline.at(beats.knock, 0.5), timeline.at(beats.swap)[1], 1],
+        ease: yEase,
+      },
+    },
+  }
+}
+
+/**
+ * The boot: rotation and visibility on the one clock, like everything else.
+ *
+ * Invisible until the windup — the cue mounts it for the kick's whole duration
+ * because the cue is pure of time, so "the boot exists only from the windup to
+ * the swap's end" is a pair of step keyframes on opacity, not a mount. It cocks
+ * away from the defender, swings through with no deceleration — the contact
+ * frame is the moment of maximum angular velocity — and holds the follow-through
+ * at +45° while the defender it just hit goes down.
+ */
+export function bootMotion(timeline: KickTimeline) {
+  const { beats } = timeline
+  const rotateEase: Easing[] = ['linear', WINDUP, SWING, 'linear']
+  const windupStart = timeline.at(beats.windup)[0]
+  const swapEnd = timeline.at(beats.swap)[1]
+  return {
+    animate: {
+      rotate: [0, 0, -25, 45, 45],
+      opacity: [0, 0, 1, 1, 0, 0],
+    },
+    transition: {
+      duration: timeline.total,
+      rotate: {
+        duration: timeline.total,
+        times: [0, windupStart, timeline.at(beats.windup)[1], timeline.at(beats.strike)[1], 1],
+        ease: rotateEase,
+      },
+      // Duplicated times are steps: appear whole at the windup, vanish whole
+      // when the follow-through ends. A boot that fades is a boot that lingers.
+      opacity: {
+        duration: timeline.total,
+        times: [0, windupStart, windupStart, swapEnd, swapEnd, 1],
+        ease: 'linear' as const,
+      },
+    },
+  }
+}
+
+/**
+ * The boot itself, anchored heel-first to the attacker's logo.
+ *
+ * Positioned by the same CSS tokens that lay the row out — no measurement. The
+ * anchor is the logo's top-right corner: the pill sits centred in its
+ * `--w-pill` track, the logo centred in the closed pill, so the corner is half
+ * a logo right of and above the row's pill-track centre. `transform-origin`
+ * 0% 0% pins the heel to that corner while the toe swings.
+ *
+ * It lives on the row, *outside* the pill: the pill's `overflow: hidden` is
+ * load-bearing for the collapse, and a boot inside it would be clipped at the
+ * first degree of swing.
+ */
+function Boot({ timeline }: { timeline: KickTimeline }) {
+  return (
+    <motion.img
+      src="/assets/boot.png"
+      alt=""
+      {...bootMotion(timeline)}
+      style={{
+        position: 'absolute',
+        left: `calc(var(--s-3) + var(--w-rank) + var(--s-3) + var(--w-pill) / 2 + ${LOGO / 2}px)`,
+        top: `calc(var(--h-row) / 2 - ${LOGO / 2}px)`,
+        height: BOOT_HEIGHT_PX,
+        width: 'auto',
+        transformOrigin: '0% 0%',
+        // Above both pills: the attacker's row is later in the DOM than the
+        // defender's, so the row already paints over it; this lifts the boot
+        // over the attacker's own pill as well.
+        zIndex: 2,
+        pointerEvents: 'none',
+      }}
+    />
+  )
+}
+
+const STILL = { animate: { x: 0, y: 0 }, transition: { duration: 0 } } as const
 
 export function VenturePill({
   team,
@@ -355,12 +533,20 @@ export function VenturePill({
   const fade = collapse === null ? {} : fadeMotion(collapse)
   const pill = collapse === null || rest === null ? {} : pillMotion(rest, collapse)
   const detail = collapse === null || rest === null ? {} : detailMotion(rest, collapse)
-  // `STILL`, not `{}`, for every row not currently riding: the reset to y 0 has
-  // to land in the same commit as the settle's re-slot — see `rideMotion`.
+  // `STILL`, not `{}`, for every row not currently riding: the reset to x/y 0
+  // has to land in the same commit as the settle's re-slot — see `rideMotion`.
+  // Contestants get their full strike-and-fall rides; the rows between get the
+  // one-row slide; everyone else holds.
   const ride =
-    cue === undefined || cue.rows === 0 || rest === null
+    cue === undefined || rest === null
       ? STILL
-      : rideMotion(cue.rows, rest, cue.timeline)
+      : cue.role === 'attacker'
+        ? attackerRide(cue, rest, cue.timeline)
+        : cue.role === 'defender'
+          ? defenderRide(cue, rest, cue.timeline)
+          : cue.rows !== 0
+            ? rideMotion(cue.rows, rest, cue.timeline)
+            : STILL
 
   /**
    * The kick is over when this row's animation is, reported by the animation
@@ -393,7 +579,11 @@ export function VenturePill({
   }, [attacker, onSettled])
 
   return (
-    <motion.div {...ride} style={{ ...ROW_OUTER, height: 'var(--h-row)' }}>
+    // `position: relative`: the boot anchors to this box. Stated even though a
+    // transform would establish the containing block anyway, because `STILL`
+    // resolves to no transform at rest and the anchor must not depend on which.
+    <motion.div {...ride} style={{ ...ROW_OUTER, height: 'var(--h-row)', position: 'relative' }}>
+      {cue?.boot === true && <Boot timeline={cue.timeline} />}
       <motion.span
         {...fade}
         className="tv-figure"
