@@ -45,6 +45,17 @@ export const POLL_INTERVAL_MS = 60_000
  */
 export const SPARE_TEAM_IDS: readonly TeamId[] = ['SLE-C441', 'SLE-C442']
 
+// ── Weekly board ────────────────────────────────────────────────────────────
+
+/**
+ * A day's revenue at or above this reads as a strong day and is emphasised.
+ *
+ * One threshold, one emphasis. It is a display decision, not a milestone — the
+ * wall no longer fires anything on crossing it, so a team moving above and below
+ * it through the day is free to.
+ */
+export const HOT_TODAY_MIN = 5_000
+
 // ── Logos ───────────────────────────────────────────────────────────────────
 
 /**

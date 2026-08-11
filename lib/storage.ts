@@ -13,13 +13,17 @@ import type { CsvCache } from '@/lib/types'
  *
  * ── Version lives in the key name ──
  *
- * A version bump makes the old key simply *absent*, which routes into the seed
- * branch the code already has to support for a brand-new TV. Putting a version
- * inside the value would need a migration branch at read time — a second read
- * path, for a store whose entire contents can be rebuilt from the sheet.
+ * A version bump makes the old key simply *absent*, which routes into the branch
+ * the code already has to support for a brand-new TV. Putting a version inside
+ * the value would need a migration branch at read time — a second read path, for
+ * a store whose entire contents can be rebuilt from the sheet.
+ *
+ * Bumped to v2 with the six-column feed. Without it, every wall already running
+ * would boot holding a v1 cache, throw on it, and log a parse error on first
+ * paint until the first fetch landed — noise that reads like a fault and is not.
  */
 
-const PREFIX = 'byob-tv.v1'
+const PREFIX = 'byob-tv.v2'
 
 export const KEYS = {
   csv: `${PREFIX}.csv`,

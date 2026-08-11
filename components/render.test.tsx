@@ -4,9 +4,12 @@ import { createRoot } from 'react-dom/client'
 import { describe, expect, it } from 'vitest'
 
 import { Podium, visibleTeams } from '@/components/Podium'
+import { VenturePill } from '@/components/VenturePill'
+import { WeeklyLeaderboard, columnsOf } from '@/components/WeeklyLeaderboard'
+import { HOT_TODAY_MIN } from '@/config'
 import { formatRupees, ordinal } from '@/lib/format'
-import { rankTeams } from '@/lib/ranking'
-import { teams } from '@/test/fixtures'
+import { competingTeams, rankTeams } from '@/lib/ranking'
+import { team, teams } from '@/test/fixtures'
 
 /**
  * Smoke tests: every surface renders with mock data and puts the right words on
@@ -71,6 +74,58 @@ describe('visibleTeams', () => {
   it('never shows more than ten', () => {
     const all = teams().map((team, index) => ({ ...team, totalRevenue: 1000 * (42 - index) }))
     expect(visibleTeams(rankTeams(all))).toHaveLength(10)
+  })
+})
+
+describe('WeeklyLeaderboard', () => {
+  it('puts all forty competing teams on screen at once', () => {
+    const board = competingTeams(
+      teams().map((row, index) => ({ ...row, weekRevenue: 1_000 * (42 - index) })),
+    )
+    const text = render(<WeeklyLeaderboard teams={board} />)
+    expect(text).toContain('Venture 1')
+    expect(text).toContain('Venture 40')
+    // The spares are not on the board at all.
+    expect(text).not.toContain('Venture 41')
+  })
+
+  /** Down then across: ranks 1-20 are one column, 21-40 the next. */
+  it('splits the columns in reading order', () => {
+    const board = competingTeams(
+      teams().map((row, index) => ({ ...row, weekRevenue: 1_000 * (42 - index) })),
+    )
+    const [left, right] = columnsOf(board)
+    expect(left).toHaveLength(20)
+    expect(right).toHaveLength(20)
+    expect(left[0].teamId).toBe('SLE-C401')
+    expect(left[19].teamId).toBe('SLE-C420')
+    expect(right[0].teamId).toBe('SLE-C421')
+  })
+
+  it('renders an empty board without inventing anything to put in it', () => {
+    expect(render(<WeeklyLeaderboard teams={[]} />)).toBe('')
+  })
+})
+
+describe('VenturePill', () => {
+  /**
+   * Forty rows of ₹0 every morning is noise, and the column exists to say who
+   * is moving today. Silence is the honest answer for everyone else.
+   */
+  it('shows nothing rather than a zero for a team that has not sold today', () => {
+    const text = render(<VenturePill team={team({ weekRevenue: 4_000, todayRevenue: 0 })} rank={7} />)
+    expect(text).toContain(formatRupees(4_000))
+    expect(text).not.toContain(formatRupees(0))
+  })
+
+  it('shows today once there is something to show', () => {
+    const text = render(<VenturePill team={team({ todayRevenue: HOT_TODAY_MIN })} rank={7} />)
+    expect(text).toContain(formatRupees(HOT_TODAY_MIN))
+  })
+
+  it('falls back to the team id for a venture with no name yet', () => {
+    const text = render(<VenturePill team={team({ teamId: 'SLE-C418', ventureName: '' })} rank={9} />)
+    expect(text).toContain('SLE-C418')
   })
 })
 

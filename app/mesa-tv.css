@@ -91,9 +91,35 @@
   --t-tv-card-context: 700 clamp(11px, 1vw, 21px) / 1.2 var(--font-sans);
   --t-tv-card-name: 600 clamp(16px, 1.8vw, 38px) / 1.15 var(--font-sans);
 
-  /* Ambient chrome: the microsecond ticker and the as-of stamp. Deliberately
+  /* Ambient chrome: the Flea countdown strip and the as-of stamp. Deliberately
      the smallest type on the wall — present, never competing. */
   --t-tv-ticker: 500 clamp(11px, 0.95vw, 20px) / 1 var(--font-mono);
+
+  /* ========= WEEKLY BOARD =========
+
+     Forty rows on one frame, so the row height is what the whole slide is built
+     around. 40px at 1920 leaves 1080 - header - padding with a little air; the
+     type is then sized to sit inside that with its descenders clear.
+
+     **Every column is a fixed width, including the name**, and each row is then
+     centred in its half of the frame. Letting the name absorb the slack instead
+     measured fine and read badly: with short venture names the revenue figures
+     were flung to the far edge, leaving 550px of white between "Pluck" and its
+     number. At six metres the eye cannot carry an association across that gap.
+     Fixed widths also mean every row is identical, so the four fields line up
+     down a column of twenty. */
+  --h-header: 3.4vw;
+  --h-row: 2.4vw;
+  --w-rank: 1.9vw;
+  --w-name: 16vw;
+  --w-week: 5.9vw;
+  --w-today: 4.8vw;
+
+  --t-tv-row-rank: 700 clamp(12px, 1.15vw, 24px) / 1 var(--font-sans);
+  --t-tv-row-name: 500 clamp(12px, 1.15vw, 24px) / 1.1 var(--font-sans);
+  --t-tv-row-week: 600 clamp(12px, 1.15vw, 24px) / 1 var(--font-sans);
+  --t-tv-row-today: 500 clamp(11px, 1.05vw, 22px) / 1 var(--font-sans);
+  --t-tv-row-today-hot: 700 clamp(11px, 1.05vw, 22px) / 1 var(--font-sans);
 
   --track-tv-tight: -0.02em;
 }
