@@ -1,192 +1,218 @@
-# Sheet setup — the three new tabs in `BYOB_MASTER`
+# Sheet setup — the two new tabs in `BYOB_MASTER`
+
+**v2 — supersedes the three-tab setup.** If you already built the v1 tabs, do not
+read this top to bottom and re-key everything. Go to **[What changed from
+v1](#what-changed-from-v1)** first; it is a short list and the published URLs do
+not change.
 
 **These formulas have not been run.** They were written against the Apps Script
 source (`Consolidate.js`, `Iteration_1.js`), which guarantees *column positions* but
 not header text, and I have no access to the live sheet. Paste them, then work
 through the verification checklist at the bottom before pointing the wall at them.
-Every formula is independently checkable — that is why the work is split across
-helper columns rather than packed into three clever one-liners.
 
 ## Ground rules
 
 - **Formula-only. No Apps Script.** The master already runs enough of it, and
   formulas re-run themselves whenever the consolidator writes.
-- **Do not touch any existing tab.** These three tabs are additive. Nothing in
+- **Do not touch any existing tab.** These two tabs are additive. Nothing in
   `BYOB_Protect_Alerts.js` protects the master, and no script enumerates its tabs,
   so adding them is safe.
-- **Reference source tabs by column position, not header name.** `Daily Dump` row 1,
-  `Daily Team Summary` A1:L1 and `Weekly — by Team` row 1 are typed by hand — no
-  script writes them, so a `MATCH()` on that text is a silent failure waiting to
-  happen. The existing summary formulas reference positionally; these follow suit.
-- **`Weekly — by Team` contains a U+2014 em dash**, not a hyphen or en dash. Copy the
-  tab name rather than retyping it.
+- **Reference source tabs by column position, not header name.** `Daily Dump` row 1
+  and `Daily Team Summary` A1:L1 are typed by hand — no script writes them, so a
+  `MATCH()` on that text is a silent failure waiting to happen.
 - Revenue is always `Daily Dump` column **N** (`Money in (₹)`) filtered to
   `Type = "Sale"`. Column N is already proof-gated upstream — a Sale only becomes
   money-in when proof is `Yes` **and** units ≥ 1. Summing column I instead would
   count unproven and zero-unit sales and disagree with every existing rollup.
+- **All three revenue figures use that one rule.** `total_revenue` reads it through
+  `Daily Team Summary`; `week_revenue` and `today_revenue` apply it directly with a
+  date filter. There is one definition of revenue in this build, not three.
 
 Source layout this relies on:
 
 | Tab | Header row | Data rows | Columns used |
 |---|---|---|---|
 | `Team Links` | 4 | **6–47** | A team ID, E venture name |
-| `Daily Dump` | 1 | 2+ | A team, B date, D type, H units, N money in |
+| `Daily Dump` | 1 | 2+ | A team, B date, D type, N money in |
 | `Daily Team Summary` | 1 | 2–43 | A team, B revenue (proof), D units sold |
-| `Weekly — by Team` | 1 | 2–337 | A team, B week (1–8), C revenue |
 | `Sync Status` | 1 | 2–43 | B last sync |
 
+`Weekly — by Team` and `Daily Dump` column H are no longer read. See
+[Why `week_revenue` does not come from `Weekly — by Team`](#why-week_revenue-does-not-come-from-weekly--by-team).
+
 ---
 
-## Tab 1 — `TV_Helper` (hidden, not published)
+## What changed from v1
 
-Named `TV_Helper` rather than `Streaks_Helper` as the brief had it, because it ended
-up carrying the weekly rank maths too and the name should say what the tab does.
+Three things happen in the live master, in this order. Total time: about ten minutes.
 
-Row 1 is a label row. Put the closed-week number in **M1**:
+### 1. Delete `TV_Helper` entirely
 
-```
-=MAX(0, MIN(8, INT((TODAY() - DATE(2026,7,20)) / 7)))
-```
+Right-click the tab ▸ Delete. It computed streaks and closed-week rank maths. Nothing
+in v2 reads either. If you named it `Streaks_Helper`, that is the same tab.
 
-The number of *fully completed* challenge weeks, anchored to the programme's own
-20 July 2026 Monday. It is `0` until the first week closes and clamps at 8. Today
-(11 Aug 2026) it should read **3** — weeks 1–3 are complete and week 4 is running.
+Nothing else references it once step 2 is done, so delete it **after** step 2 to
+avoid `#REF!` noise in between.
 
-Then, in row 2, filling down to **row 43** (42 teams):
+### 2. `TV_Feed` — replace the header row and all five formulas
 
-| Cell | Formula | What it is |
+Clear `A1:F43` and paste the new block from [Tab 1](#tab-1--tv_feed-published-as-csv).
+Do not patch it column by column; the columns moved.
+
+| Column | v1 | v2 |
 |---|---|---|
-| `A2` | `=IF('Team Links'!A6="","",'Team Links'!A6)` | team ID |
-| `B2` | see below | `streak_days` |
-| `C2` | `=SUMIFS('Weekly — by Team'!$C:$C, 'Weekly — by Team'!$A:$A, $A2, 'Weekly — by Team'!$B:$B, $M$1)` | revenue in the closed week |
-| `D2` | `=SUMIFS('Weekly — by Team'!$C:$C, 'Weekly — by Team'!$A:$A, $A2, 'Weekly — by Team'!$B:$B, $M$1-1)` | revenue the week before |
-| `E2` | `=C2-D2` | week-over-week improvement |
-| `F2` | `=SUMIFS('Weekly — by Team'!$C:$C, 'Weekly — by Team'!$A:$A, $A2, 'Weekly — by Team'!$B:$B, "<="&$M$1)` | cumulative through the closed week |
-| `G2` | `=SUMIFS('Weekly — by Team'!$C:$C, 'Weekly — by Team'!$A:$A, $A2, 'Weekly — by Team'!$B:$B, "<="&$M$1-1)` | cumulative through the week before |
-| `H2` | `=IF($A2="","",RANK($F2,$F$2:$F$43))` | rank at the close of the week |
-| `I2` | `=IF($A2="","",RANK($G2,$G$2:$G$43))` | rank a week earlier |
-| `J2` | `=I2-H2` | ranks climbed (positive is upward) |
-| `K2` | `=IF($A2="","",RANK(VLOOKUP($A2,'Daily Team Summary'!$A$2:$B$43,2,FALSE), ARRAYFORMULA(VLOOKUP($A$2:$A$43,'Daily Team Summary'!$A$2:$B$43,2,FALSE))))` | current rank, for the rank-25 floor |
+| A | `team_id` | `team_id` — unchanged |
+| B | `venture_name` | `venture_name` — unchanged |
+| C | `total_revenue` | `total_revenue` — unchanged |
+| D | `total_units` | **`week_revenue`** — new |
+| E | `streak_days` | **`today_revenue`** — new |
+| F | — | **`total_units`** — moved here from D |
 
-**Why the climb is computed this way.** The build brief ranked `prev_week_revenue`
-against `current_rank`, which compares a *weekly* figure with a *cumulative* one and
-produces a meaningless number. Columns F and G are both cumulative, so H and I are
-comparable by construction and J is a real change in standing.
+Two new figures, one deletion (`streak_days`), one column that moved. The wall's
+weekly slide is sorted on `week_revenue` and its 6pm celebration is ranked on
+`today_revenue`, so neither is optional.
 
-### `B2` — the streak
+### 3. `TV_Cohort` — drop twelve keys, add two
 
-```
-=IF($A2="","",
-  IFERROR(
-    MATCH(FALSE,
-      ARRAYFORMULA(
-        SUMIFS('Daily Dump'!$N:$N,
-               'Daily Dump'!$A:$A, $A2,
-               'Daily Dump'!$D:$D, "Sale",
-               'Daily Dump'!$B:$B, TODAY() - SEQUENCE(80,1,0,1)) > 0
-      ),
-    0) - 1,
-  80)
-)
-```
+Keep `as_of` exactly as it is. Delete the other twelve rows. Add two.
 
-Reads as: for each of the last 80 days, did this team log a Sale with money in?
-`MATCH(FALSE, …, 0)` finds the first day they did not; one less than that is the run
-of consecutive selling days ending today. If all 80 sold, `MATCH` errors and the
-`IFERROR` returns 80. Eighty days covers the whole programme (20 Jul – 30 Sep).
+| Key | v1 | v2 |
+|---|---|---|
+| `as_of` | ✔ | **keep, unchanged** |
+| `current_open_week` | — | **add** |
+| `flea_datetime_iso` | — | **add** |
+| `biggest_sale_today_team` / `_amount` | ✔ | delete |
+| `most_units_today_team` / `_count` | ✔ | delete |
+| `biggest_revenue_day_team` / `_amount` / `_date` | ✔ | delete |
+| `closed_week_number` | ✔ | delete |
+| `closed_week_revenue_team` / `_amount` | ✔ | delete |
+| `closed_week_climb_team` / `_ranks` | ✔ | delete |
+| `closed_week_improved_team` / `_delta` | ✔ | delete |
 
-A day with only unproven or zero-unit sales scores 0 in column N and correctly
-breaks the streak.
+The twelve deleted keys fed the fifteen trigger types, which no longer exist. The
+wall's only interrupt is now the 6pm celebration, and that is computed client-side
+from `today_revenue`.
+
+### What does *not* change
+
+- **The published URLs.** Editing a tab's contents does not change its `gid`. Leave
+  both publishes alone; `config.ts` stays as it is. Only *unpublishing* and
+  republishing would issue new URLs.
+- **`Team Links`.** No logo column was ever added and none is needed — logos live in
+  `config.ts`.
+- **Row count.** `TV_Feed` still publishes **42** rows, `SLE-C401`–`SLE-C442`. The
+  client filters the two spares out; the sanity gate still counts 42.
+- **The timezone precondition**, which is still unconfirmed. See
+  [Publishing](#publishing).
 
 ---
 
-## Tab 2 — `TV_Feed` (published as CSV)
+## Tab 1 — `TV_Feed` (published as CSV)
 
-Row 1, verbatim — the client parses these by name:
+Row 1, verbatim — the client parses these by name, so spelling matters and order
+does not:
 
 ```
-team_id    venture_name    total_revenue    total_units    streak_days
+team_id    venture_name    total_revenue    week_revenue    today_revenue    total_units
 ```
 
-Row 2 only. Each formula spills down 42 rows, so there is nothing to fill.
+Row 2 only. Each formula spills down 42 rows, so there is nothing to fill down.
 
 ```
 A2  =ARRAYFORMULA(IF('Team Links'!A6:A47="","",'Team Links'!A6:A47))
+
 B2  =ARRAYFORMULA(IF(A2:A43="","",IFERROR(TRIM('Team Links'!E6:E47),"")))
+
 C2  =ARRAYFORMULA(IF(A2:A43="","",IFERROR(VLOOKUP(A2:A43,'Daily Team Summary'!$A$2:$D$43,2,FALSE),0)))
-D2  =ARRAYFORMULA(IF(A2:A43="","",IFERROR(VLOOKUP(A2:A43,'Daily Team Summary'!$A$2:$D$43,4,FALSE),0)))
-E2  =ARRAYFORMULA(IF(A2:A43="","",IFERROR(VLOOKUP(A2:A43,TV_Helper!$A$2:$B$43,2,FALSE),0)))
+
+D2  =BYROW(A2:A43,LAMBDA(t,IF(t="","",SUMIFS('Daily Dump'!$N:$N,'Daily Dump'!$A:$A,t,'Daily Dump'!$D:$D,"Sale",'Daily Dump'!$B:$B,">="&(TODAY()-MOD(TODAY()-DATE(2026,7,20),7)),'Daily Dump'!$B:$B,"<="&TODAY()))))
+
+E2  =BYROW(A2:A43,LAMBDA(t,IF(t="","",SUMIFS('Daily Dump'!$N:$N,'Daily Dump'!$A:$A,t,'Daily Dump'!$D:$D,"Sale",'Daily Dump'!$B:$B,TODAY()))))
+
+F2  =ARRAYFORMULA(IF(A2:A43="","",IFERROR(VLOOKUP(A2:A43,'Daily Team Summary'!$A$2:$D$43,4,FALSE),0)))
 ```
+
+**`BYROW` for D and E, `ARRAYFORMULA` for the rest.** `SUMIFS` does not spill inside
+an `ARRAYFORMULA` — it collapses to one value for the whole column, which looks like
+a working formula and puts the same number on all 42 rows. `BYROW` evaluates it once
+per team, which is what is wanted. Checklist item 4 catches it if this goes wrong.
 
 **Looked up by team ID, not read positionally.** `Daily Team Summary` is generated
 in `Team Links` order, so row alignment currently holds — but if it ever slips, a
 positional read would attribute one team's revenue to another and the wall would
 show it confidently for a week. A `VLOOKUP` cannot do that.
 
-Five columns is the whole feed. `current_rank` is not published because the client
-computes rank itself (revenue desc → units desc → team ID asc), so the sort is the
-single authority on order; `logo_filename` lives in `config.ts`; and the weekly and
-daily per-team figures the brief listed have no consumer in the fifteen triggers or
-either slide.
+### The week window
+
+`TODAY() - MOD(TODAY() - DATE(2026,7,20), 7)` is the Monday that opened the current
+challenge week. The programme starts on a Monday, so this lands on a Monday for the
+rest of it. On 11 Aug 2026 it resolves to **10 Aug**, and `week_revenue` is that
+team's Monday-to-today total.
+
+The upper bound is `TODAY()`, not `week_start + 6`. A sale mis-dated into the future
+would otherwise inflate the current week and put a team on the weekly podium for
+days.
+
+> **The 20 July 2026 anchor is written in exactly two cells:** `TV_Feed!D2` here, and
+> `current_open_week` on `TV_Cohort`. If the programme start ever moves, change both.
+> Checklist item 6 is the cross-check that they still agree.
+
+### Why `week_revenue` does not come from `Weekly — by Team`
+
+The pivot brief specifies `Weekly — by Team` filtered to the open week. This uses
+`Daily Dump` instead, for three reasons:
+
+1. **One revenue definition.** All three revenue columns then apply the same
+   `column N, Type = "Sale"` rule. A weekly figure sourced elsewhere can disagree
+   with the daily and total figures beside it on the same row, and on a wall nobody
+   would notice for weeks.
+2. **The open week may not have a row.** `Weekly — by Team` is written by the
+   consolidator and I cannot verify without sheet access whether it carries the
+   *current, incomplete* week or only closed ones. If it only carries closed weeks,
+   the brief's formula returns 0 for every team, all week, and slide 2 is blank.
+3. **That tab is week-major and hardcodes 42 into its row arithmetic.** Reading it by
+   `SUMIFS` on team + week is safe, but it is a second thing that has to stay true.
+
+Checklist item 6 has you compare the two for one team once. If they disagree, that
+tells you which of the two is tracking the open week — and I would rather you find
+that out from a cross-check than from a blank wall.
 
 ---
 
-## Tab 3 — `TV_Cohort` (published as CSV)
+## Tab 2 — `TV_Cohort` (published as CSV)
 
-Two columns. `A1` = `key`, `B1` = `value`. Then one row per key — column A is typed
-text, column B is the formula.
+Two columns. `A1` = `key`, `B1` = `value`. Then three rows — column A is typed text,
+column B is the value.
 
-An empty value is fine and means "nobody holds this right now". A **missing key**
-throws in the client and discards the tick, so all fifteen rows must exist.
+An empty value is fine and means "not known right now". A **missing key** throws in
+the client and discards the tick, so all three rows must exist.
 
 | A (type verbatim) | B |
 |---|---|
 | `as_of` | `=TEXT(MAX('Sync Status'!$B$2:$B$43),"dd mmm HH:mm")` |
-| `biggest_sale_today_team` | `=IFERROR(INDEX(SORT(FILTER({'Daily Dump'!$A$2:$A,'Daily Dump'!$N$2:$N},'Daily Dump'!$D$2:$D="Sale",'Daily Dump'!$B$2:$B=TODAY()),2,FALSE),1,1),"")` |
-| `biggest_sale_today_amount` | same, ending `,1,2),"")` |
-| `most_units_today_team` | `=IFERROR(INDEX(SORT(QUERY(FILTER({'Daily Dump'!$A$2:$A,'Daily Dump'!$H$2:$H},'Daily Dump'!$D$2:$D="Sale",'Daily Dump'!$B$2:$B=TODAY()),"select Col1, sum(Col2) group by Col1 label sum(Col2) ''"),2,FALSE),1,1),"")` |
-| `most_units_today_count` | same, ending `,1,2),"")` |
-| `biggest_revenue_day_team` | see below |
-| `biggest_revenue_day_amount` | see below |
-| `biggest_revenue_day_date` | see below |
-| `closed_week_number` | `=TV_Helper!$M$1` |
-| `closed_week_revenue_team` | `=IF(TV_Helper!$M$1=0,"",IFERROR(INDEX(SORT({TV_Helper!$A$2:$A$43,TV_Helper!$C$2:$C$43},2,FALSE),1,1),""))` |
-| `closed_week_revenue_amount` | same, ending `,1,2),""))` |
-| `closed_week_climb_team` | `=IF(TV_Helper!$M$1<2,"",IFERROR(INDEX(SORT(FILTER({TV_Helper!$A$2:$A$43,TV_Helper!$J$2:$J$43},TV_Helper!$K$2:$K$43<=25,TV_Helper!$J$2:$J$43>0),2,FALSE),1,1),""))` |
-| `closed_week_climb_ranks` | same, ending `,1,2),""))` |
-| `closed_week_improved_team` | `=IF(TV_Helper!$M$1<2,"",IFERROR(INDEX(SORT(FILTER({TV_Helper!$A$2:$A$43,TV_Helper!$E$2:$E$43},TV_Helper!$E$2:$E$43>0),2,FALSE),1,1),""))` |
-| `closed_week_improved_delta` | same, ending `,1,2),""))` |
+| `current_open_week` | `=MAX(1,INT((TODAY()-DATE(2026,7,20))/7)+1)` |
+| `flea_datetime_iso` | `2026-09-06T10:00:00+05:30` — **typed, not a formula** |
 
 **`as_of` reads `Sync Status`, not `NOW()`.** `NOW()` would restamp on every
 recalculation and the wall would look freshly updated even while the data underneath
 was days stale — which is the exact failure this stamp exists to expose.
 
-**The rank-25 floor is applied here, in the sheet.** The client only knows *current*
-rank, which drifts after the week closes, so a client-side floor would give a
-different answer on Wednesday than on Monday.
+**`current_open_week` is not clamped at 8.** The eight challenge weeks end on 13 Sep
+but the programme runs to 30 Sep, and a clamp would freeze the weekly board on week
+8's numbers for the last fortnight. On 11 Aug 2026 it reads **4**.
 
-The climb and improved rows are blank until week 2 closes, because both compare a
-week against the one before it and there is no week 0.
+**`flea_datetime_iso` needs the cell formatted as plain text first** — Format ▸ Number
+▸ Plain text — before you type it. Otherwise Sheets parses it as a date and publishes
+something the client cannot read. After typing, the cell should still read
+`2026-09-06T10:00:00+05:30` character for character, left-aligned.
 
-### The three `biggest_revenue_day` rows
+Keep the `+05:30` offset. It is what makes the countdown correct on a laptop set to
+any timezone: the client subtracts two absolute instants and never asks what timezone
+it is in.
 
-Highest single-day revenue by any team, ever in the programme. The team and the date
-have to come out of the same grouped result, so each row rebuilds it and takes a
-different piece.
-
-```
-biggest_revenue_day_team
-=IFERROR(INDEX(SPLIT(INDEX(SORT(QUERY(FILTER({'Daily Dump'!$A$2:$A&"|"&TEXT('Daily Dump'!$B$2:$B,"yyyy-mm-dd"),'Daily Dump'!$N$2:$N},'Daily Dump'!$D$2:$D="Sale"),"select Col1, sum(Col2) group by Col1 label sum(Col2) ''"),2,FALSE),1,1),"|"),1,1),"")
-
-biggest_revenue_day_date
-=IFERROR(TEXT(INDEX(SPLIT(INDEX(SORT(QUERY(FILTER({'Daily Dump'!$A$2:$A&"|"&TEXT('Daily Dump'!$B$2:$B,"yyyy-mm-dd"),'Daily Dump'!$N$2:$N},'Daily Dump'!$D$2:$D="Sale"),"select Col1, sum(Col2) group by Col1 label sum(Col2) ''"),2,FALSE),1,1),"|"),1,2),"dd mmm"),"")
-
-biggest_revenue_day_amount
-=IFERROR(INDEX(SORT(QUERY(FILTER({'Daily Dump'!$A$2:$A&"|"&TEXT('Daily Dump'!$B$2:$B,"yyyy-mm-dd"),'Daily Dump'!$N$2:$N},'Daily Dump'!$D$2:$D="Sale"),"select Col1, sum(Col2) group by Col1 label sum(Col2) ''"),2,FALSE),1,2),"")
-```
-
-If the `|` join proves awkward in practice, the cheaper fix is a small helper block
-on `TV_Helper` rather than more nesting here.
+**The 10:00 opening time is still assumed, not confirmed.** This is now the one place
+it is written down, which is the point of moving it here — correcting it is one cell,
+not a commit and a redeploy.
 
 ---
 
@@ -194,8 +220,10 @@ on `TV_Helper` rather than more nesting here.
 
 **File ▸ Share ▸ Publish to web**, and publish **`TV_Feed` and `TV_Cohort` only**,
 each as **Comma-separated values (.csv)**. Leave "Automatically republish when
-changes are made" on. Do not publish `TV_Helper`, and do not publish the entire
-document.
+changes are made" on. Do not publish the entire document.
+
+If you published these in v1, **they are already published and the URLs are
+unchanged** — skip this section apart from the timezone check.
 
 Paste both URLs into `config.ts` as `FEED_CSV_URL` and `COHORT_CSV_URL`. They are
 public and carry no secret — the data is going onto public TVs — which is why they
@@ -206,28 +234,58 @@ seconds, so it sees a change within roughly six minutes of the consolidator writ
 
 Also confirm, once: **File ▸ Settings ▸ Time zone is `(GMT+05:30) India Standard
 Time`.** That setting is separate from `appsscript.json`, and `TODAY()` follows the
-spreadsheet. If it is wrong, "today's sales" is a day out near midnight.
+spreadsheet. If it is wrong, `today_revenue` is a day out near midnight — and in v2
+`today_revenue` drives both the 6pm celebration and a whole column of slide 2, so it
+is worth thirty seconds to check.
 
 ---
 
 ## Verification checklist
 
-Work through this before pointing the wall at the URLs. Each line is a number you
-can read off two places and compare.
+Work through this before pointing the wall at the URLs. Each line is a number you can
+read off two places and compare.
 
-1. `TV_Helper!M1` reads **3** on 11 Aug 2026, and increments each Monday.
-2. `TV_Feed` has exactly **42** data rows, `A2` = `SLE-C401`, `A43` = `SLE-C442`.
-3. Pick any team. Its `TV_Feed` `total_revenue` equals that team's `Revenue (proof) ₹`
-   on `Daily Team Summary` — the same figure the admin dashboard leads on.
-4. Pick a team you know traded yesterday and today: `streak_days` ≥ 2. Pick one that
-   has never sold: `streak_days` = 0.
-5. `TV_Helper` column J is positive for at least one team once week 2 has closed. A
-   whole column of zeros means the cumulative columns F/G are not filling.
-6. Every one of the **15** keys in `TV_Cohort` column A is present and spelled exactly
-   as listed. A missing key throws in the client and freezes the wall on last-good
-   data; a missing *value* is fine.
-7. Open both published URLs in a private window. Each returns CSV, not an HTML
-   sign-in page. A revoked publish answers with HTTP 200 and a login page, so the
-   only reliable check is looking at what comes back.
-8. `as_of` shows a time close to the last consolidator run, and does **not** advance
-   when you merely reopen the sheet.
+1. `TV_Feed` has exactly **42** data rows, `A2` = `SLE-C401`, `A43` = `SLE-C442`.
+2. Pick any team. Its `total_revenue` equals that team's `Revenue (proof) ₹` on
+   `Daily Team Summary` — the same figure the admin dashboard leads on.
+3. `week_revenue` ≤ `total_revenue` for **every** team, and `today_revenue` ≤
+   `week_revenue` for every team. Any row that breaks this has its date filter wrong.
+4. `week_revenue` is **not** identical down all 42 rows. If it is, `BYROW` collapsed
+   and every team is showing the cohort total.
+5. Pick a team you know sold today: `today_revenue` > 0. If every team reads 0 on a
+   day with sales, `Daily Dump` column B is carrying a time component and `=TODAY()`
+   no longer matches it.
+6. `TV_Cohort!current_open_week` reads **4** on 11 Aug 2026 and increments each
+   Monday. For one team, compare `TV_Feed` `week_revenue` against
+   `=SUMIFS('Weekly — by Team'!$C:$C,'Weekly — by Team'!$A:$A,"SLE-C4xx",'Weekly — by Team'!$B:$B,4)`
+   in a scratch cell. They should match, or the weekly tab should read 0 — anything
+   else means one of them is on the wrong week boundary. Delete the scratch cell after.
+7. `TV_Cohort` has exactly **three** keys in column A, spelled as listed, and
+   `TV_Helper` no longer exists in the tab bar.
+8. `flea_datetime_iso` is left-aligned and reads `2026-09-06T10:00:00+05:30`. If it
+   is right-aligned or shows `06/09/2026`, the cell was not plain text.
+9. Open both published URLs in a private window. Each returns CSV, not an HTML
+   sign-in page. A revoked publish answers with HTTP 200 and a login page, so the only
+   reliable check is looking at what comes back.
+10. `as_of` shows a time close to the last consolidator run, and does **not** advance
+    when you merely reopen the sheet.
+
+---
+
+## One thing to know before the client is built against this
+
+The consolidator clears `Daily Dump` rows 2+ and rewrites them on every run. A fetch
+landing mid-rebuild reads a partly-empty dump, so `week_revenue` and `today_revenue`
+come back near zero for everyone.
+
+In v1 that was survivable: a quiet minute, then the next poll corrected it. In v2 it
+is not. Slide 2 fires the boot kick on **any** rank change in the top 20, and when
+every team's week revenue is zero the sort falls through to team ID — roughly forty
+simultaneous rank changes, a queue of kicks, all of it fiction, and then it all
+happens again in reverse sixty seconds later.
+
+The existing 42-row gate does not catch this, because the row count is still 42 —
+`TV_Feed` reads `Team Links` for its IDs, which the rebuild does not touch.
+
+**This is a client-side fix, not a sheet one**, and it is not built yet. Flagging it
+here because this document is where the cause lives.
