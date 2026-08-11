@@ -25,10 +25,12 @@ function Column({
   teams,
   startRank,
   kick,
+  onSettled,
 }: {
   teams: readonly Team[]
   startRank: number
   kick: OvertakeEvent | null
+  onSettled?: () => void
 }) {
   // An empty column carries no heading. Labelling columns that have nothing
   // under them is apparatus describing absence.
@@ -42,6 +44,7 @@ function Column({
           team={team}
           rank={startRank + index}
           role={roleOf(kick, team.teamId)}
+          onSettled={onSettled}
         />
       ))}
     </div>
@@ -59,10 +62,13 @@ function roleOf(kick: OvertakeEvent | null, teamId: TeamId) {
 export function WeeklyLeaderboard({
   teams,
   kick = null,
+  onSettled,
 }: {
   teams: readonly Team[]
   /** The kick in progress, so the two rows involved know to clear their details. */
   kick?: OvertakeEvent | null
+  /** Passed to the rows; the attacker's reports the end of the sequence. */
+  onSettled?: () => void
 }) {
   const [left, right] = columnsOf(teams)
 
@@ -75,8 +81,8 @@ export function WeeklyLeaderboard({
         height: '100%',
       }}
     >
-      <Column teams={left} startRank={1} kick={kick} />
-      <Column teams={right} startRank={COLUMN_LENGTH + 1} kick={kick} />
+      <Column teams={left} startRank={1} kick={kick} onSettled={onSettled} />
+      <Column teams={right} startRank={COLUMN_LENGTH + 1} kick={kick} onSettled={onSettled} />
     </div>
   )
 }

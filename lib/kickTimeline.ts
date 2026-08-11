@@ -1,35 +1,34 @@
 /**
  * The boot kick's clock. Every number that says *when* lives here and nowhere else.
  *
- * ── One shared timeline, not eight animations ──
+ * ── One shared timeline, not N animations ──
  *
- * A beat is a window on this timeline. Nothing waits for a completion callback and
- * nothing waits on a timeout: every animation in the sequence runs for `TOTAL`
- * seconds and uses `times` to say which part of that span it occupies.
+ * A beat is a window on this timeline. Nothing waits for a completion callback
+ * and nothing waits on a timeout: every animation in the sequence runs for
+ * `TOTAL` seconds and uses `times` to say which part of that span it occupies.
  *
- * The alternative shapes both fail the same way. This component is unmounted
- * mid-sequence every time the rotation moves on, so a chain of callbacks would
- * need teardown at eight points to avoid firing into a dead component, and a
- * chain of timeouts would need the same plus it would drift. A shared timeline
- * has nothing to tear down — one unmount stops everything — and two beats cannot
- * disagree about when the first one ended, because neither of them decides.
+ * The alternative shapes both fail the same way. Rows are unmounted mid-sequence
+ * every time the rotation moves on, so a chain of callbacks would need teardown
+ * at every beat to avoid firing into a dead component, and a chain of timeouts
+ * would need the same plus it would drift. A shared timeline has nothing to tear
+ * down — one unmount stops everything — and two beats cannot disagree about when
+ * the first one ended, because neither of them decides.
  *
- * It also lives in `lib/` rather than in the component: the two involved rows
- * collapse and uncollapse on this clock too, and `BootKick` already imports the
- * row template from `VenturePill`, so the reverse import would be a cycle.
+ * ── Beats are added as they are built ──
+ *
+ * Only the beats that exist are here. There are no placeholder windows for work
+ * not yet done: a beat with no animation attached is a number that looks load
+ * bearing and is not.
  */
 
 /** Seconds, start to finish. The single authority on how long a kick lasts. */
 export const TOTAL = 2.85
 
 export const BEATS = {
-  collapse: [0.0, 0.24],
-  travel: [0.24, 0.86],
-  windUp: [0.86, 1.06],
-  strike: [1.06, 1.2],
-  punt: [1.2, 2.25],
-  settle: [1.2, 1.66],
-  uncollapse: [2.25, 2.85],
+  /** A — both involved rows swallow their own details. */
+  collapse: [0.0, 0.3],
+  /** E — both rows give them back, in their new positions. */
+  uncollapse: [2.45, 2.85],
 } as const
 
 export type Beat = readonly [start: number, end: number]

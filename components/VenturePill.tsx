@@ -80,75 +80,85 @@ export function ColumnHeading() {
 }
 
 /**
- * Beats 1 and 8 — the two involved rows clearing their detail cells and getting
- * them back.
+ * Beat A — the two involved rows swallowing their own details.
  *
- * ── Why a tween and not a spring ──
+ * ── The rows are the actors ──
  *
- * These are three text cells being cleared, not a mass. A spring overshoots, so
- * the venture name would be pulled back into frame after it left; at row scale
- * that reads as a rendering fault rather than as physics.
+ * This animates the real row. There is no overlay, no clone, no mark drawn a
+ * second time somewhere else. The board a passer-by is reading is the board that
+ * moves; when the sequence ends nothing has to be reconciled, because nothing
+ * was ever duplicated.
  *
- * ── Why out accelerates and back decelerates ──
+ * ── Scale alone, with the origin outside the element ──
  *
- * Going, the details are being swept aside by the event arriving, so they should
- * still be gaining speed as they vanish — ease-*in*. Coming back, the event is
- * over and the board is resuming its job, so the last thing on screen should be
- * settling. The return is deliberately not the inverse of the exit.
+ * Each detail cell's transform-origin is placed at the **logo's right edge**,
+ * which is outside that cell's own box and further away for each cell in turn.
+ * Scaling to zero about a point then does both halves of the effect at once:
+ * the cell travels left *and* shrinks, and all three converge on the same point,
+ * so the logo appears to swallow the row.
  *
- * Opacity is finished by 60% of the exit window so nothing is legible while it is
- * still moving, which is what avoids the smeared-text look.
- *
- * Both rows are given the identical window, so simultaneity is structural rather
- * than a matched pair of delays that could drift apart.
+ * Translating and scaling separately would need each cell's distance to the logo
+ * as an animated value, which is a `calc()` of two grid tracks and a gap — and
+ * interpolating between `calc()` strings is not something to rely on. A static
+ * origin is resolved by CSS once, and the only animated value is a number.
  */
-const SWEEP_OUT = cubicBezier(0.32, 0, 0.67, 0)
-const SETTLE_BACK = cubicBezier(0.16, 1, 0.3, 1)
-const CLEARED_X = 28
+const SWALLOW = cubicBezier(0.32, 0, 0.67, 0)
+const DISGORGE = cubicBezier(0.16, 1, 0.3, 1)
+
+/**
+ * Where each detail cell collapses to: the logo's right edge, expressed as an
+ * offset from that cell's own left edge. Each one is further away than the last
+ * by exactly the track it sits behind.
+ */
+const SWALLOW_ORIGIN = {
+  name: 'calc(-1 * var(--s-3)) center',
+  week: 'calc(-1 * (var(--w-name) + 2 * var(--s-3))) center',
+  today: 'calc(-1 * (var(--w-name) + var(--w-week) + 3 * var(--s-3))) center',
+} as const
 
 const COLLAPSE = {
-  animate: { x: [0, CLEARED_X, CLEARED_X, 0], opacity: [1, 0, 0, 1] },
+  animate: { scale: [1, 0, 0, 1] },
   transition: {
     duration: TOTAL,
-    x: {
-      duration: TOTAL,
-      times: [at(BEATS.collapse)[0], at(BEATS.collapse)[1], at(BEATS.uncollapse)[0], at(BEATS.uncollapse)[1]],
-      ease: [SWEEP_OUT, 'linear', SETTLE_BACK] as const,
-    },
-    opacity: {
-      duration: TOTAL,
-      times: [at(BEATS.collapse, 0.6)[0], at(BEATS.collapse, 0.6)[1], at(BEATS.uncollapse)[0], at(BEATS.uncollapse)[1]],
-      ease: ['linear', 'linear', 'linear'] as const,
-    },
+    times: [...at(BEATS.collapse), ...at(BEATS.uncollapse)],
+    ease: [SWALLOW, 'linear', DISGORGE] as const,
   },
 } as const
 
-/**
- * The three detail cells animate as three elements carrying identical values
- * rather than as one wrapped element.
- *
- * A wrapper would become a single grid cell and collapse the row's five-track
- * template into three, moving every column. `display: contents` would keep the
- * template but cannot be transformed. Identical values on three siblings is what
- * makes them move as one thing here.
- */
 export type PillRole = 'attacker' | 'defender'
 
 export function VenturePill({
   team,
   rank,
   role,
+  onSettled,
 }: {
   team: Team
   rank: number
   /** Set only while this row is in a kick. Absent means an ordinary, inert row. */
   role?: PillRole
+  /** Called once, by the attacker's row, when the last beat finishes. */
+  onSettled?: () => void
 }) {
   const podium = rank <= 3
   const hot = team.todayRevenue >= HOT_TODAY_MIN
   // Thirty-eight rows are plain spans with no animation attached at all. Only the
   // two in the contest become motion elements, and only while it lasts.
   const detail = role === undefined ? {} : COLLAPSE
+
+  /**
+   * The kick is over when this row's animation is, reported by the animation
+   * itself.
+   *
+   * The component-level `onAnimationComplete`, not the transition-level
+   * `onComplete`: the latter was measured never firing at all once the
+   * transition carried per-property overrides, which wedged the queue with
+   * `playing` pinned and nothing on screen progressing. This fires on an
+   * animation whose keyframes are constants — 1, 0, 0, 1 — so it cannot resolve
+   * early on an event whose values happen not to vary, which was the second
+   * failure in the same place.
+   */
+  const reportSettled = role === 'attacker' ? onSettled : undefined
 
   return (
     <div
@@ -184,7 +194,9 @@ export function VenturePill({
 
       <motion.span
         {...detail}
+        onAnimationComplete={reportSettled}
         style={{
+          transformOrigin: SWALLOW_ORIGIN.name,
           font: 'var(--t-tv-row-name)',
           color: 'var(--fg1)',
           // A name too long for its column is clipped, not wrapped: every row is
@@ -200,7 +212,12 @@ export function VenturePill({
       <motion.span
         {...detail}
         className="tv-figure"
-        style={{ font: 'var(--t-tv-row-week)', color: 'var(--fg1)', textAlign: 'right' }}
+        style={{
+          transformOrigin: SWALLOW_ORIGIN.week,
+          font: 'var(--t-tv-row-week)',
+          color: 'var(--fg1)',
+          textAlign: 'right',
+        }}
       >
         {/* Blank, not ₹0 — the same rule as the today column, and for the same
             reason. In week 4 only five of forty teams have sold anything this
@@ -213,6 +230,7 @@ export function VenturePill({
         {...detail}
         className="tv-figure"
         style={{
+          transformOrigin: SWALLOW_ORIGIN.today,
           font: hot ? 'var(--t-tv-row-today-hot)' : 'var(--t-tv-row-today)',
           color: hot ? HOT : 'var(--fg-muted)',
           textAlign: 'right',

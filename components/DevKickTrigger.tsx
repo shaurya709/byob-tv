@@ -24,6 +24,20 @@ import type { OvertakeEvent, Team } from '@/lib/types'
  * behaviour under repeated clicks is identical to queue behaviour under
  * repeated detection rather than merely similar.
  *
+ * ── The board snaps back at the end. That is expected ──
+ *
+ * The rows in a kick are the real rows, and they end the sequence in their new
+ * positions. What puts them there permanently is the *data* re-sorting, and this
+ * trigger fabricates an event without fabricating the data behind it — so when
+ * the held snapshot thaws there is nothing new to apply, and the two rows return
+ * to where they started.
+ *
+ * That is not a bug to chase. Giving the trigger a client-side ordering override
+ * would make it lie convincingly, and a second source of row order is the exact
+ * thing the rows-are-the-actors rewrite exists to remove. End-to-end
+ * verification runs on `scripts/dev-churn.mjs`, which changes the published feed
+ * and therefore produces a real reorder; these buttons are for watching a beat.
+ *
  * ── Reset is not a fallback ──
  *
  * The third button exists so an animation that wedges can be cleared without a

@@ -12,20 +12,20 @@ describe('t', () => {
   it('normalises seconds against the whole timeline', () => {
     expect(t(0)).toBe(0)
     expect(t(TOTAL)).toBe(1)
-    expect(t(BEATS.strike[0])).toBeCloseTo(1.06 / 2.85, 10)
+    expect(t(BEATS.uncollapse[0])).toBeCloseTo(2.45 / 2.85, 10)
   })
 })
 
 describe('at', () => {
   it('brackets a beat with its own start and end', () => {
-    expect(at(BEATS.collapse)).toEqual([t(0), t(0.24)])
+    expect(at(BEATS.collapse)).toEqual([t(0), t(0.3)])
   })
 
   it('places stops as fractions of the beat, not of the timeline', () => {
-    const [start, middle, end] = at(BEATS.punt, 0.5)
-    expect(start).toBeCloseTo(t(1.2), 10)
-    expect(middle).toBeCloseTo(t(1.2 + (2.25 - 1.2) * 0.5), 10)
-    expect(end).toBeCloseTo(t(2.25), 10)
+    const [start, middle, end] = at(BEATS.uncollapse, 0.5)
+    expect(start).toBeCloseTo(t(2.45), 10)
+    expect(middle).toBeCloseTo(t(2.45 + (2.85 - 2.45) * 0.5), 10)
+    expect(end).toBeCloseTo(t(2.85), 10)
   })
 
   it('keeps every value inside the timeline and in order', () => {
@@ -40,8 +40,7 @@ describe('at', () => {
 
 describe('the sequence', () => {
   it('runs in the order the choreography describes', () => {
-    const order = ['collapse', 'travel', 'windUp', 'strike', 'punt', 'uncollapse'] as const
-    const starts = order.map((name) => BEATS[name][0])
+    const starts = Object.values(BEATS).map(([start]) => start)
     expect([...starts].sort((a, b) => a - b)).toEqual(starts)
   })
 
@@ -63,9 +62,12 @@ describe('the sequence', () => {
     expect(BEATS.uncollapse[1]).toBe(TOTAL)
   })
 
-  /** The strike is the moment of contact, so the punt cannot begin before it. */
-  it('starts the punt no earlier than the strike lands', () => {
-    expect(BEATS.punt[0]).toBeGreaterThanOrEqual(BEATS.strike[1])
-    expect(BEATS.settle[0]).toBeGreaterThanOrEqual(BEATS.strike[1])
+  /**
+   * Only beats that exist are in the table. A window with no animation attached
+   * is a number that looks load bearing and is not, and the next beat added
+   * would be timed against it.
+   */
+  it('carries no window for a beat that has not been built', () => {
+    expect(Object.keys(BEATS)).toEqual(['collapse', 'uncollapse'])
   })
 })

@@ -2,10 +2,9 @@
 
 import { useState } from 'react'
 
-import { BootKick } from '@/components/BootKick'
 import { DevKickTrigger } from '@/components/DevKickTrigger'
 import { WallHeader } from '@/components/WallHeader'
-import { COLUMN_LENGTH, WeeklyLeaderboard } from '@/components/WeeklyLeaderboard'
+import { WeeklyLeaderboard } from '@/components/WeeklyLeaderboard'
 import { WATCH_RANKS_WEEKLY } from '@/config'
 import { openWeek } from '@/lib/feed'
 import { competingTeams, rankByWeek } from '@/lib/ranking'
@@ -56,10 +55,7 @@ export default function WeeklyPage() {
           to be an event *inside* the leaderboard — the two rows involved clear
           their own details, and that is the whole focus beat. Dimming stays on
           the podium, where the contest genuinely is the frame. */}
-      <div style={{ position: 'relative' }}>
-        <WeeklyLeaderboard teams={teams} kick={kick} />
-        {kick !== null && <BootKick event={kick} teams={teams} perColumn={COLUMN_LENGTH} onSettled={settled} />}
-      </div>
+      <WeeklyLeaderboard teams={teams} kick={kick} onSettled={settled} />
 
       <DevKickTrigger
         teams={teams}
