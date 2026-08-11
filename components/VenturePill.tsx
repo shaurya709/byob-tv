@@ -127,7 +127,15 @@ export function ColumnHeading() {
  * pill's. The fade finishes at 60% of the window so nothing is still legible
  * while the edge is crossing it.
  */
-const SWALLOW = cubicBezier(0.32, 0, 0.67, 0)
+/**
+ * Not an ease-in. That was the first attempt and it read as a fade, not a
+ * collapse: at 60% of the window — the moment the text had finished fading — the
+ * pill was still 84% open, so the only visible thing in the first half was the
+ * details disappearing, and the whole close was crammed into the last hundred
+ * milliseconds as a snap. The pill has to be visibly shutting the entire time
+ * the details are going, or the details *are* the animation.
+ */
+const SWALLOW = cubicBezier(0.42, 0, 0.58, 1)
 const DISGORGE = cubicBezier(0.16, 1, 0.3, 1)
 
 /** Beat A's window, the hold between, then Beat E's. Shared by every property. */
@@ -201,8 +209,10 @@ const FADE = {
   animate: { opacity: [1, 0, 0, 1] },
   transition: {
     duration: TOTAL,
-    // Gone by 60% of the close; back across the whole of the open.
-    times: [...at(BEATS.collapse, 0.6).slice(0, 2), ...at(BEATS.uncollapse)],
+    // Gone by 55% of the close, which is where the closing edge has crossed the
+    // last two columns — the fade covers the content sliding with the pill, and
+    // the clip does the rest. Back across the whole of the open.
+    times: [...at(BEATS.collapse, 0.55).slice(0, 2), ...at(BEATS.uncollapse)],
     ease: ['linear', 'linear', 'linear'] as const,
   },
 } as const

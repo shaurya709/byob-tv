@@ -26,9 +26,9 @@ export const TOTAL = 2.85
 
 export const BEATS = {
   /** A — both involved rows swallow their own details. */
-  collapse: [0.0, 0.3],
+  collapse: [0.0, 0.48],
   /** E — both rows give them back, in their new positions. */
-  uncollapse: [2.45, 2.85],
+  uncollapse: [2.23, 2.85],
 } as const
 
 export type Beat = readonly [start: number, end: number]
