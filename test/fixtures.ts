@@ -12,8 +12,9 @@ export function team(overrides: Partial<Team> = {}): Team {
     teamId: 'SLE-C401',
     ventureName: 'Aurora',
     totalRevenue: 0,
+    weekRevenue: 0,
+    todayRevenue: 0,
     totalUnits: 0,
-    streakDays: 0,
     ...overrides,
   }
 }
@@ -38,16 +39,17 @@ export function teams(overrides: Partial<Team>[] = []): Team[] {
 export function cohort(overrides: Record<string, string> = {}): Record<string, string> {
   const base: Record<string, string> = {}
   for (const key of COHORT_KEYS) base[key] = ''
-  base.closed_week_number = '0'
-  base.as_of = '2026-08-11 09:00'
+  base.as_of = '11 Aug 14:23'
+  base.current_open_week = '4'
+  base.flea_datetime_iso = '2026-09-06T10:00:00+05:30'
   return { ...base, ...overrides }
 }
 
 export function feedCsv(rows: readonly Team[]): string {
-  const header = 'team_id,venture_name,total_revenue,total_units,streak_days'
+  const header = 'team_id,venture_name,total_revenue,week_revenue,today_revenue,total_units'
   const body = rows.map(
     (row) =>
-      `${row.teamId},${row.ventureName},${row.totalRevenue},${row.totalUnits},${row.streakDays}`,
+      `${row.teamId},${row.ventureName},${row.totalRevenue},${row.weekRevenue},${row.todayRevenue},${row.totalUnits}`,
   )
   return [header, ...body].join('\n')
 }

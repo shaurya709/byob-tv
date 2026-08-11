@@ -1,22 +1,33 @@
 /**
  * Shared types for the wall.
  *
- * Everything lives here so `feed`, `triggers`, `storage` and `player` never
- * import each other merely to borrow a type, and therefore cannot form an
- * import cycle. This file holds no logic.
+ * Everything lives here so `feed`, `ranking`, `storage` and the animation
+ * modules never import each other merely to borrow a type, and therefore cannot
+ * form an import cycle. This file holds no logic.
  */
 
 export type TeamId = string
 
-/** One row of `TV_Feed`. Five columns; nothing else is published per team. */
+/**
+ * One row of `TV_Feed`. Six columns; nothing else is published per team.
+ *
+ * All three revenue figures are **logged (proof-backed)** revenue — `Daily Dump`
+ * column N filtered to `Type = "Sale"` — differing only in their date window.
+ * One definition across the whole system, so two figures on the same row can
+ * never quietly disagree.
+ */
 export type Team = {
   teamId: TeamId
   /** Empty string for a workbook with no venture name filled in yet. */
   ventureName: string
-  /** Logged (proof-backed) revenue. The only revenue figure this project uses. */
+  /** All-time. Ranks `/podium`, and breaks ties everywhere else. */
   totalRevenue: number
+  /** Since Monday 00:00 IST. Ranks `/weekly`. */
+  weekRevenue: number
+  /** Today, IST. Shown on `/weekly`; never a sort key. */
+  todayRevenue: number
+  /** First tie-break for absolute ranking only. */
   totalUnits: number
-  streakDays: number
 }
 
 /**
@@ -24,16 +35,22 @@ export type Team = {
  *
  * Deliberately not a typed struct: every value arrives as a string and may
  * legitimately be empty, and a struct would invite treating a missing key and
- * an empty value as the same thing. They are not — an empty value means "no
- * team holds this title right now", which is normal, while a missing key means
- * the sheet's shape has drifted, which throws.
+ * an empty value as the same thing. They are not — an empty value means the
+ * sheet does not know yet, which is normal and renders as nothing, while a
+ * missing key means the sheet's shape has drifted, which throws.
+ *
+ * Read it through `openWeek` and `fleaInstant` in `lib/feed.ts` rather than
+ * indexing it directly; those are where a string becomes a checked value.
  */
 export type Cohort = Readonly<Record<string, string>>
 
 /**
- * Both CSVs, parsed together. Always constructed as a unit: triggers that name
- * a cohort title holder look that team's venture name up in `teams`, so a fresh
- * cohort reconciled against a stale feed would put the wrong name on screen.
+ * Both CSVs, parsed together, and always constructed as a unit.
+ *
+ * `current_open_week` is what tells the wall a week rolled over and the weekly
+ * board reset to zero — the moment it must *not* animate. Pairing it with a
+ * stale feed, or the reverse, would either animate that reset or suppress a real
+ * week of overtakes.
  */
 export type Snapshot = {
   teams: readonly Team[]

@@ -36,6 +36,15 @@ export const MIN_TEAM_ROWS = 40
 /** The consolidator writes every 10 minutes and Google caches the CSV ~5 min; polling faster only burns cycles. */
 export const POLL_INTERVAL_MS = 60_000
 
+/**
+ * Workbooks that exist but do not compete.
+ *
+ * `TV_Feed` publishes all 42 because it reads `Team Links`; these two are spares
+ * and are filtered out for display. They still count toward `MIN_TEAM_ROWS`,
+ * which asks whether a whole fetch arrived, not who is racing.
+ */
+export const SPARE_TEAM_IDS: readonly TeamId[] = ['SLE-C441', 'SLE-C442']
+
 // ── Logos ───────────────────────────────────────────────────────────────────
 
 /**

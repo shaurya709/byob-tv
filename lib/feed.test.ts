@@ -1,16 +1,40 @@
 import { describe, expect, it } from 'vitest'
 
 import { cohort, cohortCsv, feedCsv, teams } from '@/test/fixtures'
-import { COHORT_KEYS, TvSchemaError, parseCohort, parseSnapshot, parseTeams, passesRowGate } from '@/lib/feed'
+import {
+  COHORT_KEYS,
+  TvSchemaError,
+  fleaInstant,
+  openWeek,
+  parseCohort,
+  parseSnapshot,
+  parseTeams,
+  passesRowGate,
+} from '@/lib/feed'
 
 describe('parseTeams', () => {
   it('reads a well-formed feed', () => {
     const rows = parseTeams(
-      feedCsv(teams([{ teamId: 'SLE-C407', totalRevenue: 104_500, totalUnits: 12, streakDays: 3 }])),
+      feedCsv(
+        teams([
+          {
+            teamId: 'SLE-C407',
+            totalRevenue: 104_500,
+            weekRevenue: 21_000,
+            todayRevenue: 5_400,
+            totalUnits: 12,
+          },
+        ]),
+      ),
     )
     expect(rows).toHaveLength(42)
     const seven = rows.find((row) => row.teamId === 'SLE-C407')
-    expect(seven).toMatchObject({ totalRevenue: 104_500, totalUnits: 12, streakDays: 3 })
+    expect(seven).toMatchObject({
+      totalRevenue: 104_500,
+      weekRevenue: 21_000,
+      todayRevenue: 5_400,
+      totalUnits: 12,
+    })
   })
 
   /**
@@ -25,23 +49,28 @@ describe('parseTeams', () => {
     const rows = parseTeams(csv)
     expect(rows).toHaveLength(42)
     expect(rows[0].teamId).toBe('SLE-C401')
-    expect(rows[41].streakDays).toBe(0)
+    expect(rows[41].totalUnits).toBe(0)
   })
 
   it('reads formatted rupee values, because the sheet publishes formatted cells', () => {
-    const csv = ['team_id,venture_name,total_revenue,total_units,streak_days', 'SLE-C401,Aurora,"₹1,04,500",12,3'].join('\n')
+    const csv = ['team_id,venture_name,total_revenue,week_revenue,today_revenue,total_units', 'SLE-C401,Aurora,"₹1,04,500","₹21,000",0,12'].join('\n')
     expect(parseTeams(csv)[0].totalRevenue).toBe(104_500)
   })
 
   it('treats a blank revenue as zero — a team with no sales yet is normal', () => {
-    const csv = ['team_id,venture_name,total_revenue,total_units,streak_days', 'SLE-C401,Aurora,,,'].join('\n')
-    expect(parseTeams(csv)[0]).toMatchObject({ totalRevenue: 0, totalUnits: 0, streakDays: 0 })
+    const csv = ['team_id,venture_name,total_revenue,week_revenue,today_revenue,total_units', 'SLE-C401,Aurora,,,,'].join('\n')
+    expect(parseTeams(csv)[0]).toMatchObject({
+      totalRevenue: 0,
+      weekRevenue: 0,
+      todayRevenue: 0,
+      totalUnits: 0,
+    })
   })
 
   it('keeps a venture name containing a comma intact', () => {
     const csv = [
-      'team_id,venture_name,total_revenue,total_units,streak_days',
-      'SLE-C401,"Bhatt, Rao & Co",1000,1,1',
+      'team_id,venture_name,total_revenue,week_revenue,today_revenue,total_units',
+      'SLE-C401,"Bhatt, Rao & Co",1000,500,100,1',
     ].join('\n')
     expect(parseTeams(csv)[0].ventureName).toBe('Bhatt, Rao & Co')
   })
@@ -58,9 +87,9 @@ describe('parseTeams', () => {
    */
   it('drops a row whose numbers did not parse rather than rendering NaN for a week', () => {
     const csv = [
-      'team_id,venture_name,total_revenue,total_units,streak_days',
-      'SLE-C401,Aurora,#REF!,1,1',
-      'SLE-C402,Kite,1000,1,1',
+      'team_id,venture_name,total_revenue,week_revenue,today_revenue,total_units',
+      'SLE-C401,Aurora,#REF!,1,1,1',
+      'SLE-C402,Kite,1000,500,100,1',
     ].join('\n')
     const rows = parseTeams(csv)
     expect(rows.map((row) => row.teamId)).toEqual(['SLE-C402'])
@@ -70,19 +99,19 @@ describe('parseTeams', () => {
 
 describe('parseCohort', () => {
   it('reads every key', () => {
-    const parsed = parseCohort(cohortCsv(cohort({ biggest_sale_today_team: 'SLE-C412' })))
-    expect(parsed.biggest_sale_today_team).toBe('SLE-C412')
+    const parsed = parseCohort(cohortCsv(cohort({ current_open_week: '4' })))
+    expect(parsed.current_open_week).toBe('4')
     for (const key of COHORT_KEYS) expect(parsed).toHaveProperty(key)
   })
 
-  it('accepts empty values — no team holds a title before the first sale', () => {
-    const parsed = parseCohort(cohortCsv(cohort()))
-    expect(parsed.biggest_sale_today_team).toBe('')
+  it('accepts an empty value — the sheet not knowing yet is normal', () => {
+    const parsed = parseCohort(cohortCsv(cohort({ flea_datetime_iso: '' })))
+    expect(parsed.flea_datetime_iso).toBe('')
   })
 
   it('throws on a missing key, because that means the sheet shape drifted', () => {
     const values = cohort()
-    delete values.closed_week_number
+    delete values.current_open_week
     expect(() => parseCohort(cohortCsv(values))).toThrow(TvSchemaError)
   })
 })
@@ -109,7 +138,7 @@ describe('passesRowGate', () => {
   it('rejects a full-length feed whose rows are too garbled to use', () => {
     const csv = feedCsv(teams())
       .split('\n')
-      .map((line, index) => (index >= 1 && index <= 3 ? line.replace(/,0,0,0$/, ',#REF!,0,0') : line))
+      .map((line, index) => (index >= 1 && index <= 3 ? line.replace(/,0,0,0,0$/, ',#REF!,0,0,0') : line))
       .join('\n')
     const parsed = parseTeams(csv)
     expect(parsed).toHaveLength(39)
@@ -133,6 +162,44 @@ describe('parseSnapshot', () => {
       cohortCsv: cohortCsv(cohort()),
     })
     expect(snapshot.teams).toHaveLength(42)
-    expect(snapshot.cohort.closed_week_number).toBe('0')
+    expect(snapshot.cohort.current_open_week).toBe('4')
+  })
+})
+
+describe('openWeek', () => {
+  it('reads the week the sheet says is open', () => {
+    expect(openWeek(cohort({ current_open_week: '4' }))).toBe(4)
+  })
+
+  /** No week means the wall cannot tell a rollover from forty overtakes, so it must not guess. */
+  it('is null when the sheet has not produced one', () => {
+    expect(openWeek(cohort({ current_open_week: '' }))).toBeNull()
+    expect(openWeek(cohort({ current_open_week: '#REF!' }))).toBeNull()
+    expect(openWeek(cohort({ current_open_week: '0' }))).toBeNull()
+    expect(openWeek(cohort({ current_open_week: '2.5' }))).toBeNull()
+  })
+})
+
+describe('fleaInstant', () => {
+  it('reads an instant carrying its offset', () => {
+    expect(fleaInstant(cohort())?.toISOString()).toBe('2026-09-06T04:30:00.000Z')
+  })
+
+  /**
+   * The offset is the whole point. Without it `new Date` parses in the browser's
+   * timezone, so a laptop set to anything but IST counts down to the wrong
+   * instant and looks completely healthy doing it. Rejecting is what keeps the
+   * countdown a difference between two absolute instants.
+   */
+  it('rejects an instant with no offset rather than parsing it as browser-local', () => {
+    expect(fleaInstant(cohort({ flea_datetime_iso: '2026-09-06T10:00:00' }))).toBeNull()
+    expect(fleaInstant(cohort({ flea_datetime_iso: '06/09/2026 10:00' }))).toBeNull()
+    expect(fleaInstant(cohort({ flea_datetime_iso: '' }))).toBeNull()
+  })
+
+  it('accepts UTC as an explicit offset', () => {
+    expect(fleaInstant(cohort({ flea_datetime_iso: '2026-09-06T04:30:00Z' }))?.toISOString()).toBe(
+      '2026-09-06T04:30:00.000Z',
+    )
   })
 })

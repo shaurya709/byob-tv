@@ -16,27 +16,12 @@ export const FEED_HEADERS = [
   'team_id',
   'venture_name',
   'total_revenue',
+  'week_revenue',
+  'today_revenue',
   'total_units',
-  'streak_days',
 ] as const
 
-export const COHORT_KEYS = [
-  'as_of',
-  'biggest_sale_today_team',
-  'biggest_sale_today_amount',
-  'most_units_today_team',
-  'most_units_today_count',
-  'biggest_revenue_day_team',
-  'biggest_revenue_day_amount',
-  'biggest_revenue_day_date',
-  'closed_week_number',
-  'closed_week_revenue_team',
-  'closed_week_revenue_amount',
-  'closed_week_climb_team',
-  'closed_week_climb_ranks',
-  'closed_week_improved_team',
-  'closed_week_improved_delta',
-] as const
+export const COHORT_KEYS = ['as_of', 'current_open_week', 'flea_datetime_iso'] as const
 
 export class TvSchemaError extends Error {
   constructor(
@@ -81,16 +66,25 @@ function toTeam(row: Record<string, string>): Team | null {
   if (teamId === '') return null
 
   const totalRevenue = toNumber(row.total_revenue ?? '')
+  const weekRevenue = toNumber(row.week_revenue ?? '')
+  const todayRevenue = toNumber(row.today_revenue ?? '')
   const totalUnits = toNumber(row.total_units ?? '')
-  const streakDays = toNumber(row.streak_days ?? '')
-  if (totalRevenue === null || totalUnits === null || streakDays === null) return null
+  if (
+    totalRevenue === null ||
+    weekRevenue === null ||
+    todayRevenue === null ||
+    totalUnits === null
+  ) {
+    return null
+  }
 
   return {
     teamId,
     ventureName: (row.venture_name ?? '').trim(),
     totalRevenue,
+    weekRevenue,
+    todayRevenue,
     totalUnits,
-    streakDays,
   }
 }
 
@@ -134,6 +128,44 @@ export function parseCohort(csv: string): Cohort {
     if (!(key in cohort)) throw new TvSchemaError('cohort', key, Object.keys(cohort))
   }
   return cohort
+}
+
+/**
+ * The current challenge week, or `null` if the sheet has not produced one.
+ *
+ * This is the wall's only way to know a week rolled over — the moment every
+ * team's `week_revenue` drops to zero at once and the weekly board reshuffles
+ * completely. That is a reset, not forty overtakes, and the number is what tells
+ * the two apart.
+ */
+export function openWeek(cohort: Cohort): number | null {
+  const raw = (cohort.current_open_week ?? '').trim()
+  if (raw === '') return null
+  const value = Number(raw)
+  return Number.isInteger(value) && value >= 1 ? value : null
+}
+
+/** An ISO instant must carry `Z` or an explicit ±HH:MM offset. See `fleaInstant`. */
+const ABSOLUTE_INSTANT = /(?:Z|[+-]\d{2}:\d{2})$/
+
+/**
+ * When the Mesa Flea opens, or `null` if the sheet has not said.
+ *
+ * **The offset is mandatory.** `new Date('2026-09-06T10:00:00')` — no offset —
+ * is parsed in the *browser's* timezone, so a laptop set to anything but IST
+ * would count down to the wrong instant and look completely healthy doing it.
+ * Requiring `+05:30` is what makes the countdown a difference between two
+ * absolute instants, correct on any machine whose clock is right.
+ *
+ * `null` renders as no countdown strip at all. The opening time is still
+ * unconfirmed and lives in one cell now; a wall showing nothing there is a
+ * legible state, and a guessed date is not.
+ */
+export function fleaInstant(cohort: Cohort): Date | null {
+  const raw = (cohort.flea_datetime_iso ?? '').trim()
+  if (!ABSOLUTE_INSTANT.test(raw)) return null
+  const at = new Date(raw)
+  return Number.isFinite(at.getTime()) ? at : null
 }
 
 /** The only thing that ever produces a `Snapshot`, from cache and network alike. */
