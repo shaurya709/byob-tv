@@ -67,6 +67,11 @@ export const PILL_INNER: React.CSSProperties = {
   gap: 'var(--s-3)',
   paddingInline: 'var(--s-3)',
   height: '100%',
+  // **Load bearing.** The inner tracks are fixed, so they do not compress as the
+  // pill narrows — without this the venture name and both figures spill out of
+  // the pill and across the row as it closes. The pill closing *over* its
+  // contents is the whole beat, and this is the line that does it.
+  overflow: 'hidden',
 }
 
 /**
@@ -146,21 +151,7 @@ const EASE = [SWALLOW, 'linear', DISGORGE] as const
 const LOGO = 30
 const CLOSED_PAD = 4
 
-/**
- * How far the details tuck left as they go, and how quickly they are gone.
- *
- * They sit inside the pill, so without a local translate they are carried
- * *right* by its slide to the centre — the numbers appeared to fade off to the
- * right, which is backwards.
- *
- * The fade is short because at rest the logo's right edge and the venture name's
- * left edge are touching. The moment the logo starts travelling it is on top of
- * the name — measured, it read as "Amb(A)r Alley" — so there is no window in
- * which both can be visible and clear of each other. The details leave first,
- * and the pill goes on closing behind them, which is what carries the beat.
- */
-const DETAIL_DRIFT = 60
-const DETAIL_GONE = 0.25
+
 
 /**
  * The pill's resting geometry, read from the DOM once when the row mounts.
@@ -228,27 +219,27 @@ function pillMotion(rest: Resting) {
 }
 
 /**
- * The details: fading, and drifting left rather than riding the pill right.
+ * The details hold still and let the pill close over them.
  *
- * The local translate cancels the pill's own slide and then some, so what is on
- * screen moves toward the logo while the closing edge crosses it. The logo is
- * painted above them, so the two never read as overlapping text — whatever the
- * logo reaches, it covers.
+ * The local translate is the exact negative of the pill's slide, so on screen
+ * they do not move at all: the pill travels across them while they stay put.
+ * That is what makes this one motion rather than two. Every earlier version gave
+ * them a window or a distance of their own, and it always read as a fade racing
+ * a collapse — because that is what it was.
+ *
+ * Both edges then do the work. The left edge sweeps right and takes the name
+ * with it; the right edge sweeps left through the figures; and the logo, riding
+ * just inside the left edge and painted above, covers whatever it reaches. Text
+ * only ever exists to the right of the logo, so nothing can sit on a mark.
+ *
+ * The fade is on the same window and the same curve — it softens the last few
+ * pixels rather than being an effect of its own.
  */
 function detailMotion(rest: Resting) {
-  // Enough to cancel the pill's own slide over this short window and still leave
-  // them moving left. The pill has barely started when they are gone, so only
-  // the leading part of its travel needs cancelling.
-  const slide = ((rest.width - closedWidth(rest)) / 2) * DETAIL_GONE
-  const drift = -(slide + DETAIL_DRIFT)
-  const leaving = [...at(BEATS.collapse, DETAIL_GONE).slice(0, 2), ...at(BEATS.uncollapse)]
+  const held = -(rest.width - closedWidth(rest)) / 2
   return {
-    animate: { opacity: [1, 0, 0, 1], x: [0, drift, drift, 0] },
-    transition: {
-      duration: TOTAL,
-      opacity: { duration: TOTAL, times: leaving, ease: ['linear', 'linear', 'linear'] as const },
-      x: { duration: TOTAL, times: leaving, ease: EASE },
-    },
+    animate: { opacity: [1, 0, 0, 1], x: [0, held, held, 0] },
+    transition: { duration: TOTAL, times: WINDOW, ease: EASE },
   }
 }
 
@@ -265,9 +256,10 @@ const FADE = {
   animate: { opacity: [1, 0, 0, 1] },
   transition: {
     duration: TOTAL,
-    // The rank leaves with the details.
-    times: [...at(BEATS.collapse, DETAIL_GONE).slice(0, 2), ...at(BEATS.uncollapse)],
-    ease: ['linear', 'linear', 'linear'] as const,
+    // The rank is outside the pill, so nothing clips it — it fades on the same
+    // window as everything else so the row leaves as one thing.
+    times: WINDOW,
+    ease: EASE,
   },
 } as const
 
