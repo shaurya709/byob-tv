@@ -37,10 +37,12 @@ describe('timelineFor', () => {
   })
 
   /**
-   * The strike-and-fall phases: windup 115ms, strike 115ms, knock 138ms, swap
-   * 322ms — 690ms between the climb's end and the uncollapse, whatever the
-   * climb size. There is no faceoff phase: the climb itself is the diagonal
-   * that arrives squared off.
+   * The strike-and-fall phases: windup 115ms, strike 115ms, knock 180ms, swap
+   * 322ms — 732ms between the climb's end and the uncollapse, whatever the
+   * climb size. The knock is the one eye-tuned duration, stated in rendered
+   * milliseconds: at 138ms it read as a snap rather than a bounce-off. There
+   * is no faceoff phase: the climb itself is the diagonal that arrives
+   * squared off.
    */
   it('holds the four strike-and-fall phases between B and E, back to back', () => {
     for (const delta of [1, 3, 8]) {
@@ -48,9 +50,9 @@ describe('timelineFor', () => {
       const end = beats.climb[1]
       close(beats.windup, [end, end + 0.115])
       close(beats.strike, [end + 0.115, end + 0.23])
-      close(beats.knock, [end + 0.23, end + 0.368])
-      close(beats.swap, [end + 0.368, end + 0.69])
-      expect(beats.uncollapse[0]).toBeCloseTo(end + 0.69, 10)
+      close(beats.knock, [end + 0.23, end + 0.41])
+      close(beats.swap, [end + 0.41, end + 0.732])
+      expect(beats.uncollapse[0]).toBeCloseTo(end + 0.732, 10)
     }
   })
 
@@ -60,10 +62,10 @@ describe('timelineFor', () => {
     expect(beats.knock[0]).toBe(beats.strike[1])
   })
 
-  it('computes the slowed totals: Δ=1 → 2.645s, Δ=3 → 2.783s, Δ=8 → 3.128s', () => {
-    expect(timelineFor(1).total).toBeCloseTo(2.645, 10)
-    expect(timelineFor(3).total).toBeCloseTo(2.783, 10)
-    expect(timelineFor(8).total).toBeCloseTo(3.128, 10)
+  it('computes the totals: Δ=1 → 2.687s, Δ=3 → 2.825s, Δ=8 → 3.17s', () => {
+    expect(timelineFor(1).total).toBeCloseTo(2.687, 10)
+    expect(timelineFor(3).total).toBeCloseTo(2.825, 10)
+    expect(timelineFor(8).total).toBeCloseTo(3.17, 10)
   })
 })
 

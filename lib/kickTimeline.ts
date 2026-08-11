@@ -90,7 +90,13 @@ const CLIMB_PER_RANK_S = 0.06
 /** C's two phases, then D's two. Their sum is the whole strike-and-fall span. */
 const WINDUP_S = 0.1
 const STRIKE_S = 0.1
-const KNOCK_S = 0.12
+/**
+ * The one eye-tuned duration, stated in *rendered* seconds and divided back
+ * out of the factor: at 138ms the knock read as a snap, not a bounce-off, so
+ * it was retimed to 180ms watched at full tempo. Dividing keeps it at 180ms
+ * whatever the factor becomes — it was tuned against the eye, not the clock.
+ */
+const KNOCK_S = 0.18 / SPEED_FACTOR
 const SWAP_S = 0.28
 const UNCOLLAPSE_S = 0.7
 
@@ -102,7 +108,7 @@ const UNCOLLAPSE_S = 0.7
 /** Edge-to-edge daylight between the two logos at faceoff. */
 export const FACEOFF_GAP_PX = 12
 /** How far sideways the contact punches the defender before it falls. */
-export const KNOCK_PX = 24
+export const KNOCK_PX = 28
 /** The impact dip: down and back up inside the knock, never leaving the row. */
 export const KNOCK_DIP_PX = 4
 /** The boot's rendered height — about half the pill. Width follows the PNG's aspect. */

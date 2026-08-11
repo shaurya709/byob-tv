@@ -173,8 +173,11 @@ describe('defenderRide — the knock, the fall', () => {
   const ride = defenderRide(cue, REST, timeline)
   const t = (s: number) => s / timeline.total
 
-  it('holds still until the contact frame, then is shoved sideways', () => {
-    expect(ride.animate.x).toEqual([0, 0, KNOCK_PX, 0, 0])
+  it('holds still until the contact frame, then is shoved 28px sideways', () => {
+    // The literal, not the constant: a knock tuned to 28 that quietly reverts
+    // to 24 still matches its own constant. Distance asserted by value.
+    expect(KNOCK_PX).toBe(28)
+    expect(ride.animate.x).toEqual([0, 0, 28, 0, 0])
     expect(ride.transition.x.times[1]).toBeCloseTo(t(timeline.beats.knock[0]), 10)
     expect(ride.transition.x.times[2]).toBeCloseTo(t(timeline.beats.knock[1]), 10)
   })
