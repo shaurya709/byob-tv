@@ -1,6 +1,6 @@
 import { ColumnHeading, VenturePill } from '@/components/VenturePill'
 import { rankByWeek } from '@/lib/ranking'
-import type { Team } from '@/lib/types'
+import type { OvertakeEvent, Team, TeamId } from '@/lib/types'
 
 /**
  * Slide 2 — the whole competing cohort, ranked on this week's revenue.
@@ -21,7 +21,15 @@ export function columnsOf(teams: readonly Team[]): [Team[], Team[]] {
   return [ranked.slice(0, COLUMN_LENGTH), ranked.slice(COLUMN_LENGTH, COLUMN_LENGTH * 2)]
 }
 
-function Column({ teams, startRank }: { teams: readonly Team[]; startRank: number }) {
+function Column({
+  teams,
+  startRank,
+  kick,
+}: {
+  teams: readonly Team[]
+  startRank: number
+  kick: OvertakeEvent | null
+}) {
   // An empty column carries no heading. Labelling columns that have nothing
   // under them is apparatus describing absence.
   if (teams.length === 0) return <div />
@@ -29,13 +37,33 @@ function Column({ teams, startRank }: { teams: readonly Team[]; startRank: numbe
     <div style={{ display: 'grid', gridAutoRows: 'var(--h-row)', alignContent: 'start' }}>
       <ColumnHeading />
       {teams.map((team, index) => (
-        <VenturePill key={team.teamId} team={team} rank={startRank + index} />
+        <VenturePill
+          key={team.teamId}
+          team={team}
+          rank={startRank + index}
+          role={roleOf(kick, team.teamId)}
+        />
       ))}
     </div>
   )
 }
 
-export function WeeklyLeaderboard({ teams }: { teams: readonly Team[] }) {
+/** Which side of the contest this row is on, or `undefined` for the other thirty-eight. */
+function roleOf(kick: OvertakeEvent | null, teamId: TeamId) {
+  if (kick === null) return undefined
+  if (teamId === kick.attacker) return 'attacker' as const
+  if (teamId === kick.defender) return 'defender' as const
+  return undefined
+}
+
+export function WeeklyLeaderboard({
+  teams,
+  kick = null,
+}: {
+  teams: readonly Team[]
+  /** The kick in progress, so the two rows involved know to clear their details. */
+  kick?: OvertakeEvent | null
+}) {
   const [left, right] = columnsOf(teams)
 
   return (
@@ -47,8 +75,8 @@ export function WeeklyLeaderboard({ teams }: { teams: readonly Team[] }) {
         height: '100%',
       }}
     >
-      <Column teams={left} startRank={1} />
-      <Column teams={right} startRank={COLUMN_LENGTH + 1} />
+      <Column teams={left} startRank={1} kick={kick} />
+      <Column teams={right} startRank={COLUMN_LENGTH + 1} kick={kick} />
     </div>
   )
 }

@@ -5,6 +5,7 @@ import { motion } from 'motion/react'
 
 import { ROW } from '@/components/VenturePill'
 import { VentureLogo } from '@/components/VentureLogo'
+import { BEATS, TOTAL, at } from '@/lib/kickTimeline'
 import type { OvertakeEvent, Team } from '@/lib/types'
 
 /**
@@ -15,13 +16,9 @@ import type { OvertakeEvent, Team } from '@/lib/types'
  * moves on, and a chain of `setTimeout`s would need teardown at seven points to
  * avoid firing into a dead component. There is nothing here to clean up.
  *
- *   0.00  focus      the board recedes; the two marks come forward
- *   0.35  approach   the attacker climbs to the row it has taken
- *   1.00  wind-up    the boot appears, tilted back
- *   1.20  strike     the boot swings; dust blooms at contact
- *   1.35  punt       the defender arcs away and down to its new row
- *   2.20  bounce     the attacker lands, squashes, settles
- *   2.60  settle     everything fades and the board returns
+ * The windows live in `lib/kickTimeline.ts` and nothing here re-divides a number
+ * by the total. Every animation below runs for `TOTAL` and uses `times` to say
+ * which part of it belongs to which beat.
  *
  * ── Position is computed, never measured ──
  *
@@ -37,13 +34,6 @@ import type { OvertakeEvent, Team } from '@/lib/types'
  * moves into the slot. Failing loud on a wall is worse than failing quiet, and
  * this is the one place the brief asks for that.
  */
-
-const APPROACH = 0.35
-const WIND_UP = 1.0
-const STRIKE = 1.2
-const PUNT = 1.35
-const BOUNCE = 2.2
-const END = 3.0
 
 const MARK = 30
 
@@ -75,10 +65,13 @@ export function BootKick({
   event,
   teams,
   perColumn,
+  onSettled,
 }: {
   event: OvertakeEvent
   teams: readonly Team[]
   perColumn: number
+  /** Fired when the last beat finishes. The queue waits on this, not on a timer. */
+  onSettled: () => void
 }) {
   const find = (id: string, name: string): Team =>
     teams.find((team) => team.teamId === id) ?? {
@@ -124,15 +117,23 @@ export function BootKick({
         <motion.div
           initial={{ top: from }}
           animate={{ top: [from, to, to] }}
-          transition={{ duration: END, times: [0, APPROACH / END, 1], ease: 'easeOut' }}
+          // The one animation that spans the whole timeline, so its completion is
+          // beat 8's completion by construction rather than by coincidence. This
+          // is the only callback in the component, and the queue's guard.
+          transition={{
+            duration: TOTAL,
+            times: [0, at(BEATS.travel)[1], 1],
+            ease: 'easeOut',
+            onComplete: onSettled,
+          }}
           style={{ position: 'absolute', left: 0, right: 0, zIndex: 2 }}
         >
           <AtRow style={{ position: 'relative' }}>
             <motion.div
               animate={{ scale: [1, 1.45, 1.45, 1.7, 0.92, 1.2, 1] }}
               transition={{
-                duration: END,
-                times: [0, 0.1, BOUNCE / END, (BOUNCE + 0.1) / END, (BOUNCE + 0.2) / END, (BOUNCE + 0.3) / END, 1],
+                duration: TOTAL,
+                times: [0, at(BEATS.collapse)[1], ...at(BEATS.settle, 0.25, 0.5, 0.75), 1],
                 ease: 'easeOut',
               }}
               style={{ transformOrigin: 'center bottom' }}
@@ -149,8 +150,15 @@ export function BootKick({
                 scaleX: [0.78, 0.78, 0.78, 1, 1, 1],
               }}
               transition={{
-                duration: END,
-                times: [0, WIND_UP / END, (WIND_UP + 0.08) / END, STRIKE / END, (STRIKE + 0.55) / END, 1],
+                duration: TOTAL,
+                times: [
+                  0,
+                  at(BEATS.windUp)[0],
+                  at(BEATS.windUp, 0.4)[1],
+                  at(BEATS.strike)[1],
+                  at(BEATS.punt, 0.5)[1],
+                  1,
+                ],
               }}
               style={{
                 position: 'absolute',
@@ -178,7 +186,10 @@ export function BootKick({
           <motion.div
             initial={{ opacity: 0, scale: 0.4 }}
             animate={{ opacity: [0, 0, 0.9, 0], scale: [0.4, 0.4, 1.5, 2], y: [0, 0, -16, -30] }}
-            transition={{ duration: END, times: [0, STRIKE / END, (STRIKE + 0.2) / END, (STRIKE + 0.55) / END] }}
+            transition={{
+              duration: TOTAL,
+              times: [0, at(BEATS.strike)[1], at(BEATS.punt, 0.19)[1], at(BEATS.punt, 0.52)[1]],
+            }}
             style={{
               position: 'absolute',
               left: MARK * 1.5,
@@ -195,7 +206,11 @@ export function BootKick({
         <motion.div
           initial={{ top: to }}
           animate={{ top: [to, to, pushed] }}
-          transition={{ duration: END, times: [0, PUNT / END, (PUNT + 0.85) / END], ease: [0.4, 0, 0.6, 1] }}
+          transition={{
+            duration: TOTAL,
+            times: [0, at(BEATS.punt)[0], at(BEATS.punt)[1]],
+            ease: [0.4, 0, 0.6, 1],
+          }}
           style={{ position: 'absolute', left: 0, right: 0 }}
         >
           <AtRow style={{ position: 'relative' }}>
@@ -211,8 +226,14 @@ export function BootKick({
                 rotate: [0, 0, 0, 320, 540],
               }}
               transition={{
-                duration: END,
-                times: [0, APPROACH / END, PUNT / END, (PUNT + 0.42) / END, (PUNT + 0.85) / END],
+                duration: TOTAL,
+                times: [
+                  0,
+                  at(BEATS.travel)[1],
+                  at(BEATS.punt)[0],
+                  at(BEATS.punt, 0.4)[1],
+                  at(BEATS.punt)[1],
+                ],
                 ease: [0.4, 0, 0.6, 1],
               }}
             >

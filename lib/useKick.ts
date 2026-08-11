@@ -1,13 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
-import { KICK_MS } from '@/config'
 import { takeKick } from '@/lib/storage'
 import type { OvertakeEvent } from '@/lib/types'
 
 /**
- * What is on screen, and exactly one timer.
+ * What is on screen, and when it is over.
  *
  * ── The invariant ──
  *
@@ -22,9 +21,25 @@ import type { OvertakeEvent } from '@/lib/types'
  *
  * `queueVersion` is the nudge from the data loop: the queue lives in
  * localStorage, so nothing about writing to it would otherwise re-render this.
+ *
+ * ── There is no timer here ──
+ *
+ * A kick ends when its last beat ends, reported by the animation itself. The
+ * previous version ran a fixed `setTimeout(KICK_MS)` alongside it, which was a
+ * second opinion about the same fact: it happened to be longer than the
+ * sequence, so it looked right, but nothing tied the two together and extending
+ * a beat past it would have started the next kick over the tail of the current
+ * one with nothing to report it.
  */
-export function useKick(board: string, queueVersion: number): OvertakeEvent | null {
+export type Kick = {
+  playing: OvertakeEvent | null
+  /** Handed to `BootKick`; the animation calls it when its last beat finishes. */
+  settled: () => void
+}
+
+export function useKick(board: string, queueVersion: number): Kick {
   const [playing, setPlaying] = useState<OvertakeEvent | null>(null)
+  const settled = useCallback(() => setPlaying(null), [])
 
   // Take the next event, but only while nothing is playing. The dependency on
   // `playing` is what makes this run again the moment the previous one ends.
@@ -42,14 +57,5 @@ export function useKick(board: string, queueVersion: number): OvertakeEvent | nu
     if (next !== null) setPlaying(next)
   }, [board, playing, queueVersion])
 
-  // One timer, existing only while something is playing. The animation's own
-  // beats are declarative delays inside the component; this only decides when
-  // the wall goes back to being a leaderboard.
-  useEffect(() => {
-    if (playing === null) return
-    const timer = setTimeout(() => setPlaying(null), KICK_MS)
-    return () => clearTimeout(timer)
-  }, [playing])
-
-  return playing
+  return { playing, settled }
 }

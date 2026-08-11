@@ -1,6 +1,9 @@
+import { cubicBezier, motion } from 'motion/react'
+
 import { HOT_TODAY_MIN } from '@/config'
 import { VentureLogo } from '@/components/VentureLogo'
 import { formatRupees } from '@/lib/format'
+import { BEATS, TOTAL, at } from '@/lib/kickTimeline'
 import type { Team } from '@/lib/types'
 
 /**
@@ -76,9 +79,76 @@ export function ColumnHeading() {
   )
 }
 
-export function VenturePill({ team, rank }: { team: Team; rank: number }) {
+/**
+ * Beats 1 and 8 — the two involved rows clearing their detail cells and getting
+ * them back.
+ *
+ * ── Why a tween and not a spring ──
+ *
+ * These are three text cells being cleared, not a mass. A spring overshoots, so
+ * the venture name would be pulled back into frame after it left; at row scale
+ * that reads as a rendering fault rather than as physics.
+ *
+ * ── Why out accelerates and back decelerates ──
+ *
+ * Going, the details are being swept aside by the event arriving, so they should
+ * still be gaining speed as they vanish — ease-*in*. Coming back, the event is
+ * over and the board is resuming its job, so the last thing on screen should be
+ * settling. The return is deliberately not the inverse of the exit.
+ *
+ * Opacity is finished by 60% of the exit window so nothing is legible while it is
+ * still moving, which is what avoids the smeared-text look.
+ *
+ * Both rows are given the identical window, so simultaneity is structural rather
+ * than a matched pair of delays that could drift apart.
+ */
+const SWEEP_OUT = cubicBezier(0.32, 0, 0.67, 0)
+const SETTLE_BACK = cubicBezier(0.16, 1, 0.3, 1)
+const CLEARED_X = 28
+
+const COLLAPSE = {
+  animate: { x: [0, CLEARED_X, CLEARED_X, 0], opacity: [1, 0, 0, 1] },
+  transition: {
+    duration: TOTAL,
+    x: {
+      duration: TOTAL,
+      times: [at(BEATS.collapse)[0], at(BEATS.collapse)[1], at(BEATS.uncollapse)[0], at(BEATS.uncollapse)[1]],
+      ease: [SWEEP_OUT, 'linear', SETTLE_BACK] as const,
+    },
+    opacity: {
+      duration: TOTAL,
+      times: [at(BEATS.collapse, 0.6)[0], at(BEATS.collapse, 0.6)[1], at(BEATS.uncollapse)[0], at(BEATS.uncollapse)[1]],
+      ease: ['linear', 'linear', 'linear'] as const,
+    },
+  },
+} as const
+
+/**
+ * The three detail cells animate as three elements carrying identical values
+ * rather than as one wrapped element.
+ *
+ * A wrapper would become a single grid cell and collapse the row's five-track
+ * template into three, moving every column. `display: contents` would keep the
+ * template but cannot be transformed. Identical values on three siblings is what
+ * makes them move as one thing here.
+ */
+export type PillRole = 'attacker' | 'defender'
+
+export function VenturePill({
+  team,
+  rank,
+  role,
+}: {
+  team: Team
+  rank: number
+  /** Set only while this row is in a kick. Absent means an ordinary, inert row. */
+  role?: PillRole
+}) {
   const podium = rank <= 3
   const hot = team.todayRevenue >= HOT_TODAY_MIN
+  // Thirty-eight rows are plain spans with no animation attached at all. Only the
+  // two in the contest become motion elements, and only while it lasts.
+  const detail = role === undefined ? {} : COLLAPSE
 
   return (
     <div
@@ -112,7 +182,8 @@ export function VenturePill({ team, rank }: { team: Team; rank: number }) {
 
       <VentureLogo team={team} size={30} />
 
-      <span
+      <motion.span
+        {...detail}
         style={{
           font: 'var(--t-tv-row-name)',
           color: 'var(--fg1)',
@@ -124,9 +195,10 @@ export function VenturePill({ team, rank }: { team: Team; rank: number }) {
         }}
       >
         {team.ventureName || team.teamId}
-      </span>
+      </motion.span>
 
-      <span
+      <motion.span
+        {...detail}
         className="tv-figure"
         style={{ font: 'var(--t-tv-row-week)', color: 'var(--fg1)', textAlign: 'right' }}
       >
@@ -135,9 +207,10 @@ export function VenturePill({ team, rank }: { team: Team; rank: number }) {
             week, so printing the zero would set thirty-five identical figures
             down the board and teach the eye to skip the column that matters. */}
         {team.weekRevenue > 0 ? formatRupees(team.weekRevenue) : ''}
-      </span>
+      </motion.span>
 
-      <span
+      <motion.span
+        {...detail}
         className="tv-figure"
         style={{
           font: hot ? 'var(--t-tv-row-today-hot)' : 'var(--t-tv-row-today)',
@@ -149,7 +222,7 @@ export function VenturePill({ team, rank }: { team: Team; rank: number }) {
             rows of ₹0 every morning is noise, and the column is there to say
             who is moving today — silence is the honest answer for the rest. */}
         {team.todayRevenue > 0 ? formatRupees(team.todayRevenue) : ''}
-      </span>
+      </motion.span>
     </div>
   )
 }

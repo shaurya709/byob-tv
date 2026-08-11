@@ -33,7 +33,7 @@ export default function WeeklyPage() {
   // counter is only the nudge that tells `useKick` to look, exactly as
   // `queueVersion` does. Adding to it keeps one drain and one reader.
   const [devTicks, setDevTicks] = useState(0)
-  const kick = useKick(BOARD.name, queueVersion + devTicks)
+  const { playing: kick, settled } = useKick(BOARD.name, queueVersion + devTicks)
 
   const week = snapshot === null ? null : openWeek(snapshot.cohort)
   const teams = competingTeams(snapshot?.teams ?? [])
@@ -59,9 +59,9 @@ export default function WeeklyPage() {
             transition: 'opacity 0.35s var(--ease-out)',
           }}
         >
-          <WeeklyLeaderboard teams={teams} />
+          <WeeklyLeaderboard teams={teams} kick={kick} />
         </div>
-        {kick !== null && <BootKick event={kick} teams={teams} perColumn={COLUMN_LENGTH} />}
+        {kick !== null && <BootKick event={kick} teams={teams} perColumn={COLUMN_LENGTH} onSettled={settled} />}
       </div>
 
       <DevKickTrigger teams={teams} week={week} onQueued={() => setDevTicks((n) => n + 1)} />
