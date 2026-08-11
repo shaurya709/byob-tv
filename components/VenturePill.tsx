@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from 'react'
 import { cubicBezier, motion } from 'motion/react'
 
 import { HOT_TODAY_MIN } from '@/config'
@@ -50,11 +51,12 @@ export const ROW_OUTER: React.CSSProperties = {
   alignItems: 'center',
   gap: 'var(--s-3)',
   paddingInline: 'var(--s-3)',
-  // Every track is fixed, so the row is exactly as wide as its content and can
-  // be centred in its half of the frame. All forty rows then share one set of
-  // column positions — a ragged left edge across twenty rows is unreadable at
-  // distance.
-  width: 'max-content',
+  // Stated, not `max-content`. Every track is fixed so the two agree at rest —
+  // but a `max-content` row shrinks when the pill inside it does, and a shrunken
+  // row with `margin: auto` re-centres, so the closed pill lands at the track's
+  // right edge instead of its centre and the whole row slides. Measured: the
+  // pill closed to 801-839 in a track spanning 186-839.
+  width: 'calc(var(--w-rank) + var(--w-pill) + 3 * var(--s-3))',
   marginInline: 'auto',
 }
 
@@ -97,7 +99,7 @@ export function ColumnHeading() {
 }
 
 /**
- * Beat A — the two involved rows swallowing their own details.
+ * Beat A — the pill closing around its own logo, and Beat E — it opening again.
  *
  * ── The rows are the actors ──
  *
@@ -106,39 +108,102 @@ export function ColumnHeading() {
  * moves; when the sequence ends nothing has to be reconciled, because nothing
  * was ever duplicated.
  *
- * ── Scale alone, with the origin outside the element ──
+ * ── One motion, not a sequence ──
  *
- * Each detail cell's transform-origin is placed at the **logo's right edge**,
- * which is outside that cell's own box and further away for each cell in turn.
- * Scaling to zero about a point then does both halves of the effect at once:
- * the cell travels left *and* shrinks, and all three converge on the same point,
- * so the logo appears to swallow the row.
+ * The pill's width, its padding and its offset are three properties of one
+ * animation, on one window, with one curve. They arrive together in the same
+ * frame. Closing the pill and *then* walking the logo to the centre would read
+ * as two events, and there is only one thing happening.
  *
- * Translating and scaling separately would need each cell's distance to the logo
- * as an animated value, which is a `calc()` of two grid tracks and a gap — and
- * interpolating between `calc()` strings is not something to rely on. A static
- * origin is resolved by CSS once, and the only animated value is a number.
+ * The logo needs no animation of its own. It sits against the pill's padding
+ * edge, so narrowing the padding while the pill shrinks and slides carries it to
+ * the centre of the row's space exactly — the arithmetic cancels, and the logo
+ * crosses the full width of the row without ever being told to.
+ *
+ * ── The details fade rather than move ──
+ *
+ * They stay where they are and the pill closes over them, clipped by its own
+ * rounded edge. Sliding them as well would be a second motion competing with the
+ * pill's. The fade finishes at 60% of the window so nothing is still legible
+ * while the edge is crossing it.
  */
 const SWALLOW = cubicBezier(0.32, 0, 0.67, 0)
 const DISGORGE = cubicBezier(0.16, 1, 0.3, 1)
 
-/**
- * Where each detail cell collapses to: the logo's right edge, expressed as an
- * offset from that cell's own left edge. Each one is further away than the last
- * by exactly the track it sits behind.
- */
-const SWALLOW_ORIGIN = {
-  name: 'calc(-1 * var(--s-3)) center',
-  week: 'calc(-1 * (var(--w-name) + 2 * var(--s-3))) center',
-  today: 'calc(-1 * (var(--w-name) + var(--w-week) + 3 * var(--s-3))) center',
-} as const
+/** Beat A's window, the hold between, then Beat E's. Shared by every property. */
+const WINDOW = [...at(BEATS.collapse), ...at(BEATS.uncollapse)]
+const EASE = [SWALLOW, 'linear', DISGORGE] as const
 
-const COLLAPSE = {
-  animate: { scale: [1, 0, 0, 1] },
+/** The closed pill: the logo, and a hair either side of it. */
+const LOGO = 30
+const CLOSED_PAD = 4
+const CLOSED_W = LOGO + CLOSED_PAD * 2
+
+/**
+ * The pill's resting geometry, read from the DOM once when the row mounts.
+ *
+ * ── Why this is measured and not computed ──
+ *
+ * Everything else on this wall derives its position from CSS and is never read
+ * back. The pill's width cannot be: it is a `calc()` mixing `vw` tracks with
+ * `px` gaps, and Motion cannot interpolate `width` between that and a pixel
+ * value — measured, it writes `calc(138.728px)` on the first frame of a 653px
+ * pill and eases from there. Starting at `100%` is worse: it snaps to the closed
+ * width immediately. `paddingInline` is not animatable at all, being a
+ * shorthand; only the long-hand sides are.
+ *
+ * So the four animated values are plain numbers, and the one number that has to
+ * come from the browser is taken **once, at mount** — long before any kick, and
+ * never during one. No layout is read while an animation is running.
+ */
+function useRestingPill(): [React.RefObject<HTMLDivElement | null>, { width: number; pad: number } | null] {
+  const ref = useRef<HTMLDivElement>(null)
+  const [rest, setRest] = useState<{ width: number; pad: number } | null>(null)
+
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (el === null) return
+    // A mount-only read of layout that the animation config needs before it can
+    // exist. It runs once per row, at page load, and never while a kick plays.
+    setRest({
+      width: el.getBoundingClientRect().width,
+      pad: Number.parseFloat(getComputedStyle(el).paddingLeft),
+    })
+  }, [])
+
+  return [ref, rest]
+}
+
+function pillMotion(rest: { width: number; pad: number }) {
+  const closed = [rest.width, CLOSED_W, CLOSED_W, rest.width]
+  const centred = (rest.width - CLOSED_W) / 2
+  return {
+    animate: {
+      width: closed,
+      paddingLeft: [rest.pad, CLOSED_PAD, CLOSED_PAD, rest.pad],
+      paddingRight: [rest.pad, CLOSED_PAD, CLOSED_PAD, rest.pad],
+      x: [0, centred, centred, 0],
+    },
+    transition: { duration: TOTAL, times: WINDOW, ease: EASE },
+  }
+}
+
+/**
+ * The details, and the rank number with them.
+ *
+ * The rank goes too, rather than holding at the row's left edge while the logo
+ * floats to the centre — a label that has lost its subject. It is also what
+ * makes the rank *value* safe to change: a row shows its new rank the instant
+ * the board re-sorts, and hiding the number through the middle of the sequence
+ * means that swap can never be caught happening.
+ */
+const FADE = {
+  animate: { opacity: [1, 0, 0, 1] },
   transition: {
     duration: TOTAL,
-    times: [...at(BEATS.collapse), ...at(BEATS.uncollapse)],
-    ease: [SWALLOW, 'linear', DISGORGE] as const,
+    // Gone by 60% of the close; back across the whole of the open.
+    times: [...at(BEATS.collapse, 0.6).slice(0, 2), ...at(BEATS.uncollapse)],
+    ease: ['linear', 'linear', 'linear'] as const,
   },
 } as const
 
@@ -161,7 +226,9 @@ export function VenturePill({
   const hot = team.todayRevenue >= HOT_TODAY_MIN
   // Thirty-eight rows are plain spans with no animation attached at all. Only the
   // two in the contest become motion elements, and only while it lasts.
-  const detail = role === undefined ? {} : COLLAPSE
+  const [pillRef, rest] = useRestingPill()
+  const fade = role === undefined ? {} : FADE
+  const pill = role === undefined || rest === null ? {} : pillMotion(rest)
 
   /**
    * The kick is over when this row's animation is, reported by the animation
@@ -179,7 +246,8 @@ export function VenturePill({
 
   return (
     <div style={{ ...ROW_OUTER, height: 'var(--h-row)' }}>
-      <span
+      <motion.span
+        {...fade}
         className="tv-figure"
         style={{
           font: 'var(--t-tv-row-rank)',
@@ -188,16 +256,15 @@ export function VenturePill({
         }}
       >
         {rank}
-      </span>
+      </motion.span>
 
-      <div className="tv-pill" style={PILL_INNER}>
+      <motion.div ref={pillRef} {...pill} className="tv-pill" style={PILL_INNER}>
         <VentureLogo team={team} size={30} />
 
       <motion.span
-        {...detail}
+        {...fade}
         onAnimationComplete={reportSettled}
         style={{
-          transformOrigin: SWALLOW_ORIGIN.name,
           font: 'var(--t-tv-row-name)',
           color: 'var(--fg1)',
           // A name too long for its column is clipped, not wrapped: every row is
@@ -211,10 +278,9 @@ export function VenturePill({
       </motion.span>
 
       <motion.span
-        {...detail}
+        {...fade}
         className="tv-figure"
         style={{
-          transformOrigin: SWALLOW_ORIGIN.week,
           font: 'var(--t-tv-row-week)',
           color: 'var(--fg1)',
           textAlign: 'right',
@@ -228,10 +294,9 @@ export function VenturePill({
       </motion.span>
 
       <motion.span
-        {...detail}
+        {...fade}
         className="tv-figure"
         style={{
-          transformOrigin: SWALLOW_ORIGIN.today,
           font: hot ? 'var(--t-tv-row-today-hot)' : 'var(--t-tv-row-today)',
           color: hot ? HOT : 'var(--fg-muted)',
           textAlign: 'right',
@@ -242,7 +307,7 @@ export function VenturePill({
             who is moving today — silence is the honest answer for the rest. */}
         {team.todayRevenue > 0 ? formatRupees(team.todayRevenue) : ''}
         </motion.span>
-      </div>
+      </motion.div>
     </div>
   )
 }
