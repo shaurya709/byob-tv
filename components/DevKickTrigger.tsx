@@ -1,7 +1,7 @@
 'use client'
 
 import { rankByWeek } from '@/lib/ranking'
-import { enqueueKicks } from '@/lib/storage'
+import { clearKicks, enqueueKicks } from '@/lib/storage'
 import type { OvertakeEvent, Team } from '@/lib/types'
 
 /**
@@ -23,6 +23,14 @@ import type { OvertakeEvent, Team } from '@/lib/types'
  * The id uses the same `week:attacker:toRank` shape as a real event, so queue
  * behaviour under repeated clicks is identical to queue behaviour under
  * repeated detection rather than merely similar.
+ *
+ * ── Reset is not a fallback ──
+ *
+ * The third button exists so an animation that wedges can be cleared without a
+ * page reload while the cause is being found. It is not a recovery path for the
+ * wall: it renders only in development, nothing schedules it, and no production
+ * code calls what it calls. A wedged kick in production is a bug to fix, not a
+ * state to recover from.
  */
 
 /** Deterministic pairs, so the same click always produces the same contest. */
@@ -68,10 +76,13 @@ export function DevKickTrigger({
   teams,
   week,
   onQueued,
+  onReset,
 }: {
   teams: readonly Team[]
   week: number | null
   onQueued: () => void
+  /** Clears whatever is playing. Handed the same `settled` the animation calls. */
+  onReset: () => void
 }) {
   // The one check. `NODE_ENV` is inlined at build time, so this whole component
   // folds away in a production build.
@@ -105,6 +116,19 @@ export function DevKickTrigger({
       </button>
       <button type="button" style={BUTTON} onClick={() => fire(PAIRS)}>
         Trigger burst
+      </button>
+      {/* Queue first, then what is playing: clearing them the other way round
+          lets the drain pick up the next event on its way out and the board
+          never reaches rest. */}
+      <button
+        type="button"
+        style={BUTTON}
+        onClick={() => {
+          clearKicks('weekly')
+          onReset()
+        }}
+      >
+        Reset
       </button>
     </div>
   )

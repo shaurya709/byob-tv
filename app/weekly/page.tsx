@@ -64,7 +64,12 @@ export default function WeeklyPage() {
         {kick !== null && <BootKick event={kick} teams={teams} perColumn={COLUMN_LENGTH} onSettled={settled} />}
       </div>
 
-      <DevKickTrigger teams={teams} week={week} onQueued={() => setDevTicks((n) => n + 1)} />
+      <DevKickTrigger
+        teams={teams}
+        week={week}
+        onQueued={() => setDevTicks((n) => n + 1)}
+        onReset={settled}
+      />
     </main>
   )
 }

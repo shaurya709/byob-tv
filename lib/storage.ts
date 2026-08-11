@@ -145,6 +145,11 @@ export function enqueueKicks(board: string, events: readonly OvertakeEvent[]): v
   writeJson(KEYS.queue(board), fresh.slice(-KICK_QUEUE_CAP))
 }
 
+/** Drop everything waiting. Development only; nothing in the wall's own path calls this. */
+export function clearKicks(board: string): void {
+  writeJson(KEYS.queue(board), [])
+}
+
 /**
  * Take the next event, removing it.
  *
