@@ -4,36 +4,30 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 
 import { POLL_INTERVAL_MS } from '@/config'
 import { fetchCsv, parseSnapshot, passesRowGate } from '@/lib/feed'
-import { enqueue, readCsvCache, readLedger, writeCsvCache, writeLedger } from '@/lib/storage'
-import { reconcile } from '@/lib/triggers'
+import { readCsvCache, writeCsvCache } from '@/lib/storage'
 import type { Snapshot } from '@/lib/types'
 
 /**
  * The 60-second loop. The only module in the project that touches `fetch`,
  * `setInterval` or the visibility API.
  *
- * ── Only a visible page fetches or reconciles ──
+ * ── Only a visible page fetches ──
  *
- * The slideshow is driven from a laptop over HDMI, which most likely means a
- * tab rotator — so both pages may be *open at once* with only one on screen.
- * Without this gate, two renderers would each run a read-compute-write cycle
- * every 60 seconds against the same localStorage: double-fired triggers and
- * clobbered writes.
+ * `/podium` and `/weekly` stay reachable as standalone URLs for inspection, so
+ * two of them can be open at once with only one on screen. Without this gate,
+ * two renderers would each run a read-compute-write cycle every 60 seconds
+ * against the same localStorage: duplicated animations and clobbered writes.
  *
- * Gating on `visibilityState` also covers the other possibility — that the
- * rotation reloads each URL from scratch — with the same mechanism rather than
- * a second one. Whichever the rotation turns out to be, the page that is on
- * screen owns the state.
+ * The rotation shell in session 2 fetches once at the shell level and passes
+ * data down, which is the normal path. This gate is what keeps the standalone
+ * URLs honest alongside it.
  */
 export type WallData = {
   snapshot: Snapshot | null
-  /** Bumped whenever new events were queued, so the player knows to look. */
-  queueVersion: number
 }
 
 export function useWallData(): WallData {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
-  const [queueVersion, setQueueVersion] = useState(0)
   const running = useRef(false)
 
   /**
@@ -81,17 +75,6 @@ export function useWallData(): WallData {
       }
 
       writeCsvCache(raw)
-
-      // Reconcile only ever runs on a freshly gated fetch. The boot cache is
-      // render-only: reconciling it would emit nothing anyway, because
-      // reconcile is idempotent, and would cost a write for nothing.
-      const { ledger, events } = reconcile(readLedger(), fresh)
-      writeLedger(ledger)
-      if (events.length > 0) {
-        enqueue(events)
-        setQueueVersion((version) => version + 1)
-      }
-
       setSnapshot(fresh)
     } finally {
       running.current = false
@@ -134,5 +117,5 @@ export function useWallData(): WallData {
     }
   }, [tick])
 
-  return { snapshot, queueVersion }
+  return { snapshot }
 }

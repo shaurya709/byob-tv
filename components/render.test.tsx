@@ -3,15 +3,10 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, expect, it } from 'vitest'
 
-import { Countdown, stateFor } from '@/components/Countdown'
-import { HeroNotification } from '@/components/HeroNotification'
 import { Podium, visibleTeams } from '@/components/Podium'
-import { SubCardNotification } from '@/components/SubCardNotification'
-import { AWARE_AT_MS, FINAL_HOUR_AT_MS, URGENT_AT_MS } from '@/config'
 import { formatRupees, ordinal } from '@/lib/format'
-import { rankTeams } from '@/lib/triggers'
+import { rankTeams } from '@/lib/ranking'
 import { teams } from '@/test/fixtures'
-import type { CardEvent, HeroEvent } from '@/lib/types'
 
 /**
  * Smoke tests: every surface renders with mock data and puts the right words on
@@ -76,75 +71,6 @@ describe('visibleTeams', () => {
   it('never shows more than ten', () => {
     const all = teams().map((team, index) => ({ ...team, totalRevenue: 1000 * (42 - index) }))
     expect(visibleTeams(rankTeams(all))).toHaveLength(10)
-  })
-})
-
-describe('notifications', () => {
-  it('renders a revenue hero as the team crossing, not as first in the cohort', () => {
-    const event: HeroEvent = {
-      id: 'rev:SLE-C401:200000',
-      kind: 'hero',
-      teamId: 'SLE-C401',
-      ventureName: 'Aurora Bakes',
-      type: 'revenue',
-      threshold: 200_000,
-      totalRevenue: 240_000,
-    }
-    const text = render(<HeroNotification event={event} teams={TRADING} />)
-    expect(text).toContain('Aurora Bakes')
-    expect(text).toContain(`Crossed ${formatRupees(200_000)}`)
-    // "First to cross" would be false for every team after the first.
-    expect(text).not.toContain('First to cross')
-  })
-
-  it('renders a weekly hero with its week and award', () => {
-    const event: HeroEvent = {
-      id: 'week:3:climb',
-      kind: 'hero',
-      teamId: 'SLE-C402',
-      ventureName: 'Kite Coffee',
-      type: 'weekly',
-      week: 3,
-      award: 'climb',
-      value: 7,
-    }
-    const text = render(<HeroNotification event={event} teams={TRADING} />)
-    expect(text).toContain('Week 3')
-    expect(text).toContain('Biggest climb')
-    expect(text).toContain('Up 7 places')
-  })
-
-  it('renders a title sub-card with units rather than rupees for most units', () => {
-    const event: CardEvent = {
-      id: 'title:mostUnitsToday',
-      kind: 'card',
-      teamId: 'SLE-C403',
-      ventureName: 'Solstice',
-      type: 'title',
-      title: 'mostUnitsToday',
-      value: 38,
-    }
-    const text = render(<SubCardNotification event={event} teams={TRADING} />)
-    expect(text).toContain('Most units today')
-    expect(text).toContain('38 units')
-    expect(text).not.toContain('₹38')
-  })
-})
-
-describe('Countdown', () => {
-  it('renders without a clock mismatch on first paint', () => {
-    expect(() => render(<Countdown />)).not.toThrow()
-  })
-
-  /** The brief left 24h-1h with no state; Urgent runs down to the final hour. */
-  it('covers every gap between states', () => {
-    expect(stateFor(AWARE_AT_MS + 1)).toBe('calm')
-    expect(stateFor(AWARE_AT_MS - 1)).toBe('aware')
-    expect(stateFor(URGENT_AT_MS - 1)).toBe('urgent')
-    expect(stateFor(24 * 60 * 60 * 1000 - 1)).toBe('urgent')
-    expect(stateFor(FINAL_HOUR_AT_MS - 1)).toBe('final')
-    expect(stateFor(0)).toBe('past')
-    expect(stateFor(-1)).toBe('past')
   })
 })
 
