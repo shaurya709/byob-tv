@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { motion } from 'motion/react'
+import { cubicBezier, motion } from 'motion/react'
 
 import { ROW } from '@/components/VenturePill'
 import { VentureLogo } from '@/components/VentureLogo'
@@ -36,6 +36,35 @@ import type { OvertakeEvent, Team } from '@/lib/types'
  */
 
 const MARK = 30
+
+/**
+ * Beat 2 — the attacker climbing to the row it is about to take.
+ *
+ * ── It stops one row short ──
+ *
+ * The beat always ends with the attacker *below* the slot, never in it. Taking
+ * the slot is beat 6's job, after the strike. That ordering is what makes the
+ * kick causal: the attacker arrives, kicks, and only then moves up. Arriving in
+ * the slot first would make everything after it decoration.
+ *
+ * ── Vertical travel is a percentage, not pixels ──
+ *
+ * The element being moved is exactly one row tall, so `y: '100%'` is exactly one
+ * row whatever the viewport. No `--h-row` constant is duplicated into TypeScript
+ * and nothing is read back from the DOM — the row height stays defined in one
+ * place, in CSS.
+ *
+ * ── The wobble is keyframes, not a spring ──
+ *
+ * A spring's lateral overshoot decays monotonically. A body climbing under its
+ * own effort sways *against* the direction of travel first and then past centre,
+ * and that asymmetry is what reads as effort. Only explicit stops express it.
+ */
+const TRAVEL_Y = cubicBezier(0.22, 0.68, 0.24, 1)
+
+/** Sway in px, scaled by how far there is to climb. Zero for a single-rank climb. */
+const SWAY_BACK = -6
+const SWAY_THROUGH = 4
 
 /** Where a rank's row sits inside its column, in the board's own units. */
 function rowTop(rank: number, perColumn: number): string {
@@ -92,9 +121,18 @@ export function BootKick({
   const column = event.toRank <= perColumn ? 0 : 1
   const defenderTo = Math.min(event.toRank + 1, perColumn * (column + 1))
 
-  const from = rowTop(event.fromRank, perColumn)
   const to = rowTop(event.toRank, perColumn)
   const pushed = rowTop(defenderTo, perColumn)
+
+  // How far the attacker climbs, and how far beat 2 carries it: one row short of
+  // the slot. For a single-rank climb both terms are zero and the beat is a
+  // no-op because its parameters are zero, not because a branch skipped it.
+  const climb = event.fromRank - event.toRank
+  const travelRows = climb - 1
+  const sway = Math.min(travelRows, 6) / 6
+
+  // Anchored where beat 2 ends. Beat 6 takes it the last row up from here.
+  const home = pushed
 
   return (
     <div
@@ -113,20 +151,32 @@ export function BootKick({
       {column === 1 && <div />}
 
       <div style={{ position: 'relative' }}>
-        {/* The attacker climbs into the slot and lands on it. */}
+        {/* Beat 2 — the climb, on transform. `top` is static: a position that
+            animates cannot also carry a wobble, and mixing the two would put the
+            same motion in two properties. */}
         <motion.div
-          initial={{ top: from }}
-          animate={{ top: [from, to, to] }}
+          animate={{
+            y: [`${travelRows * 100}%`, `${travelRows * 100}%`, '0%', '0%'],
+            x: [0, 0, SWAY_BACK * sway, SWAY_THROUGH * sway, 0, 0],
+          }}
           // The one animation that spans the whole timeline, so its completion is
           // beat 8's completion by construction rather than by coincidence. This
           // is the only callback in the component, and the queue's guard.
           transition={{
             duration: TOTAL,
-            times: [0, at(BEATS.travel)[1], 1],
-            ease: 'easeOut',
             onComplete: onSettled,
+            y: {
+              duration: TOTAL,
+              times: [0, at(BEATS.travel)[0], at(BEATS.travel)[1], 1],
+              ease: ['linear', TRAVEL_Y, 'linear'],
+            },
+            x: {
+              duration: TOTAL,
+              times: [0, ...at(BEATS.travel, 0.32, 0.68), 1],
+              ease: ['linear', 'easeInOut', 'easeInOut', 'easeInOut', 'linear'],
+            },
           }}
-          style={{ position: 'absolute', left: 0, right: 0, zIndex: 2 }}
+          style={{ position: 'absolute', top: home, left: 0, right: 0, zIndex: 2 }}
         >
           <AtRow style={{ position: 'relative' }}>
             <motion.div
@@ -143,9 +193,8 @@ export function BootKick({
 
             {/* Only ever visible for the wind-up and the strike. */}
             <motion.div
-              initial={{ opacity: 0, rotate: -14, scaleX: 0.78 }}
+              initial={{ rotate: -14, scaleX: 0.78 }}
               animate={{
-                opacity: [0, 0, 1, 1, 0, 0],
                 rotate: [-14, -14, -14, -4, -4, -4],
                 scaleX: [0.78, 0.78, 0.78, 1, 1, 1],
               }}
@@ -167,6 +216,11 @@ export function BootKick({
                 width: MARK * 1.7,
                 zIndex: 1,
                 transformOrigin: 'left center',
+                // Hidden for this pass. Its fade was rising during the travel
+                // window and pulling the eye off the climb, and beat 3 removes
+                // the fade entirely anyway — the boot is meant to enter by
+                // rotation from behind the mark, never by opacity.
+                opacity: 0,
               }}
             >
               <Image
