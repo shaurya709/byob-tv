@@ -222,7 +222,7 @@ is one authority on ordering rather than a sheet column that can disagree with t
 ## 5. `lib/feed.ts` — fetch, parse, gate
 
 ```ts
-export const EXPECTED_TEAM_ROWS = 42
+export const MIN_TEAM_ROWS = 40
 export type Team = { teamId: string; ventureName: string; totalRevenue: number; totalUnits: number; streakDays: number }
 export type Cohort = Record<string, string>
 export type Snapshot = { teams: Team[]; cohort: Cohort }
@@ -235,12 +235,17 @@ export async function fetchSnapshot(): Promise<Snapshot>
 
 Four things here are non-obvious and each would have shipped a broken wall:
 
-- **The gate is `teams.length < EXPECTED_TEAM_ROWS`, not `!== 42`.** A partial write can
-  only ever produce *fewer* rows, so short-checking is strictly correct — and an exact
-  check means the day a 43rd team is added, every wall freezes on stale data permanently,
+- **The gate is `teams.length < MIN_TEAM_ROWS`, not `!== 42`.** A short export can only
+  ever produce *fewer* rows, so short-checking is strictly correct — and an exact check
+  means the day a 43rd team is added, every wall freezes on stale data permanently,
   silently, with no spinner or error to notice. The dashboard's `lib/sheets/gate.ts`
-  already encodes exactly this ("short, not exact"). Log a warning above 42.
-  *This is a deliberate refinement of the row-count gate you approved.*
+  already encodes exactly this ("short, not exact").
+  *Revised 11 Aug 2026:* the threshold is **40**, the competing cohort, since `SLE-C441`
+  and `SLE-C442` are spares. What it guards is Google's CSV export re-reading the sheet
+  inside a rebuild's `clearContent` → `setValues` window — **not** a torn read of the
+  master, which `LockService` and the consolidator's build-then-write make impossible.
+  The gate counts *usable* rows, which is why `parseTeams` drops a row with an
+  unparseable number rather than throwing on it: one judge of trustworthiness, not two.
 - **Google's published CSV carries a UTF-8 BOM and CRLF line endings.** `﻿team_id`
   does not equal `team_id`, so a header check throws on every fetch from first deploy.
   Both are handled by **papaparse**, which is the main reason to take the dependency

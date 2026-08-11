@@ -51,9 +51,20 @@ describe('parseTeams', () => {
     expect(() => parseTeams(csv)).toThrow(TvSchemaError)
   })
 
-  it('throws on a non-numeric revenue rather than rendering NaN for a week', () => {
-    const csv = ['team_id,venture_name,total_revenue,total_units,streak_days', 'SLE-C401,Aurora,#REF!,1,1'].join('\n')
-    expect(() => parseTeams(csv)).toThrow(TvSchemaError)
+  /**
+   * A formula tab mid-recalculation exports `#REF!` where a number should be.
+   * Dropping the row rather than throwing is what lets `passesRowGate` be the
+   * single judge of whether a fetch is trustworthy — see the gate tests below.
+   */
+  it('drops a row whose numbers did not parse rather than rendering NaN for a week', () => {
+    const csv = [
+      'team_id,venture_name,total_revenue,total_units,streak_days',
+      'SLE-C401,Aurora,#REF!,1,1',
+      'SLE-C402,Kite,1000,1,1',
+    ].join('\n')
+    const rows = parseTeams(csv)
+    expect(rows.map((row) => row.teamId)).toEqual(['SLE-C402'])
+    expect(rows.every((row) => Number.isFinite(row.totalRevenue))).toBe(true)
   })
 })
 
@@ -78,15 +89,31 @@ describe('parseCohort', () => {
 
 describe('passesRowGate', () => {
   /**
-   * Short, not exact. A read landing mid-rebuild yields *fewer* rows, and acting
-   * on it could fire a false overtake or permanently burn a milestone.
+   * Short, not exact. Google's CSV export can re-read the sheet inside the
+   * `clearContent` → `setValues` window of a full rebuild and come back short.
+   * Acting on that would vanish teams and reshuffle ranks around the hole.
    */
-  it('rejects a short feed', () => {
-    expect(passesRowGate(teams().slice(0, 41))).toBe(false)
+  it('rejects a feed short of the competing cohort', () => {
+    expect(passesRowGate(teams().slice(0, 39))).toBe(false)
   })
 
-  it('accepts exactly the expected count', () => {
-    expect(passesRowGate(teams())).toBe(true)
+  it('accepts the forty competing teams, the two spares being optional', () => {
+    expect(passesRowGate(teams().slice(0, 40))).toBe(true)
+  })
+
+  /**
+   * The gate counts *usable* rows, so a torn export that garbles cells rather
+   * than truncating lines is caught by the same rule. This is the reason
+   * `parseTeams` drops an unparseable row instead of throwing on it.
+   */
+  it('rejects a full-length feed whose rows are too garbled to use', () => {
+    const csv = feedCsv(teams())
+      .split('\n')
+      .map((line, index) => (index >= 1 && index <= 3 ? line.replace(/,0,0,0$/, ',#REF!,0,0') : line))
+      .join('\n')
+    const parsed = parseTeams(csv)
+    expect(parsed).toHaveLength(39)
+    expect(passesRowGate(parsed)).toBe(false)
   })
 
   /**

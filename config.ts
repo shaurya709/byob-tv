@@ -41,8 +41,14 @@ export const PROGRAMME_START = new Date('2026-07-20T00:00:00+05:30')
 export const FEED_CSV_URL: string = ''
 export const COHORT_CSV_URL: string = ''
 
-/** 42 workbooks, SLE-C401..SLE-C442. The gate checks *short*, never exact — see lib/feed.ts. */
-export const EXPECTED_TEAM_ROWS = 42
+/**
+ * The fewest usable rows a fetch may carry and still be trusted.
+ *
+ * 40, not 42: `SLE-C441` and `SLE-C442` are spares and the wall does not compete
+ * them, so forty is the real cohort. The gate checks *short*, never exact — see
+ * `passesRowGate` in lib/feed.ts.
+ */
+export const MIN_TEAM_ROWS = 40
 
 /** The consolidator writes every 10 minutes and Google caches the CSV ~5 min; polling faster only burns cycles. */
 export const POLL_INTERVAL_MS = 60_000

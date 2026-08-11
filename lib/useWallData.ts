@@ -70,9 +70,11 @@ export function useWallData(): WallData {
       const raw = await fetchCsv()
       const fresh = parseSnapshot(raw)
 
-      // Discard the whole tick on a short feed and keep the last good data. A
-      // read landing mid-rebuild could otherwise fire a false overtake or
-      // permanently burn a milestone. Nothing is written, not even the cache.
+      // Discard the whole tick on a short feed and keep the last good data.
+      // Google's CSV export can re-read the sheet inside the clearContent →
+      // setValues window of a full rebuild; acting on what comes back would
+      // vanish teams and reshuffle ranks around the hole. Nothing is written,
+      // not even the cache.
       if (!passesRowGate(fresh.teams)) {
         console.error(`[tv] short feed (${fresh.teams.length} rows); keeping last good data`)
         return

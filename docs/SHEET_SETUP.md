@@ -272,20 +272,31 @@ read off two places and compare.
 
 ---
 
-## One thing to know before the client is built against this
+## Rebuilds, and why the wall does not flinch at them
 
-The consolidator clears `Daily Dump` rows 2+ and rewrites them on every run. A fetch
-landing mid-rebuild reads a partly-empty dump, so `week_revenue` and `today_revenue`
-come back near zero for everyone.
+**The master is never readable in a torn state.** The consolidator builds its output
+in memory and writes it under `LockService`, so nothing reading the spreadsheet ever
+sees a half-updated `Daily Dump`. Formulas on these two tabs inherit that: they
+recalculate against a consistent sheet, and the numbers they publish are consistent
+with each other.
 
-In v1 that was survivable: a quiet minute, then the next poll corrected it. In v2 it
-is not. Slide 2 fires the boot kick on **any** rank change in the top 20, and when
-every team's week revenue is zero the sort falls through to team ID — roughly forty
-simultaneous rank changes, a queue of kicks, all of it fiction, and then it all
-happens again in reverse sixty seconds later.
+The narrow window that does exist is outside Apps Script. A full rebuild does
+`clearContent` and then `setValues`, roughly 200ms apart, and **Google's CSV export
+can re-read the sheet inside that gap**. The export that comes back is short, or
+carries `#REF!` where a formula's source has momentarily gone.
 
-The existing 42-row gate does not catch this, because the row count is still 42 —
-`TV_Feed` reads `Team Links` for its IDs, which the rebuild does not touch.
+That is the one input that can put nonsense on the wall with no error anywhere:
+teams vanish, the remaining ranks close up around the hole, and the boot kick treats
+every one of those shifts as news.
 
-**This is a client-side fix, not a sheet one**, and it is not built yet. Flagging it
-here because this document is where the cause lives.
+**The client rejects it on row count alone.** A fetch yielding fewer than **40** rows
+with a non-empty `team_id` and a numeric `total_revenue` is discarded whole — nothing
+parsed, nothing stored, nothing animated, last-good data left on screen and a line in
+the console. Forty because `SLE-C441` and `SLE-C442` are spares; a short export cannot
+*add* rows, so the check is a floor and never a ceiling.
+
+Built, in `passesRowGate` and `parseTeams` (`lib/feed.ts`). There is no cohort-total
+floor and no stored threshold — one number, one decision, nothing that needs tuning.
+
+Nothing is required of the sheet for this. It is here because this document is where
+the cause lives.

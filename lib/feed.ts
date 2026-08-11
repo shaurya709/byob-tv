@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
 
-import { COHORT_CSV_URL, EXPECTED_TEAM_ROWS, FEED_CSV_URL } from '@/config'
+import { COHORT_CSV_URL, FEED_CSV_URL, MIN_TEAM_ROWS } from '@/config'
 import type { Cohort, CsvCache, Snapshot, Team } from '@/lib/types'
 
 /**
@@ -54,18 +54,44 @@ export class TvSchemaError extends Error {
  * `₹1,04,500` rather than `104500`. Strip currency and separators, then require
  * a finite number.
  *
- * Blank is 0 — a team with no sales yet is normal. Anything else that fails to
- * parse is corruption, and throwing discards the tick and keeps the last good
- * data, which is strictly better than rendering NaN on a wall for a week.
+ * Blank is 0 — a team with no sales yet is normal. `null` means the cell did not
+ * parse at all, which makes the whole row unusable; see `toTeam`.
  */
-function toNumber(raw: string, field: string): number {
+function toNumber(raw: string): number | null {
   const cleaned = raw.replace(/[₹,\s]/g, '')
   if (cleaned === '') return 0
   const value = Number(cleaned)
-  if (!Number.isFinite(value)) {
-    throw new TvSchemaError('feed', `${field} (got "${raw}")`, [])
+  return Number.isFinite(value) ? value : null
+}
+
+/**
+ * One CSV row to one team, or `null` for a row the wall cannot use: no team id,
+ * or a number that did not parse. `#REF!` and `#N/A` are what a formula tab
+ * exports while it is mid-recalculation.
+ *
+ * **Unusable rows are dropped, not thrown on, because the count of usable rows
+ * *is* the sanity gate.** A garbled cell and a missing row are the same event
+ * seen from two angles, and routing both into `passesRowGate` keeps one decision
+ * point for "is this fetch trustworthy". Throwing here would instead let a single
+ * bad cell discard a fetch that is 41 rows good — the gate's whole job is to
+ * judge that, and it cannot judge what never reaches it.
+ */
+function toTeam(row: Record<string, string>): Team | null {
+  const teamId = (row.team_id ?? '').trim()
+  if (teamId === '') return null
+
+  const totalRevenue = toNumber(row.total_revenue ?? '')
+  const totalUnits = toNumber(row.total_units ?? '')
+  const streakDays = toNumber(row.streak_days ?? '')
+  if (totalRevenue === null || totalUnits === null || streakDays === null) return null
+
+  return {
+    teamId,
+    ventureName: (row.venture_name ?? '').trim(),
+    totalRevenue,
+    totalUnits,
+    streakDays,
   }
-  return value
 }
 
 function rows(csv: string): Record<string, string>[] {
@@ -86,15 +112,7 @@ export function parseTeams(csv: string): Team[] {
     if (!found.includes(header)) throw new TvSchemaError('feed', header, found)
   }
 
-  return data
-    .filter((row) => (row.team_id ?? '').trim() !== '')
-    .map((row) => ({
-      teamId: row.team_id.trim(),
-      ventureName: (row.venture_name ?? '').trim(),
-      totalRevenue: toNumber(row.total_revenue ?? '', 'total_revenue'),
-      totalUnits: toNumber(row.total_units ?? '', 'total_units'),
-      streakDays: toNumber(row.streak_days ?? '', 'streak_days'),
-    }))
+  return data.map(toTeam).filter((team): team is Team => team !== null)
 }
 
 export function parseCohort(csv: string): Cohort {
@@ -126,17 +144,24 @@ export function parseSnapshot(raw: CsvCache): Snapshot {
 /**
  * **Short, not exact.**
  *
- * The consolidator clears `Daily Dump` rows 2+ and rewrites them on every run,
- * so a read landing mid-rebuild yields *fewer* rows — and acting on that could
- * fire a false overtake or permanently burn a milestone.
+ * The master itself is never readable in a torn state — the consolidator builds
+ * in memory and writes under `LockService`. What this guards is narrower: a full
+ * rebuild does `clearContent` then `setValues`, and Google's CSV export can
+ * re-read the sheet inside that window. The export that comes back is short.
  *
- * An exact `!== 42` check would also freeze every wall the day a 43rd workbook
- * is added: permanently, silently, with no spinner and no error state to notice.
- * A partial write cannot *add* rows, so short-checking is both strictly correct
- * and strictly safer. The admin dashboard's own gate reasons the same way.
+ * A short feed is the one input that can put nonsense on the wall without any
+ * error anywhere — teams vanish, ranks reshuffle around the hole, and the
+ * animations treat all of it as news. So a fetch carrying fewer than the
+ * competing cohort is rejected whole, and the last good data stays on screen.
+ *
+ * An exact `=== 42` check would instead freeze every wall the day a 43rd
+ * workbook is added: permanently, silently, with no spinner and no error state
+ * to notice. A short export cannot *add* rows, so short-checking is both
+ * strictly correct and strictly safer. The admin dashboard's gate reasons the
+ * same way.
  */
 export function passesRowGate(teams: readonly Team[]): boolean {
-  return teams.length >= EXPECTED_TEAM_ROWS
+  return teams.length >= MIN_TEAM_ROWS
 }
 
 /**
