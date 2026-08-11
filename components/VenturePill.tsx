@@ -4,7 +4,12 @@ import { cubicBezier, motion, type Easing } from 'motion/react'
 import { HOT_TODAY_MIN } from '@/config'
 import { VentureLogo } from '@/components/VentureLogo'
 import { formatRupees } from '@/lib/format'
-import { BOOT_HEIGHT_PX, KNOCK_DIP_PX, type KickTimeline } from '@/lib/kickTimeline'
+import {
+  BOOT_ANCHOR_Y_FRACTION,
+  BOOT_HEIGHT_PX,
+  KNOCK_DIP_PX,
+  type KickTimeline,
+} from '@/lib/kickTimeline'
 import type { Team } from '@/lib/types'
 
 /**
@@ -300,10 +305,12 @@ export type KickCue = {
   timeline: KickTimeline
   /** Attacker only: render the boot. Its windows and geometry are not per-event. */
   boot?: true
-  /** Attacker: the faceoff slide's destination, relative to Beat B's end. */
-  faceoffOffset?: KickOffset
-  /** Attacker: the swap's destination — the defender's old slot — relative to Beat B's end. */
-  slotSwapDestination?: KickOffset
+  /**
+   * Attacker: the diagonal's horizontal reach — the squared-off position to
+   * the defender's left. Ridden out during the climb, recovered during the
+   * swap; the vertical half of the same diagonal is `rows`.
+   */
+  faceoffXPx?: number
   /** Defender: where the contact punches it, relative to its own slot. */
   knock?: KickOffset
   /** Defender: where it lands — the row below — which is also its snapshot slot. */
@@ -348,8 +355,6 @@ export function rideMotion(rows: number, rest: Resting, timeline: KickTimeline) 
   }
 }
 
-/** C's faceoff slide: accelerating out of the stack, decelerating into the square-up. */
-const FACEOFF = cubicBezier(0.32, 0.72, 0.28, 1)
 /** C's boot phases: accelerate into the cocked position; then ease-in only — contact at max speed. */
 const WINDUP = cubicBezier(0.34, 0, 0.68, 0.6)
 const SWING = cubicBezier(0.6, 0, 1, 0.5)
@@ -361,36 +366,37 @@ const GRAVITY = cubicBezier(0.4, 0, 0.7, 1)
 /**
  * The attacker's whole ride, one animation per axis on the shared clock.
  *
- * y: hold, climb to one row below the defender (Beat B), then rise the last row
- * during the faceoff and hold at the defender's y for the rest of the sequence.
- * x: hold in column until the faceoff slides it out to the defender's left,
- * hold there through the windup, the strike and the knock, then take the
- * defender's vacated slot during the swap. Both axes end exactly on the grid
- * position the held snapshot re-slots this row into, which is what makes the
- * settle invisible.
+ * The climb is a diagonal: x and y ride out together, on one window and one
+ * curve, from the attacker's own slot straight to the squared-off position at
+ * the defender's left. There is no vertical-only stop stacked under the
+ * defender — the path to the faceoff *is* the climb. x then holds through the
+ * windup, the strike and the knock, and recovers to the column during the
+ * swap as the attacker takes the defender's vacated slot; y holds at the
+ * defender's row from the diagonal's end onward. Both axes end exactly on the
+ * grid position the held snapshot re-slots this row into, which is what makes
+ * the settle invisible.
  */
 export function attackerRide(cue: KickCue, rest: Resting, timeline: KickTimeline) {
   const { beats } = timeline
   const climbY = cue.rows * rest.height
-  const face = cue.faceoffOffset ?? { xPx: 0, yRows: 0 }
-  const swap = cue.slotSwapDestination ?? { xPx: 0, yRows: 0 }
-  const xEase: Easing[] = ['linear', FACEOFF, 'linear', GRAVITY, 'linear']
-  const yEase: Easing[] = ['linear', CLIMB, FACEOFF, 'linear']
+  const faceX = cue.faceoffXPx ?? 0
+  const xEase: Easing[] = ['linear', CLIMB, 'linear', GRAVITY, 'linear']
+  const yEase: Easing[] = ['linear', CLIMB, 'linear']
   return {
     animate: {
-      x: [0, 0, face.xPx, face.xPx, swap.xPx, swap.xPx],
-      y: [0, 0, climbY, climbY + face.yRows * rest.height, climbY + face.yRows * rest.height],
+      x: [0, 0, faceX, faceX, 0, 0],
+      y: [0, 0, climbY, climbY],
     },
     transition: {
       duration: timeline.total,
       x: {
         duration: timeline.total,
-        times: [0, ...timeline.at(beats.faceoff), timeline.at(beats.swap)[0], timeline.at(beats.swap)[1], 1],
+        times: [0, ...timeline.at(beats.climb), timeline.at(beats.swap)[0], timeline.at(beats.swap)[1], 1],
         ease: xEase,
       },
       y: {
         duration: timeline.total,
-        times: [0, timeline.at(beats.climb)[0], timeline.at(beats.climb)[1], timeline.at(beats.faceoff)[1], 1],
+        times: [0, ...timeline.at(beats.climb), 1],
         ease: yEase,
       },
     },
@@ -475,10 +481,12 @@ export function bootMotion(timeline: KickTimeline) {
  * The boot itself, anchored heel-first to the attacker's logo.
  *
  * Positioned by the same CSS tokens that lay the row out — no measurement. The
- * anchor is the logo's top-right corner: the pill sits centred in its
- * `--w-pill` track, the logo centred in the closed pill, so the corner is half
- * a logo right of and above the row's pill-track centre. `transform-origin`
- * 0% 0% pins the heel to that corner while the toe swings.
+ * anchor sits on the logo's right edge at leg height — `BOOT_ANCHOR_Y_FRACTION`
+ * of the logo down from its top, not the top corner, which read as a boot
+ * through the head. The pill sits centred in its `--w-pill` track, the logo
+ * centred in the closed pill, so the edge is half a logo right of the row's
+ * pill-track centre. `transform-origin` 0% 0% pins the heel to the anchor
+ * while the toe swings.
  *
  * It lives on the row, *outside* the pill: the pill's `overflow: hidden` is
  * load-bearing for the collapse, and a boot inside it would be clipped at the
@@ -489,11 +497,16 @@ function Boot({ timeline }: { timeline: KickTimeline }) {
     <motion.img
       src="/assets/boot.png"
       alt=""
+      // Explicit, not inferred from the first keyframe: without it the img
+      // paints at the browser's default opacity 1 for the frame or two between
+      // mounting and Motion's first style commit — a boot flashing beside the
+      // still-open pill at kick start. Measured at 76ms into a kick.
+      initial={{ opacity: 0, rotate: 0 }}
       {...bootMotion(timeline)}
       style={{
         position: 'absolute',
         left: `calc(var(--s-3) + var(--w-rank) + var(--s-3) + var(--w-pill) / 2 + ${LOGO / 2}px)`,
-        top: `calc(var(--h-row) / 2 - ${LOGO / 2}px)`,
+        top: `calc(var(--h-row) / 2 + ${LOGO * BOOT_ANCHOR_Y_FRACTION - LOGO / 2}px)`,
         height: BOOT_HEIGHT_PX,
         width: 'auto',
         transformOrigin: '0% 0%',
@@ -610,6 +623,9 @@ export function VenturePill({
         style={{
           font: 'var(--t-tv-row-name)',
           color: 'var(--fg1)',
+          // Centred in its track: the name floats in the room between the logo
+          // and the figures instead of crowding whichever side it starts from.
+          textAlign: 'center',
           // A name too long for its column is clipped, not wrapped: every row is
           // a fixed height and a wrapped name would push forty rows down.
           overflow: 'hidden',

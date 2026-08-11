@@ -8,10 +8,10 @@ import type { OvertakeEvent } from '@/lib/types'
 /**
  * The choreography as data: who a kick cues, by how much, and on what clock —
  * before a browser ever runs it. The bugs these exist to catch render
- * convincingly: an attacker travelling Δ rows instead of Δ−1 still animates
- * smoothly, it just lands *on* the defender instead of below it, and a stagger
- * on the between-rows still looks like motion. Both are wrong by numbers only
- * a test or a ruler can see.
+ * convincingly: a diagonal that lost its horizontal half still animates
+ * smoothly, it just stacks the attacker under the defender instead of squaring
+ * them off, and a stagger on the between-rows still looks like motion. All
+ * wrong by numbers only a test or a ruler can see.
  */
 
 function kick(fromRank: number, toRank: number): OvertakeEvent {
@@ -33,9 +33,9 @@ describe('cueOf — who moves', () => {
   const event = kick(8, 5)
   const timeline = timelineFor(3)
 
-  it('sends the attacker up Δ−1 rows, to one row below the defender', () => {
+  it('sends the attacker the full Δ rows up, to the defender’s own y', () => {
     const cue = cueOf(event, timeline, 'SLE-C408', 8)
-    expect(cue).toMatchObject({ role: 'attacker', rows: -2 })
+    expect(cue).toMatchObject({ role: 'attacker', rows: -3 })
   })
 
   it('holds the defender still through the climb', () => {
@@ -43,13 +43,12 @@ describe('cueOf — who moves', () => {
     expect(cue).toMatchObject({ role: 'defender', rows: 0 })
   })
 
-  /** The faceoff: out of the stack to the defender's left, up to the defender's y. */
-  it('gives the attacker the boot, the faceoff slide and the slot swap', () => {
+  /** The diagonal's horizontal half: out of the column to the defender's left. */
+  it('gives the attacker the boot and the faceoff reach', () => {
     const cue = cueOf(event, timeline, 'SLE-C408', 8)
     expect(cue).toMatchObject({
       boot: true,
-      faceoffOffset: { xPx: -(LOGO + FACEOFF_GAP_PX), yRows: -1 },
-      slotSwapDestination: { xPx: 0, yRows: -1 },
+      faceoffXPx: -(LOGO + FACEOFF_GAP_PX),
     })
   })
 
@@ -65,7 +64,7 @@ describe('cueOf — who moves', () => {
   it('gives the between-rows neither boot nor offsets', () => {
     const cue = cueOf(event, timeline, 'SLE-C406', 6)
     expect(cue?.boot).toBeUndefined()
-    expect(cue?.faceoffOffset).toBeUndefined()
+    expect(cue?.faceoffXPx).toBeUndefined()
     expect(cue?.knock).toBeUndefined()
   })
 
@@ -89,11 +88,11 @@ describe('cueOf — who moves', () => {
     expect(cueOf(null, null, 'SLE-C408', 8)).toBeUndefined()
   })
 
-  /** Δ=1: already adjacent. The attacker holds; there is nothing in between. */
-  it('moves nothing vertically on a one-rank climb', () => {
+  /** Δ=1: one row of diagonal, straight from the resting slot. Nothing between. */
+  it('rides one full row even on a one-rank climb — the diagonal has no zero case', () => {
     const adjacent = kick(6, 5)
     const tl = timelineFor(1)
-    expect(cueOf(adjacent, tl, 'SLE-C408', 6)?.rows).toBe(0)
+    expect(cueOf(adjacent, tl, 'SLE-C408', 6)?.rows).toBe(-1)
     expect(cueOf(adjacent, tl, 'SLE-C407', 7)).toBeUndefined()
   })
 })
@@ -129,7 +128,7 @@ describe('rideMotion — how they move', () => {
   })
 })
 
-describe('attackerRide — the climb, the faceoff, the swap', () => {
+describe('attackerRide — one diagonal, then the swap', () => {
   const timeline = timelineFor(3)
   const event = kick(8, 5)
   const cue = cueOf(event, timeline, 'SLE-C408', 8)!
@@ -137,20 +136,26 @@ describe('attackerRide — the climb, the faceoff, the swap', () => {
   const t = (s: number) => s / timeline.total
 
   /**
-   * The faceoff is a *diagonal*: sideways out of the stack and up to the
-   * defender's y on one window. A vertical-only phase 1 leaves the attacker
-   * climbing up through the defender's pill instead of stepping around it.
+   * The climb is the faceoff: x and y ride the same window with the same
+   * curve, so there is never a frame with the attacker stacked under the
+   * defender at x 0. A vertical-only climb is exactly the bug this catches.
    */
-  it('slides out to the defender’s left during the faceoff — x is not vertical-only', () => {
+  it('moves x and y together on the climb window — no vertical-only segment', () => {
     expect(ride.animate.x).toEqual([0, 0, -42, -42, 0, 0])
-    expect(ride.transition.x.times[1]).toBeCloseTo(t(timeline.beats.faceoff[0]), 10)
-    expect(ride.transition.x.times[2]).toBeCloseTo(t(timeline.beats.faceoff[1]), 10)
+    expect(ride.animate.y).toEqual([0, 0, -132, -132])
+    // Same window boundaries for both axes…
+    expect(ride.transition.x.times[1]).toBeCloseTo(t(timeline.beats.climb[0]), 10)
+    expect(ride.transition.x.times[2]).toBeCloseTo(t(timeline.beats.climb[1]), 10)
+    expect(ride.transition.y.times[1]).toBeCloseTo(t(timeline.beats.climb[0]), 10)
+    expect(ride.transition.y.times[2]).toBeCloseTo(t(timeline.beats.climb[1]), 10)
+    // …and the same curve on the moving segment, so the path is one line.
+    expect(ride.transition.x.ease[1]).toBe(ride.transition.y.ease[1])
   })
 
-  it('rises the last row during the faceoff and holds at the defender’s y', () => {
-    // Beat B: −2 rows; faceoff: one more; then flat to the end.
-    expect(ride.animate.y).toEqual([0, 0, -88, -132, -132])
-    expect(ride.transition.y.times[3]).toBeCloseTo(t(timeline.beats.faceoff[1]), 10)
+  it('reaches the full Δ rows: the diagonal ends at the defender’s own y', () => {
+    // −3 rows × 44px, held flat from the climb's end to the settle.
+    expect(ride.animate.y[2]).toBe(-132)
+    expect(ride.animate.y[3]).toBe(-132)
   })
 
   it('takes the defender’s slot during the swap, ending at exactly x 0', () => {
@@ -195,7 +200,7 @@ describe('bootMotion — when the boot exists and how it swings', () => {
    * The boot is mounted for the kick but *visible* only from the windup to the
    * swap's end — step keyframes on the one clock, because the cue is pure of
    * time and cannot mount things mid-sequence. A boot visible during the
-   * faceoff is a boot that arrived before its owner squared up.
+   * climb is a boot that arrived before its owner squared up.
    */
   it('is invisible until the windup starts, and gone when the follow-through ends', () => {
     const windupStart = t(timeline.beats.windup[0])

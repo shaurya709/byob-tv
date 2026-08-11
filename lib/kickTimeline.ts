@@ -26,15 +26,22 @@
  * the difference; one exactly as long as the longest case would cut every
  * shorter case off. So the whole timeline is derived, per kick, from Δ.
  *
- * ── The strike and the fall are five phases on one clock ──
+ * ── The climb is the faceoff ──
  *
- * C: the attacker slides out of the stack to face the defender off
- * (`faceoff`), the boot cocks (`windup`), the boot swings (`strike`). D: the
- * defender is punched sideways out of its slot (`knock`) and falls into the
- * attacker's vacated position while the attacker takes its slot (`swap`). The
- * contact frame *is* the boundary between `strike` and `knock` — cause and
- * effect share an instant because they share a clock, not because anything
- * waited for anything.
+ * B's climb is a *diagonal*: the attacker rides directly from its own slot to
+ * the squared-off position at the defender's left, x and y on one window, one
+ * curve. There is no vertical-only stop stacked underneath the defender — that
+ * intermediate existed once and read as a frame of hesitation between two
+ * moves that are really one.
+ *
+ * ── The strike and the fall are four phases on one clock ──
+ *
+ * C: the boot cocks (`windup`) and swings (`strike`). D: the defender is
+ * punched sideways out of its slot (`knock`) and falls into the attacker's
+ * vacated position while the attacker takes its slot (`swap`). The contact
+ * frame *is* the boundary between `strike` and `knock` — cause and effect
+ * share an instant because they share a clock, not because anything waited
+ * for anything.
  */
 
 export type Beat = readonly [start: number, end: number]
@@ -45,10 +52,8 @@ export type KickTimeline = {
   beats: {
     /** A — both involved rows swallow their own details. */
     collapse: Beat
-    /** B — the attacker climbs to one row below the defender; the rows between slide down one. */
+    /** B — the attacker rides diagonally to the defender's left; the rows between slide down one. */
     climb: Beat
-    /** C — the attacker slides diagonally out of the stack to the defender's left. */
-    faceoff: Beat
     /** C — the boot appears at the attacker's logo and cocks away from the defender. */
     windup: Beat
     /** C — the swing. Ends at the contact frame. */
@@ -69,12 +74,20 @@ export type KickTimeline = {
   at(beat: Beat, ...within: number[]): number[]
 }
 
+/**
+ * Every duration below, multiplied once, in one place. The first cut of the
+ * sequence measured right and *read* rushed on a wall watched from metres
+ * away; slowing every beat by the same factor keeps the choreography's
+ * proportions while giving the eye time. Tuning the whole kick's tempo is
+ * this one number — never hand-adjust an individual beat to retime the set.
+ */
+export const SPEED_FACTOR = 1.15
+
 const COLLAPSE_S = 0.6
 /** The climb's floor; every extra rank climbed past the first adds a step. */
 const CLIMB_MIN_S = 0.4
 const CLIMB_PER_RANK_S = 0.06
-/** C's three phases, then D's two. Their sum is the whole strike-and-fall span. */
-const FACEOFF_S = 0.15
+/** C's two phases, then D's two. Their sum is the whole strike-and-fall span. */
 const WINDUP_S = 0.1
 const STRIKE_S = 0.1
 const KNOCK_S = 0.12
@@ -94,24 +107,30 @@ export const KNOCK_PX = 24
 export const KNOCK_DIP_PX = 4
 /** The boot's rendered height — about half the pill. Width follows the PNG's aspect. */
 export const BOOT_HEIGHT_PX = 22
+/**
+ * Where on the logo's right edge the boot's heel sits, as a fraction of the
+ * logo's height from its top. 0 was the first cut and read as a boot through
+ * the head; leg height is a little below the middle.
+ */
+export const BOOT_ANCHOR_Y_FRACTION = 0.55
 
 /** The whole kick's clock, derived from how many ranks the attacker took. */
 export function timelineFor(delta: number): KickTimeline {
-  const climbEnd = COLLAPSE_S + CLIMB_MIN_S + CLIMB_PER_RANK_S * Math.max(0, delta - 1)
-  const faceoffEnd = climbEnd + FACEOFF_S
-  const windupEnd = faceoffEnd + WINDUP_S
-  const strikeEnd = windupEnd + STRIKE_S
-  const knockEnd = strikeEnd + KNOCK_S
-  const swapEnd = knockEnd + SWAP_S
-  const total = swapEnd + UNCOLLAPSE_S
+  const s = (seconds: number) => seconds * SPEED_FACTOR
+  const collapseEnd = s(COLLAPSE_S)
+  const climbEnd = collapseEnd + s(CLIMB_MIN_S + CLIMB_PER_RANK_S * Math.max(0, delta - 1))
+  const windupEnd = climbEnd + s(WINDUP_S)
+  const strikeEnd = windupEnd + s(STRIKE_S)
+  const knockEnd = strikeEnd + s(KNOCK_S)
+  const swapEnd = knockEnd + s(SWAP_S)
+  const total = swapEnd + s(UNCOLLAPSE_S)
 
   return {
     total,
     beats: {
-      collapse: [0, COLLAPSE_S],
-      climb: [COLLAPSE_S, climbEnd],
-      faceoff: [climbEnd, faceoffEnd],
-      windup: [faceoffEnd, windupEnd],
+      collapse: [0, collapseEnd],
+      climb: [collapseEnd, climbEnd],
+      windup: [climbEnd, windupEnd],
       strike: [windupEnd, strikeEnd],
       knock: [strikeEnd, knockEnd],
       swap: [knockEnd, swapEnd],
