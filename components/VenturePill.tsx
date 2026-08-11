@@ -142,10 +142,25 @@ const DISGORGE = cubicBezier(0.16, 1, 0.3, 1)
 const WINDOW = [...at(BEATS.collapse), ...at(BEATS.uncollapse)]
 const EASE = [SWALLOW, 'linear', DISGORGE] as const
 
-/** The closed pill: the logo, and a hair either side of it. */
+/** The closed pill: the logo, and an even hair either side of it. */
 const LOGO = 30
 const CLOSED_PAD = 4
-const CLOSED_W = LOGO + CLOSED_PAD * 2
+
+/**
+ * How far the details tuck left as they go, and how quickly they are gone.
+ *
+ * They sit inside the pill, so without a local translate they are carried
+ * *right* by its slide to the centre — the numbers appeared to fade off to the
+ * right, which is backwards.
+ *
+ * The fade is short because at rest the logo's right edge and the venture name's
+ * left edge are touching. The moment the logo starts travelling it is on top of
+ * the name — measured, it read as "Amb(A)r Alley" — so there is no window in
+ * which both can be visible and clear of each other. The details leave first,
+ * and the pill goes on closing behind them, which is what carries the beat.
+ */
+const DETAIL_DRIFT = 60
+const DETAIL_GONE = 0.25
 
 /**
  * The pill's resting geometry, read from the DOM once when the row mounts.
@@ -164,35 +179,76 @@ const CLOSED_W = LOGO + CLOSED_PAD * 2
  * come from the browser is taken **once, at mount** — long before any kick, and
  * never during one. No layout is read while an animation is running.
  */
-function useRestingPill(): [React.RefObject<HTMLDivElement | null>, { width: number; pad: number } | null] {
+type Resting = { width: number; pad: number; border: number }
+
+function useRestingPill(): [React.RefObject<HTMLDivElement | null>, Resting | null] {
   const ref = useRef<HTMLDivElement>(null)
-  const [rest, setRest] = useState<{ width: number; pad: number } | null>(null)
+  const [rest, setRest] = useState<Resting | null>(null)
 
   useLayoutEffect(() => {
     const el = ref.current
     if (el === null) return
     // A mount-only read of layout that the animation config needs before it can
     // exist. It runs once per row, at page load, and never while a kick plays.
+    const cs = getComputedStyle(el)
     setRest({
       width: el.getBoundingClientRect().width,
-      pad: Number.parseFloat(getComputedStyle(el).paddingLeft),
+      pad: Number.parseFloat(cs.paddingLeft),
+      border: Number.parseFloat(cs.borderLeftWidth),
     })
   }, [])
 
   return [ref, rest]
 }
 
-function pillMotion(rest: { width: number; pad: number }) {
-  const closed = [rest.width, CLOSED_W, CLOSED_W, rest.width]
-  const centred = (rest.width - CLOSED_W) / 2
+/**
+ * The closed width has to carry the border as well as the padding.
+ *
+ * `box-sizing: border-box` means a stated width *includes* the stroke, so
+ * `logo + 2 * pad` left the content box 3px short of the logo and the pill
+ * clipped it on the right — 5px of ring showing on the left against 3px on the
+ * right. Symmetry here is arithmetic, not taste.
+ */
+function closedWidth(rest: Resting): number {
+  return LOGO + 2 * CLOSED_PAD + 2 * rest.border
+}
+
+function pillMotion(rest: Resting) {
+  const closed = closedWidth(rest)
+  const centred = (rest.width - closed) / 2
   return {
     animate: {
-      width: closed,
+      width: [rest.width, closed, closed, rest.width],
       paddingLeft: [rest.pad, CLOSED_PAD, CLOSED_PAD, rest.pad],
       paddingRight: [rest.pad, CLOSED_PAD, CLOSED_PAD, rest.pad],
       x: [0, centred, centred, 0],
     },
     transition: { duration: TOTAL, times: WINDOW, ease: EASE },
+  }
+}
+
+/**
+ * The details: fading, and drifting left rather than riding the pill right.
+ *
+ * The local translate cancels the pill's own slide and then some, so what is on
+ * screen moves toward the logo while the closing edge crosses it. The logo is
+ * painted above them, so the two never read as overlapping text — whatever the
+ * logo reaches, it covers.
+ */
+function detailMotion(rest: Resting) {
+  // Enough to cancel the pill's own slide over this short window and still leave
+  // them moving left. The pill has barely started when they are gone, so only
+  // the leading part of its travel needs cancelling.
+  const slide = ((rest.width - closedWidth(rest)) / 2) * DETAIL_GONE
+  const drift = -(slide + DETAIL_DRIFT)
+  const leaving = [...at(BEATS.collapse, DETAIL_GONE).slice(0, 2), ...at(BEATS.uncollapse)]
+  return {
+    animate: { opacity: [1, 0, 0, 1], x: [0, drift, drift, 0] },
+    transition: {
+      duration: TOTAL,
+      opacity: { duration: TOTAL, times: leaving, ease: ['linear', 'linear', 'linear'] as const },
+      x: { duration: TOTAL, times: leaving, ease: EASE },
+    },
   }
 }
 
@@ -209,10 +265,8 @@ const FADE = {
   animate: { opacity: [1, 0, 0, 1] },
   transition: {
     duration: TOTAL,
-    // Gone by 55% of the close, which is where the closing edge has crossed the
-    // last two columns — the fade covers the content sliding with the pill, and
-    // the clip does the rest. Back across the whole of the open.
-    times: [...at(BEATS.collapse, 0.55).slice(0, 2), ...at(BEATS.uncollapse)],
+    // The rank leaves with the details.
+    times: [...at(BEATS.collapse, DETAIL_GONE).slice(0, 2), ...at(BEATS.uncollapse)],
     ease: ['linear', 'linear', 'linear'] as const,
   },
 } as const
@@ -239,6 +293,7 @@ export function VenturePill({
   const [pillRef, rest] = useRestingPill()
   const fade = role === undefined ? {} : FADE
   const pill = role === undefined || rest === null ? {} : pillMotion(rest)
+  const detail = role === undefined || rest === null ? {} : detailMotion(rest)
 
   /**
    * The kick is over when this row's animation is, reported by the animation
@@ -269,10 +324,15 @@ export function VenturePill({
       </motion.span>
 
       <motion.div ref={pillRef} {...pill} className="tv-pill" style={PILL_INNER}>
-        <VentureLogo team={team} size={30} />
+        {/* Above the details in paint order. The logo crosses them on its way
+            to the centre, and a number sitting on top of a venture's mark reads
+            as a rendering fault. */}
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <VentureLogo team={team} size={LOGO} />
+        </div>
 
       <motion.span
-        {...fade}
+        {...detail}
         onAnimationComplete={reportSettled}
         style={{
           font: 'var(--t-tv-row-name)',
@@ -288,7 +348,7 @@ export function VenturePill({
       </motion.span>
 
       <motion.span
-        {...fade}
+        {...detail}
         className="tv-figure"
         style={{
           font: 'var(--t-tv-row-week)',
@@ -304,7 +364,7 @@ export function VenturePill({
       </motion.span>
 
       <motion.span
-        {...fade}
+        {...detail}
         className="tv-figure"
         style={{
           font: hot ? 'var(--t-tv-row-today-hot)' : 'var(--t-tv-row-today)',
