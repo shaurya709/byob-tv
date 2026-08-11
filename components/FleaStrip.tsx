@@ -191,15 +191,23 @@ export function FleaStrip({ at }: { at: Date | null }) {
   if (at === null || state === null || state.mode === 'hidden') return null
 
   return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--s-2)' }}>
-      {/* The label stays as text beside the page: a bare number in a calendar
-          says something is coming, but not what. */}
+    <span
+      style={{
+        display: 'inline-flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 'var(--s-1)',
+      }}
+    >
+      {/* The label stays as text, captioned above the page: a bare number in a
+          calendar says something is coming, but not what. Full-strength ink,
+          not muted — it is the name of the event, not apparatus. */}
       <span
         style={{
           font: 'var(--t-tv-strip-label)',
           letterSpacing: 'var(--track-overline)',
           textTransform: 'uppercase',
-          color: 'var(--fg-muted)',
+          color: 'var(--fg1)',
         }}
       >
         Mesa Flea

@@ -148,12 +148,16 @@
      measured to overflow the 3.4vw band and push rank 20 off the frame. */
   --t-tv-heading: 700 clamp(22px, 2.4vw, 50px) / 1 var(--font-sans);
   --track-tv-heading: 0.04em;
+  /* The Mesa lockup, sized to the heading's own glyph height so the two read
+     as one rank of furniture across the band. Same clamp as --t-tv-heading. */
+  --h-tv-logo: clamp(22px, 2.4vw, 50px);
 
-  /* The Mesa Flea calendar. The label sits beside the page; the page itself is
-     sized to the header band, and the figures inside step down as they get
-     longer — a day count, then days-and-hours, then a full ticking clock. */
+  /* The Mesa Flea calendar. The label sits above the page, so the stack has to
+     clear the 3.4vw header band: label + gap + page ≤ the band, which is what
+     caps the page at 2.3vw. The figures inside step down as they get longer —
+     a day count, then days-and-hours, then a full ticking clock. */
   --t-tv-strip-label: 700 clamp(10px, 0.85vw, 18px) / 1 var(--font-sans);
-  --h-tv-cal: clamp(30px, 2.6vw, 54px);
+  --h-tv-cal: clamp(26px, 2.3vw, 48px);
   --t-tv-cal-day: 700 clamp(13px, 1.2vw, 25px) / 1 var(--font-sans);
   --t-tv-cal-unit: 700 clamp(8px, 0.7vw, 14px) / 1 var(--font-sans);
   --t-tv-cal-mid: 700 clamp(9px, 0.85vw, 18px) / 1 var(--font-sans);
