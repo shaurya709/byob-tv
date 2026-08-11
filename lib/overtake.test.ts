@@ -16,12 +16,18 @@ function board(overrides: Partial<Team>[] = []): Team[] {
   }))
 }
 
-function run(prev: BoardState | null, rows: readonly Team[], week: number | null = 4) {
+function run(
+  prev: BoardState | null,
+  rows: readonly Team[],
+  week: number | null = 4,
+  watchTo: number = WATCH_RANKS_WEEKLY,
+) {
   return detect(prev, {
     ranked: rankByWeek(rows),
     week,
-    watchTo: WATCH_RANKS_WEEKLY,
+    watchTo,
     earned: (team) => team.weekRevenue,
+    columnLength: 20,
   })
 }
 
@@ -155,19 +161,82 @@ describe('the floor and the rollover', () => {
   it('still animates normally on the fetch after a rollover', () => {
     const monday = teams().map((team) => ({ ...team, weekRevenue: 0, totalRevenue: 1_000 }))
     const seeded = run(run(null, board(), 4).state, monday, 5).state
+    // C410, not a right-column team: on the all-tied Monday board ranks follow
+    // team id, so a deeper climber would cross the column boundary and be
+    // suppressed — which is its own test below, not this one.
     const { events } = run(
       seeded,
-      monday.map((team) => (team.teamId === 'SLE-C430' ? { ...team, weekRevenue: 9_000 } : team)),
+      monday.map((team) => (team.teamId === 'SLE-C410' ? { ...team, weekRevenue: 9_000 } : team)),
       5,
     )
     expect(events).toHaveLength(1)
-    expect(events[0].attacker).toBe('SLE-C430')
+    expect(events[0].attacker).toBe('SLE-C410')
   })
 
   it('treats a team that was not on the board before as arriving, not overtaking', () => {
     const before: BoardState = { week: 4, ranks: { 'SLE-C401': 1 }, earned: { 'SLE-C401': 41_000 } }
     const { events } = run(before, board())
     expect(events).toEqual([])
+  })
+})
+
+/**
+ * The kick renders as vertical slides inside one column. Ranks 1-20 are the left
+ * column, 21-40 the right; a climb from one into the other has no vertical line
+ * to travel and must not fire. The board still re-sorts silently.
+ */
+describe('cross-column suppression', () => {
+  it('suppresses a climb from the right column into the left', () => {
+    const before = run(null, board()).state
+    // C425 was 25th; enough to take 18th — a real overtake, but its motion
+    // would cross the column boundary.
+    const { events } = run(before, board([{ teamId: 'SLE-C425', weekRevenue: 25_500 }]))
+    expect(events).toEqual([])
+  })
+
+  /**
+   * Rank 20 is never a defender: its attacker can only come from rank 21 or
+   * deeper, which is the right column, which is the crossing above.
+   */
+  it('suppresses the attack on a rank-20 defender', () => {
+    const before = run(null, board()).state
+    // C424 was 24th; enough to take 20th exactly.
+    const { events } = run(before, board([{ teamId: 'SLE-C424', weekRevenue: 23_500 }]))
+    expect(events).toEqual([])
+  })
+
+  /**
+   * Rank 40 is never a defender either: watched that deep, its attacker can
+   * only come from rank 41+, a third "column" past the board's edge — the same
+   * crossing arithmetic, at the bottom instead of the seam.
+   */
+  it('suppresses the attack on a rank-40 defender even when watched that deep', () => {
+    const before = run(null, board(), 4, 40).state
+    // C441 was 41st; enough to take 40th.
+    const climbed = board([{ teamId: 'SLE-C441', weekRevenue: 3_500 }])
+    expect(rankByWeek(climbed)[39].teamId).toBe('SLE-C441') // the climb is real
+    const { events } = run(before, climbed, 4, 40)
+    expect(events).toEqual([])
+  })
+
+  it('fires normally for a climb held inside one column', () => {
+    const before = run(null, board()).state
+    // C408 was 8th; enough to take 5th. Entirely inside the left column.
+    const { events } = run(before, board([{ teamId: 'SLE-C408', weekRevenue: 38_500 }]))
+    expect(events).toHaveLength(1)
+    expect(events[0]).toMatchObject({ attacker: 'SLE-C408', fromRank: 8, toRank: 5 })
+  })
+
+  it('does not suppress anything when the board declares no columns', () => {
+    const before = run(null, board()).state
+    const { events } = detect(before, {
+      ranked: rankByWeek(board([{ teamId: 'SLE-C425', weekRevenue: 25_500 }])),
+      week: 4,
+      watchTo: WATCH_RANKS_WEEKLY,
+      earned: (team) => team.weekRevenue,
+    })
+    expect(events).toHaveLength(1)
+    expect(events[0].attacker).toBe('SLE-C425')
   })
 })
 

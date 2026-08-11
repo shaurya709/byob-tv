@@ -9,6 +9,7 @@ import { VenturePill } from '@/components/VenturePill'
 import { WeeklyLeaderboard, columnsOf } from '@/components/WeeklyLeaderboard'
 import { HOT_TODAY_MIN } from '@/config'
 import { formatRupees, ordinal } from '@/lib/format'
+import { timelineFor } from '@/lib/kickTimeline'
 import { competingTeams, rankTeams } from '@/lib/ranking'
 import { team, teams } from '@/test/fixtures'
 
@@ -127,6 +128,53 @@ describe('VenturePill', () => {
   it('falls back to the team id for a venture with no name yet', () => {
     const text = render(<VenturePill team={team({ teamId: 'SLE-C418', ventureName: '' })} rank={9} />)
     expect(text).toContain('SLE-C418')
+  })
+
+  /**
+   * The deadlock guard. `playing` is only ever cleared by `onSettled`; an
+   * attacker row unmounting before its animation completes — rotation moving
+   * on, or an animation that never started — would otherwise pin the queue
+   * forever. The unmount cleanup must report the kick settled.
+   */
+  it('reports settled from unmount when the attacker row dies mid-kick', () => {
+    let settles = 0
+    const host = document.createElement('div')
+    document.body.append(host)
+    const root = createRoot(host)
+    act(() =>
+      root.render(
+        <VenturePill
+          team={team({})}
+          rank={8}
+          cue={{ role: 'attacker', rows: -2, timeline: timelineFor(3) }}
+          onSettled={() => settles++}
+        />,
+      ),
+    )
+    expect(settles).toBe(0)
+    act(() => root.unmount())
+    host.remove()
+    expect(settles).toBe(1)
+  })
+
+  it('does not report settled from an unmounting row that was not the attacker', () => {
+    let settles = 0
+    const host = document.createElement('div')
+    document.body.append(host)
+    const root = createRoot(host)
+    act(() =>
+      root.render(
+        <VenturePill
+          team={team({})}
+          rank={5}
+          cue={{ role: 'defender', rows: 0, timeline: timelineFor(3) }}
+          onSettled={() => settles++}
+        />,
+      ),
+    )
+    act(() => root.unmount())
+    host.remove()
+    expect(settles).toBe(0)
   })
 })
 

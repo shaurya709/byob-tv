@@ -130,10 +130,6 @@
      it during a kick without resizing the row or re-centring the board. Its
      three fixed columns, the logo, the three inner gaps and the two paddings. */
   --w-pill: calc(30px + var(--w-name) + var(--w-week) + var(--w-today) + 5 * var(--s-3));
-  /* Closed: the logo and a hair either side. */
-  --w-pill-closed: calc(30px + 2 * var(--s-1));
-  /* What centres the closed pill in its own track. */
-  --x-pill-closed: calc((var(--w-pill) - var(--w-pill-closed)) / 2);
 
   /* The row pill. Both are `--midnight-charcoal` at low alpha — the same base
      the system's own `--border` is mixed from, so this introduces no new hue.

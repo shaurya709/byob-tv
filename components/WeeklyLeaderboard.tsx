@@ -1,4 +1,5 @@
-import { ColumnHeading, VenturePill } from '@/components/VenturePill'
+import { ColumnHeading, VenturePill, type KickCue } from '@/components/VenturePill'
+import { timelineFor, type KickTimeline } from '@/lib/kickTimeline'
 import { rankByWeek } from '@/lib/ranking'
 import type { OvertakeEvent, Team, TeamId } from '@/lib/types'
 
@@ -25,11 +26,13 @@ function Column({
   teams,
   startRank,
   kick,
+  timeline,
   onSettled,
 }: {
   teams: readonly Team[]
   startRank: number
   kick: OvertakeEvent | null
+  timeline: KickTimeline | null
   onSettled?: () => void
 }) {
   // An empty column carries no heading. Labelling columns that have nothing
@@ -43,7 +46,7 @@ function Column({
           key={team.teamId}
           team={team}
           rank={startRank + index}
-          role={roleOf(kick, team.teamId)}
+          cue={cueOf(kick, timeline, team.teamId, startRank + index)}
           onSettled={onSettled}
         />
       ))}
@@ -51,11 +54,39 @@ function Column({
   )
 }
 
-/** Which side of the contest this row is on, or `undefined` for the other thirty-eight. */
-function roleOf(kick: OvertakeEvent | null, teamId: TeamId) {
-  if (kick === null) return undefined
-  if (teamId === kick.attacker) return 'attacker' as const
-  if (teamId === kick.defender) return 'defender' as const
+/**
+ * The choreography, in one place. The board reads the event and hands each row
+ * its instruction; no row ever computes its own.
+ *
+ * ── What Beat B moves, and by how much ──
+ *
+ * The attacker rides up to **one row below the defender** — `(Δ − 1)` rows, not
+ * Δ. The defender still holds its slot; taking it is Beat D's job, when the
+ * defender is kicked out of it, and the attacker's final settle into that slot
+ * comes from the held snapshot applying at the end of the sequence. For Δ=1 the
+ * attacker is already adjacent and does not move at all.
+ *
+ * The rows strictly between the two contestants each slide down exactly one
+ * row, closing behind the attacker. Everyone else — including the defender —
+ * holds still.
+ *
+ * Rows are identified by their rank *as rendered*, which is the held snapshot's
+ * order for the whole kick: the freeze in `useWallData` is what makes these
+ * ranks stable from the event's own frame of reference.
+ */
+export function cueOf(
+  kick: OvertakeEvent | null,
+  timeline: KickTimeline | null,
+  teamId: TeamId,
+  rank: number,
+): KickCue | undefined {
+  if (kick === null || timeline === null) return undefined
+  if (teamId === kick.attacker) {
+    // Ends one row below the defender: `toRank + 1`, so the travel is Δ − 1.
+    return { role: 'attacker', rows: kick.toRank + 1 - kick.fromRank, timeline }
+  }
+  if (teamId === kick.defender) return { role: 'defender', rows: 0, timeline }
+  if (rank > kick.toRank && rank < kick.fromRank) return { rows: 1, timeline }
   return undefined
 }
 
@@ -71,6 +102,8 @@ export function WeeklyLeaderboard({
   onSettled?: () => void
 }) {
   const [left, right] = columnsOf(teams)
+  // One clock per kick, derived from the climb size, shared by every cued row.
+  const timeline = kick === null ? null : timelineFor(kick.fromRank - kick.toRank)
 
   return (
     <div
@@ -81,8 +114,14 @@ export function WeeklyLeaderboard({
         height: '100%',
       }}
     >
-      <Column teams={left} startRank={1} kick={kick} onSettled={onSettled} />
-      <Column teams={right} startRank={COLUMN_LENGTH + 1} kick={kick} onSettled={onSettled} />
+      <Column teams={left} startRank={1} kick={kick} timeline={timeline} onSettled={onSettled} />
+      <Column
+        teams={right}
+        startRank={COLUMN_LENGTH + 1}
+        kick={kick}
+        timeline={timeline}
+        onSettled={onSettled}
+      />
     </div>
   )
 }

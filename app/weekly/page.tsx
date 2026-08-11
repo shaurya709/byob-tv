@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { DevKickTrigger } from '@/components/DevKickTrigger'
 import { WallHeader } from '@/components/WallHeader'
-import { WeeklyLeaderboard } from '@/components/WeeklyLeaderboard'
+import { WeeklyLeaderboard, COLUMN_LENGTH } from '@/components/WeeklyLeaderboard'
 import { WATCH_RANKS_WEEKLY } from '@/config'
 import { openWeek } from '@/lib/feed'
 import { competingTeams, rankByWeek } from '@/lib/ranking'
@@ -24,15 +24,24 @@ const BOARD: BoardSpec = {
   rank: (teams) => rankByWeek(competingTeams(teams)),
   earned: (team) => team.weekRevenue,
   watchTo: WATCH_RANKS_WEEKLY,
+  columnLength: COLUMN_LENGTH,
 }
 
 export default function WeeklyPage() {
-  const { snapshot, queueVersion } = useWallData(BOARD)
+  const { snapshot, queueVersion, freeze, thaw } = useWallData(BOARD)
   // The dev trigger writes to the same queue the detector writes to; this
   // counter is only the nudge that tells `useKick` to look, exactly as
   // `queueVersion` does. Adding to it keeps one drain and one reader.
   const [devTicks, setDevTicks] = useState(0)
   const { playing: kick, settled } = useKick(BOARD.name, queueVersion + devTicks)
+
+  // The freeze rides the kick exactly: rows are keyed by team id, so a snapshot
+  // applied mid-kick would re-slot the actors under their own animation. Held
+  // snapshots land on settle — see the docblock in useWallData.
+  useEffect(() => {
+    if (kick !== null) freeze()
+    else thaw()
+  }, [kick, freeze, thaw])
 
   const week = snapshot === null ? null : openWeek(snapshot.cohort)
   const teams = competingTeams(snapshot?.teams ?? [])

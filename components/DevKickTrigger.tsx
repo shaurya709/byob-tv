@@ -47,11 +47,25 @@ import type { OvertakeEvent, Team } from '@/lib/types'
  * state to recover from.
  */
 
-/** Deterministic pairs, so the same click always produces the same contest. */
-const PAIRS: readonly (readonly [from: number, to: number])[] = [
-  [8, 5],
-  [12, 9],
-  [16, 13],
+/**
+ * Deterministic pairs, so the same click always produces the same contest.
+ *
+ * One button per climb size Beat B has to be judged at: Δ=1 moves nothing but
+ * the contest itself, Δ=3 slides two rows, Δ=7 slides six. The burst is three
+ * separate contests to watch the queue drain, not a climb-size case.
+ */
+const CLIMBS: readonly { label: string; pairs: readonly (readonly [number, number])[] }[] = [
+  { label: 'Δ1', pairs: [[6, 5]] },
+  { label: 'Δ3', pairs: [[8, 5]] },
+  { label: 'Δ7', pairs: [[12, 5]] },
+  {
+    label: 'Burst',
+    pairs: [
+      [8, 5],
+      [12, 9],
+      [16, 13],
+    ],
+  },
 ]
 
 function eventFor(ranked: readonly Team[], week: number | null, [from, to]: readonly [number, number]): OvertakeEvent {
@@ -125,12 +139,11 @@ export function DevKickTrigger({
         opacity: 0.85,
       }}
     >
-      <button type="button" style={BUTTON} onClick={() => fire([PAIRS[0]])}>
-        Trigger kick
-      </button>
-      <button type="button" style={BUTTON} onClick={() => fire(PAIRS)}>
-        Trigger burst
-      </button>
+      {CLIMBS.map(({ label, pairs }) => (
+        <button key={label} type="button" style={BUTTON} onClick={() => fire(pairs)}>
+          {label}
+        </button>
+      ))}
       {/* Queue first, then what is playing: clearing them the other way round
           lets the drain pick up the next event on its way out and the board
           never reaches rest. */}

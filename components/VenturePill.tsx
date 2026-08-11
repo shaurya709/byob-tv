@@ -1,10 +1,10 @@
-import { useLayoutEffect, useRef, useState } from 'react'
-import { cubicBezier, motion } from 'motion/react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { cubicBezier, motion, type Easing } from 'motion/react'
 
 import { HOT_TODAY_MIN } from '@/config'
 import { VentureLogo } from '@/components/VentureLogo'
 import { formatRupees } from '@/lib/format'
-import { BEATS, TOTAL, at } from '@/lib/kickTimeline'
+import type { KickTimeline } from '@/lib/kickTimeline'
 import type { Team } from '@/lib/types'
 
 /**
@@ -142,9 +142,13 @@ export function ColumnHeading() {
  */
 const SWALLOW = cubicBezier(0.42, 0, 0.58, 1)
 const DISGORGE = cubicBezier(0.16, 1, 0.3, 1)
+/** Beat B's arrival: fast off the line, decelerating into place below the defender. */
+const CLIMB = cubicBezier(0.22, 0.68, 0.24, 1)
 
-/** Beat A's window, the hold between, then Beat E's. Shared by every property. */
-const WINDOW = [...at(BEATS.collapse), ...at(BEATS.uncollapse)]
+/** Beat A's window, the hold between, then Beat E's. Shared by every collapsing property. */
+function windowOf(timeline: KickTimeline): number[] {
+  return [...timeline.at(timeline.beats.collapse), ...timeline.at(timeline.beats.uncollapse)]
+}
 const EASE = [SWALLOW, 'linear', DISGORGE] as const
 
 /** The closed pill: the logo, and an even hair either side of it. */
@@ -166,11 +170,16 @@ const CLOSED_PAD = 4
  * width immediately. `paddingInline` is not animatable at all, being a
  * shorthand; only the long-hand sides are.
  *
- * So the four animated values are plain numbers, and the one number that has to
- * come from the browser is taken **once, at mount** — long before any kick, and
- * never during one. No layout is read while an animation is running.
+ * So the animated values are plain numbers, and the ones that have to come from
+ * the browser are taken **once, at mount** — long before any kick, and never
+ * during one. No layout is read while an animation is running.
+ *
+ * `height` rides along for Beat B: the vertical travel is a multiple of the
+ * row's rendered height, and `--h-row` is a `vw` value, so the true pixel
+ * height exists only in the browser. The pill fills its row exactly, so its own
+ * measured height *is* the row height — no second measurement, no parsed token.
  */
-type Resting = { width: number; pad: number; border: number }
+type Resting = { width: number; height: number; pad: number; border: number }
 
 function useRestingPill(): [React.RefObject<HTMLDivElement | null>, Resting | null] {
   const ref = useRef<HTMLDivElement>(null)
@@ -182,8 +191,10 @@ function useRestingPill(): [React.RefObject<HTMLDivElement | null>, Resting | nu
     // A mount-only read of layout that the animation config needs before it can
     // exist. It runs once per row, at page load, and never while a kick plays.
     const cs = getComputedStyle(el)
+    const box = el.getBoundingClientRect()
     setRest({
-      width: el.getBoundingClientRect().width,
+      width: box.width,
+      height: box.height,
       pad: Number.parseFloat(cs.paddingLeft),
       border: Number.parseFloat(cs.borderLeftWidth),
     })
@@ -204,7 +215,7 @@ function closedWidth(rest: Resting): number {
   return LOGO + 2 * CLOSED_PAD + 2 * rest.border
 }
 
-function pillMotion(rest: Resting) {
+function pillMotion(rest: Resting, timeline: KickTimeline) {
   const closed = closedWidth(rest)
   const centred = (rest.width - closed) / 2
   return {
@@ -214,7 +225,7 @@ function pillMotion(rest: Resting) {
       paddingRight: [rest.pad, CLOSED_PAD, CLOSED_PAD, rest.pad],
       x: [0, centred, centred, 0],
     },
-    transition: { duration: TOTAL, times: WINDOW, ease: EASE },
+    transition: { duration: timeline.total, times: windowOf(timeline), ease: EASE },
   }
 }
 
@@ -235,11 +246,11 @@ function pillMotion(rest: Resting) {
  * The fade is on the same window and the same curve — it softens the last few
  * pixels rather than being an effect of its own.
  */
-function detailMotion(rest: Resting) {
+function detailMotion(rest: Resting, timeline: KickTimeline) {
   const held = -(rest.width - closedWidth(rest)) / 2
   return {
     animate: { opacity: [1, 0, 0, 1], x: [0, held, held, 0] },
-    transition: { duration: TOTAL, times: WINDOW, ease: EASE },
+    transition: { duration: timeline.total, times: windowOf(timeline), ease: EASE },
   }
 }
 
@@ -252,40 +263,104 @@ function detailMotion(rest: Resting) {
  * the board re-sorts, and hiding the number through the middle of the sequence
  * means that swap can never be caught happening.
  */
-const FADE = {
-  animate: { opacity: [1, 0, 0, 1] },
-  transition: {
-    duration: TOTAL,
-    // The rank is outside the pill, so nothing clips it — it fades on the same
-    // window as everything else so the row leaves as one thing.
-    times: WINDOW,
-    ease: EASE,
-  },
-} as const
+function fadeMotion(timeline: KickTimeline) {
+  return {
+    animate: { opacity: [1, 0, 0, 1] },
+    transition: {
+      duration: timeline.total,
+      // The rank is outside the pill, so nothing clips it — it fades on the same
+      // window as everything else so the row leaves as one thing.
+      times: windowOf(timeline),
+      ease: EASE,
+    },
+  }
+}
 
 export type PillRole = 'attacker' | 'defender'
+
+/**
+ * One row's instruction for the kick in progress, computed by the leaderboard.
+ *
+ * The board is the brain and the rows are the actors: `WeeklyLeaderboard` reads
+ * the event once and hands each involved row a cue; a row never looks at the
+ * event, the other rows, or its own rank to decide what to do. Rows without a
+ * cue are inert — nothing about them is animated, or even configured to be.
+ */
+export type KickCue = {
+  /**
+   * Which contestant this row is, if it is one. Contestants collapse (Beat A)
+   * and uncollapse (Beat E); the rows *between* them slide fully open, so they
+   * carry no role.
+   */
+  role?: PillRole
+  /** Vertical travel during the climb, in row heights. Negative is up. Zero holds. */
+  rows: number
+  /** The kick's clock, derived from the event's climb size. One per kick, shared. */
+  timeline: KickTimeline
+}
+
+/**
+ * Beat B — the vertical ride, on the row's outer box so the rank travels with
+ * its pill.
+ *
+ * The travel is on `transform`, never on the grid: every row keeps its slot and
+ * only its visual y moves, which is what preserves the silent-reflow guarantee.
+ * The climb's window and easing come from the shared timeline, so the attacker
+ * and every sliding row move as one system — same start, same arrival, no
+ * stagger.
+ *
+ * Rows ride to their *new* positions and hold there through the back half of
+ * the sequence; the held snapshot then applies on settle, giving each ridden
+ * row the grid slot its transform was already showing. `STILL` is the other
+ * half of that handshake: the instant a row has no cue again, its transform is
+ * zero — in the same commit that re-slots it — so the reorder and the reset
+ * cannot be seen apart.
+ */
+export function rideMotion(rows: number, rest: Resting, timeline: KickTimeline) {
+  const travel = rows * rest.height
+  const ease: Easing[] = ['linear', CLIMB, 'linear']
+  return {
+    animate: { y: [0, 0, travel, travel] },
+    transition: {
+      duration: timeline.total,
+      times: [0, ...timeline.at(timeline.beats.climb), 1],
+      ease,
+    },
+  }
+}
+
+const STILL = { animate: { y: 0 }, transition: { duration: 0 } } as const
 
 export function VenturePill({
   team,
   rank,
-  role,
+  cue,
   onSettled,
 }: {
   team: Team
   rank: number
   /** Set only while this row is in a kick. Absent means an ordinary, inert row. */
-  role?: PillRole
+  cue?: KickCue
   /** Called once, by the attacker's row, when the last beat finishes. */
   onSettled?: () => void
 }) {
   const podium = rank <= 3
   const hot = team.todayRevenue >= HOT_TODAY_MIN
-  // Thirty-eight rows are plain spans with no animation attached at all. Only the
-  // two in the contest become motion elements, and only while it lasts.
+  // Rows without a cue carry no animation at all — during most kicks that is
+  // most of the board. Only the two contestants collapse, and only the rows the
+  // brain cued ride vertically, for exactly as long as the kick lasts.
   const [pillRef, rest] = useRestingPill()
-  const fade = role === undefined ? {} : FADE
-  const pill = role === undefined || rest === null ? {} : pillMotion(rest)
-  const detail = role === undefined || rest === null ? {} : detailMotion(rest)
+  // Non-null exactly while this row is a contestant: the clock its A and E run on.
+  const collapse = cue !== undefined && cue.role !== undefined ? cue.timeline : null
+  const fade = collapse === null ? {} : fadeMotion(collapse)
+  const pill = collapse === null || rest === null ? {} : pillMotion(rest, collapse)
+  const detail = collapse === null || rest === null ? {} : detailMotion(rest, collapse)
+  // `STILL`, not `{}`, for every row not currently riding: the reset to y 0 has
+  // to land in the same commit as the settle's re-slot — see `rideMotion`.
+  const ride =
+    cue === undefined || cue.rows === 0 || rest === null
+      ? STILL
+      : rideMotion(cue.rows, rest, cue.timeline)
 
   /**
    * The kick is over when this row's animation is, reported by the animation
@@ -299,10 +374,26 @@ export function VenturePill({
    * early on an event whose values happen not to vary, which was the second
    * failure in the same place.
    */
-  const reportSettled = role === 'attacker' ? onSettled : undefined
+  const attacker = cue?.role === 'attacker'
+  const reportSettled = attacker ? onSettled : undefined
+
+  /**
+   * The deadlock guard. `onSettled` is the only thing standing between the
+   * queue and a wedge: if this row unmounts before its animation completes —
+   * the rotation moving on mid-kick, or an animation that never ran because
+   * `rest` had not landed — nothing would ever report the kick finished and
+   * `playing` would pin forever. The cleanup reports it instead. Idempotent by
+   * construction: settling an already-settled kick is a no-op, so the normal
+   * path calling both is harmless. Defence for the ordering assumption, not a
+   * second completion path — when the animation runs, the animation reports.
+   */
+  useEffect(() => {
+    if (!attacker) return
+    return () => onSettled?.()
+  }, [attacker, onSettled])
 
   return (
-    <div style={{ ...ROW_OUTER, height: 'var(--h-row)' }}>
+    <motion.div {...ride} style={{ ...ROW_OUTER, height: 'var(--h-row)' }}>
       <motion.span
         {...fade}
         className="tv-figure"
@@ -370,6 +461,6 @@ export function VenturePill({
         {team.todayRevenue > 0 ? formatRupees(team.todayRevenue) : ''}
         </motion.span>
       </motion.div>
-    </div>
+    </motion.div>
   )
 }

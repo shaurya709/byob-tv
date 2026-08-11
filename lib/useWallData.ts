@@ -28,6 +28,10 @@ export type WallData = {
   snapshot: Snapshot | null
   /** Bumped whenever kicks were queued, so the player knows to look. */
   queueVersion: number
+  /** Start holding snapshots instead of applying them. Called when a kick starts. */
+  freeze: () => void
+  /** Stop holding, and apply the newest held snapshot if one arrived. Called on settle. */
+  thaw: () => void
 }
 
 /**
@@ -42,12 +46,52 @@ export type BoardSpec = {
   rank: (teams: readonly Team[]) => Team[]
   earned: (team: Team) => number
   watchTo: number
+  /** Rows per rendered column, if the board is laid out in columns. See `DetectInput`. */
+  columnLength?: number
 }
 
 export function useWallData(board: BoardSpec): WallData {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
   const [queueVersion, setQueueVersion] = useState(0)
   const running = useRef(false)
+
+  /**
+   * ── The freeze is what keeps a kick self-contained ──
+   *
+   * Rows are keyed by team id, so the moment a re-sorted snapshot lands, React
+   * moves every keyed row to its new grid slot — instantly, silently, under
+   * whatever is animating. A poll arriving mid-kick would reorder the board
+   * beneath the two rows performing on it, and the whole rows-are-the-actors
+   * architecture fails without a visible error. So while a kick plays, ticks
+   * still fetch, gate, cache and detect exactly as always — but the snapshot is
+   * *held* here rather than applied, and lands when the animation settles. The
+   * sequence never depends on when the data poll happens to arrive.
+   *
+   * The hold has a second arm: the tick that *detects* an overtake also holds
+   * its own snapshot. That tick's data is the re-sorted board; applying it
+   * immediately would put the attacker in its new slot one render before the
+   * kick starts, and the animation would then perform a climb that had already
+   * happened. Holding it is what makes the end of the kick seamless — the
+   * animation carries the rows to exactly the positions the held snapshot
+   * assigns them on settle.
+   *
+   * One mechanism, not two: there is no polling pause and no second ordering
+   * path. Ticks run on their clock; only `setSnapshot` is deferred.
+   */
+  const frozen = useRef(false)
+  const pending = useRef<Snapshot | null>(null)
+
+  const freeze = useCallback(() => {
+    frozen.current = true
+  }, [])
+
+  const thaw = useCallback(() => {
+    frozen.current = false
+    if (pending.current === null) return
+    const held = pending.current
+    pending.current = null
+    setSnapshot(held)
+  }, [])
 
   /**
    * First paint reads the cached CSV, before the browser paints. This is why
@@ -98,12 +142,13 @@ export function useWallData(board: BoardSpec): WallData {
       // Detection runs only on a freshly gated fetch. The boot cache is
       // render-only: reconciling it would emit nothing anyway, since detection
       // is idempotent, and would cost a write for nothing.
-      const { name, rank, earned, watchTo } = board
+      const { name, rank, earned, watchTo, columnLength } = board
       const { state, events } = detect(readBoard(name), {
         ranked: rank(fresh.teams),
         week: openWeek(fresh.cohort),
         watchTo,
         earned,
+        columnLength,
       })
       writeBoard(name, state)
       if (events.length > 0) {
@@ -111,7 +156,16 @@ export function useWallData(board: BoardSpec): WallData {
         setQueueVersion((version) => version + 1)
       }
 
-      setSnapshot(fresh)
+      // Held, not applied, in two cases: a kick is already playing, or this
+      // very tick just queued one — see the freeze docblock above. Only the
+      // newest hold is kept; an older held snapshot is superseded, never
+      // replayed.
+      if (frozen.current || events.length > 0) {
+        pending.current = fresh
+      } else {
+        pending.current = null
+        setSnapshot(fresh)
+      }
     } finally {
       running.current = false
     }
@@ -156,5 +210,5 @@ export function useWallData(board: BoardSpec): WallData {
     }
   }, [tick])
 
-  return { snapshot, queueVersion }
+  return { snapshot, queueVersion, freeze, thaw }
 }
