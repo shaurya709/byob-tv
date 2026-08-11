@@ -39,7 +39,11 @@ export type Kick = {
 
 export function useKick(board: string, queueVersion: number): Kick {
   const [playing, setPlaying] = useState<OvertakeEvent | null>(null)
-  const settled = useCallback(() => setPlaying(null), [])
+  // TEMPORARY instrumentation, paired with the one in BootKick.
+  const settled = useCallback(() => {
+    console.log('[kick] useKick received settled')
+    setPlaying(null)
+  }, [])
 
   // Take the next event, but only while nothing is playing. The dependency on
   // `playing` is what makes this run again the moment the previous one ends.
@@ -53,6 +57,7 @@ export function useKick(board: string, queueVersion: number): Kick {
   useEffect(() => {
     if (playing !== null) return
     const next = takeKick(board)
+    if (next !== null) console.log('[kick] useKick drained', next.id)
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (next !== null) setPlaying(next)
   }, [board, playing, queueVersion])

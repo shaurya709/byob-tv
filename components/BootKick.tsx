@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import Image from 'next/image'
 import { cubicBezier, motion } from 'motion/react'
 
@@ -164,6 +165,18 @@ export function BootKick({
   // Anchored where beat 2 ends. Beat 6 takes it the last row up from here.
   const home = pushed
 
+  // TEMPORARY instrumentation for the mid-strike wedge. Every callback boundary
+  // in one kick's lifecycle, so the one that does not fire can be named rather
+  // than guessed at. Removed once the cause is known.
+  const log = (what: string, extra?: unknown) =>
+    console.log(`[kick] ${what}`, extra === undefined ? '' : extra)
+
+  useEffect(() => {
+    log('MOUNT', { climb, travelRows, sway, toRank: event.toRank, fromRank: event.fromRank })
+    return () => log('UNMOUNT')
+  })
+
+
   return (
     <div
       style={{
@@ -192,9 +205,14 @@ export function BootKick({
           // The one animation that spans the whole timeline, so its completion is
           // beat 8's completion by construction rather than by coincidence. This
           // is the only callback in the component, and the queue's guard.
+          onAnimationStart={() => log('attacker start')}
+          onAnimationComplete={() => log('attacker onAnimationComplete')}
           transition={{
             duration: TOTAL,
-            onComplete: onSettled,
+            onComplete: () => {
+              log('attacker transition onComplete -> onSettled')
+              onSettled()
+            },
             y: {
               duration: TOTAL,
               times: [0, at(BEATS.travel)[0], at(BEATS.travel)[1], 1],
@@ -210,6 +228,8 @@ export function BootKick({
         >
           <AtRow style={{ position: 'relative' }}>
             <motion.div
+              onAnimationStart={() => log('mark scale start')}
+              onAnimationComplete={() => log('mark scale complete')}
               animate={{ scale: [1, 1.45, 1.45, 1.7, 0.92, 1.2, 1] }}
               transition={{
                 duration: TOTAL,
@@ -223,6 +243,8 @@ export function BootKick({
 
             {/* Only ever visible for the wind-up and the strike. */}
             <motion.div
+              onAnimationStart={() => log('boot start')}
+              onAnimationComplete={() => log('boot complete')}
               initial={{ rotate: -78, scaleX: 0.78 }}
               animate={{
                 rotate: [-78, -78, -16, -4, -4, -4],
@@ -274,6 +296,7 @@ export function BootKick({
         {/* Dust at the point of contact. */}
         <AtRow style={{ top: to }}>
           <motion.div
+            onAnimationComplete={() => log('dust complete')}
             initial={{ opacity: 0, scale: 0.4 }}
             animate={{ opacity: [0, 0, 0.9, 0], scale: [0.4, 0.4, 1.5, 2], y: [0, 0, -16, -30] }}
             transition={{
@@ -294,6 +317,8 @@ export function BootKick({
 
         {/* Punted: up and forward, then down and back into the row below. */}
         <motion.div
+          onAnimationStart={() => log('defender start')}
+          onAnimationComplete={() => log('defender complete')}
           initial={{ top: to }}
           animate={{ top: [to, to, pushed] }}
           transition={{
