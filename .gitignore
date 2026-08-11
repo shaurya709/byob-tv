@@ -39,3 +39,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local development fixtures. Never committed: a fixture reachable from the
+# running app is a screenshot waiting to be mistaken for real performance.
+/public/mock
+/scripts/dev-*

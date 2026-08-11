@@ -1,4 +1,4 @@
-import { VenturePill } from '@/components/VenturePill'
+import { ColumnHeading, VenturePill } from '@/components/VenturePill'
 import { rankByWeek } from '@/lib/ranking'
 import type { Team } from '@/lib/types'
 
@@ -22,8 +22,12 @@ export function columnsOf(teams: readonly Team[]): [Team[], Team[]] {
 }
 
 function Column({ teams, startRank }: { teams: readonly Team[]; startRank: number }) {
+  // An empty column carries no heading. Labelling columns that have nothing
+  // under them is apparatus describing absence.
+  if (teams.length === 0) return <div />
   return (
     <div style={{ display: 'grid', gridAutoRows: 'var(--h-row)', alignContent: 'start' }}>
+      <ColumnHeading />
       {teams.map((team, index) => (
         <VenturePill key={team.teamId} team={team} rank={startRank + index} />
       ))}

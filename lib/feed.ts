@@ -1,6 +1,6 @@
 import Papa from 'papaparse'
 
-import { COHORT_CSV_URL, FEED_CSV_URL, MIN_TEAM_ROWS } from '@/config'
+import { COHORT_CSV_URL, FEED_CSV_URL, MIN_TEAM_ROWS, UNNAMED_VENTURE } from '@/config'
 import type { Cohort, CsvCache, Snapshot, Team } from '@/lib/types'
 
 /**
@@ -50,6 +50,21 @@ function toNumber(raw: string): number | null {
 }
 
 /**
+ * A venture name, or `''` for a workbook that has not been named.
+ *
+ * The template ships each workbook with `Type your venture name` in the cell,
+ * and five of the forty competing teams still had it at the time of writing. It
+ * is semantically empty, and putting it on a campus TV is worse than putting the
+ * team code there: the code reads as "not yet", the placeholder reads as "nobody
+ * is looking after this wall". Falling back to `SLE-C4xx` is also the pressure
+ * to go and fill the cell in.
+ */
+function ventureNameOf(raw: string): string {
+  const name = raw.trim()
+  return name.toLowerCase() === UNNAMED_VENTURE ? '' : name
+}
+
+/**
  * One CSV row to one team, or `null` for a row the wall cannot use: no team id,
  * or a number that did not parse. `#REF!` and `#N/A` are what a formula tab
  * exports while it is mid-recalculation.
@@ -80,7 +95,7 @@ function toTeam(row: Record<string, string>): Team | null {
 
   return {
     teamId,
-    ventureName: (row.venture_name ?? '').trim(),
+    ventureName: ventureNameOf(row.venture_name ?? ''),
     totalRevenue,
     weekRevenue,
     todayRevenue,
@@ -95,6 +110,12 @@ function rows(csv: string): Record<string, string>[] {
   const parsed = Papa.parse<Record<string, string>>(csv, {
     header: true,
     skipEmptyLines: 'greedy',
+    // Header rows on these two tabs are typed by hand, and the live `TV_Cohort`
+    // came back as `Key,Value` rather than `key,value` — which threw on every
+    // fetch while looking, in the sheet, exactly right. Case and surrounding
+    // space are not part of the contract; the *names* are. One rule applied to
+    // both CSVs, so there is no per-tab special case to remember.
+    transformHeader: (header) => header.trim().toLowerCase(),
   })
   return parsed.data
 }

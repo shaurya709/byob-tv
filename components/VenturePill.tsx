@@ -29,6 +29,53 @@ import type { Team } from '@/lib/types'
  */
 const HOT = 'var(--green-600)'
 
+/**
+ * The row grid, shared with the column heading so the labels sit exactly over
+ * the figures they name. Two copies of this template would drift apart on the
+ * first change and nobody would notice until a heading pointed at the wrong
+ * column.
+ */
+const ROW: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'var(--w-rank) auto var(--w-name) var(--w-week) var(--w-today)',
+  alignItems: 'center',
+  gap: 'var(--s-3)',
+  paddingInline: 'var(--s-3)',
+  // Every track is fixed, so the row is exactly as wide as its content and can
+  // be centred in its half of the frame. All forty rows then share one set of
+  // column positions — a ragged left edge across twenty rows is unreadable at
+  // distance.
+  width: 'max-content',
+  marginInline: 'auto',
+}
+
+/**
+ * What the two figures on each row are.
+ *
+ * Without it the board shows two rupee amounts per team and no way to know which
+ * is which — the reason it was added after the first look at the real thing.
+ * Sits above each column, not once across the frame, because the two columns are
+ * two independent lists.
+ */
+export function ColumnHeading() {
+  const label: React.CSSProperties = {
+    font: 'var(--t-tv-col-head)',
+    letterSpacing: 'var(--track-overline)',
+    textTransform: 'uppercase',
+    color: 'var(--fg-muted)',
+    textAlign: 'right',
+  }
+  return (
+    <div style={{ ...ROW, height: 'var(--h-col-head)', alignItems: 'end' }}>
+      <span />
+      <span style={{ width: 30 }} />
+      <span />
+      <span style={label}>This week</span>
+      <span style={label}>Today</span>
+    </div>
+  )
+}
+
 export function VenturePill({ team, rank }: { team: Team; rank: number }) {
   const podium = rank <= 3
   const hot = team.todayRevenue >= HOT_TODAY_MIN
@@ -83,7 +130,11 @@ export function VenturePill({ team, rank }: { team: Team; rank: number }) {
         className="tv-figure"
         style={{ font: 'var(--t-tv-row-week)', color: 'var(--fg1)', textAlign: 'right' }}
       >
-        {formatRupees(team.weekRevenue)}
+        {/* Blank, not ₹0 — the same rule as the today column, and for the same
+            reason. In week 4 only five of forty teams have sold anything this
+            week, so printing the zero would set thirty-five identical figures
+            down the board and teach the eye to skip the column that matters. */}
+        {team.weekRevenue > 0 ? formatRupees(team.weekRevenue) : ''}
       </span>
 
       <span

@@ -109,9 +109,10 @@
      Fixed widths also mean every row is identical, so the four fields line up
      down a column of twenty. */
   --h-header: 3.4vw;
-  --h-row: 2.4vw;
+  --h-row: 2.3vw;
+  --h-col-head: 1.5vw;
   --w-rank: 1.9vw;
-  --w-name: 16vw;
+  --w-name: 18.5vw;
   --w-week: 5.9vw;
   --w-today: 4.8vw;
 
@@ -121,7 +122,41 @@
   --t-tv-row-today: 500 clamp(11px, 1.05vw, 22px) / 1 var(--font-sans);
   --t-tv-row-today-hot: 700 clamp(11px, 1.05vw, 22px) / 1 var(--font-sans);
 
+  /* Column headings on the weekly board. Smaller than the rows they label, so
+     they read as apparatus rather than as a fortieth entry. */
+  --t-tv-col-head: 700 clamp(9px, 0.78vw, 16px) / 1 var(--font-sans);
+
+  /* The Mesa Flea strip. Label and figure sized to sit on the header baseline
+     with the as-of stamp, never taller than the Mesa lockup beside it. */
+  --t-tv-strip-label: 700 clamp(10px, 0.85vw, 18px) / 1 var(--font-sans);
+  --t-tv-strip-figure: 600 clamp(12px, 1.1vw, 23px) / 1 var(--font-mono);
+
   --track-tv-tight: -0.02em;
+
+  /* ========= A NOTE ON --bright-green =========
+
+     **`--bright-green` is a dark-surface token. Do not use it on this wall.**
+
+     It is the design system's primary accent and the obvious reach for "a good
+     number", which is why this note exists. Against `--white` it measures about
+     1.9:1 — it was drawn to sit on Deep Teal and Deep Forest Green, where it has
+     all the contrast it needs. On the white surface this wall uses, a figure set
+     in it is invisible from a corridor while looking perfectly deliberate on a
+     laptop 60cm away.
+
+     Use `--green-600` for a positive figure on this wall: same hue, one step
+     deeper, already a brand token, roughly 3.1:1 on white. `VenturePill` does.
+
+     The same trap applies to `--tangerine-glow`, which is why ranks 1-3 use
+     `--tangerine-600`. */
+}
+
+/* The only animation defined in CSS rather than in Motion. It runs for weeks at
+   a time on the Flea strip, unrelated to any state change, and handing that to a
+   JS animation loop would keep the main thread busy forever for a fade. */
+@keyframes tv-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
 }
 
 @layer components {

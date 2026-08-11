@@ -97,6 +97,47 @@ describe('parseTeams', () => {
   })
 })
 
+describe('header handling', () => {
+  /**
+   * The live `TV_Cohort` came back as `Key,Value`, not `key,value` — hand-typed,
+   * looks correct in the sheet, and threw on every single fetch. Case and
+   * surrounding space are not part of the contract; the names are.
+   */
+  it('reads a hand-typed header whatever its case or padding', () => {
+    const csv = ['Key, Value', 'as_of,11 Aug 18:41', 'current_open_week,4', 'flea_datetime_iso,2026-09-06T10:00:00+05:30'].join('\r\n')
+    expect(parseCohort(csv).current_open_week).toBe('4')
+  })
+
+  it('applies the same rule to the feed, so there is no per-tab special case', () => {
+    const csv = [
+      'Team_ID,Venture_Name,Total_Revenue,Week_Revenue,Today_Revenue,Total_Units',
+      'SLE-C401,Dosa Crisps,9449,4250,0,38',
+    ].join('\r\n')
+    expect(parseTeams(csv)[0]).toMatchObject({ teamId: 'SLE-C401', weekRevenue: 4_250 })
+  })
+})
+
+describe('venture names', () => {
+  /**
+   * The workbook template ships with this in the cell, and five of the forty
+   * competing teams still had it. On a campus TV it reads as "nobody is looking
+   * after this wall"; the team code reads as "not yet", and is the pressure to
+   * go and fill it in.
+   */
+  it('treats the workbook placeholder as no name at all', () => {
+    const csv = [
+      'team_id,venture_name,total_revenue,week_revenue,today_revenue,total_units',
+      'SLE-C421,Type your venture name,0,0,0,0',
+      'SLE-C422,TYPE YOUR VENTURE NAME,0,0,0,0',
+      'SLE-C423,  Dosa Crisps  ,1,1,1,1',
+    ].join('\n')
+    const rows = parseTeams(csv)
+    expect(rows[0].ventureName).toBe('')
+    expect(rows[1].ventureName).toBe('')
+    expect(rows[2].ventureName).toBe('Dosa Crisps')
+  })
+})
+
 describe('parseCohort', () => {
   it('reads every key', () => {
     const parsed = parseCohort(cohortCsv(cohort({ current_open_week: '4' })))

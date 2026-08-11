@@ -1,6 +1,8 @@
 import Image from 'next/image'
 
 import { AsOf } from '@/components/AsOf'
+import { FleaStrip } from '@/components/FleaStrip'
+import { fleaInstant } from '@/lib/feed'
 import type { Snapshot } from '@/lib/types'
 
 /**
@@ -12,8 +14,10 @@ import type { Snapshot } from '@/lib/types'
  * board is self-evident, and a caption added because the corner looked bare is
  * exactly the filler this wall does not carry.
  *
- * The Mesa Flea countdown strip joins the right-hand group in session 3; it is
- * absent rather than stubbed until then.
+ * The right-hand group is the wall's whole apparatus: how long until the Flea,
+ * and when the numbers underneath were last refreshed. Both are ambient — the
+ * smallest type on the frame — and both disappear rather than showing a
+ * placeholder when the sheet has not supplied them.
  */
 export function WallHeader({ snapshot, label }: { snapshot: Snapshot | null; label?: string }) {
   return (
@@ -49,7 +53,10 @@ export function WallHeader({ snapshot, label }: { snapshot: Snapshot | null; lab
         )}
       </div>
 
-      <AsOf snapshot={snapshot} />
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--s-5)' }}>
+        <FleaStrip at={snapshot === null ? null : fleaInstant(snapshot.cohort)} />
+        <AsOf snapshot={snapshot} />
+      </div>
     </header>
   )
 }

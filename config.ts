@@ -21,8 +21,10 @@ import type { TeamId } from '@/lib/types'
  * them here means a fresh clone or a new Vercel project just works, rather than
  * deploying a wall that renders perfectly and fetches nothing.
  */
-export const FEED_CSV_URL: string = ''
-export const COHORT_CSV_URL: string = ''
+export const FEED_CSV_URL: string =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZTHFUyVPNGcV0rsFtd45y9KxvT2Yh2Bj8qs6qMqIFrY8rTtqc9sqb_fKOUyi_Us1hnJWZhHN0n-_z/pub?gid=917272830&single=true&output=csv'
+export const COHORT_CSV_URL: string =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZTHFUyVPNGcV0rsFtd45y9KxvT2Yh2Bj8qs6qMqIFrY8rTtqc9sqb_fKOUyi_Us1hnJWZhHN0n-_z/pub?gid=359094552&single=true&output=csv'
 
 /**
  * The fewest usable rows a fetch may carry and still be trusted.
@@ -55,6 +57,30 @@ export const SPARE_TEAM_IDS: readonly TeamId[] = ['SLE-C441', 'SLE-C442']
  * it through the day is free to.
  */
 export const HOT_TODAY_MIN = 5_000
+
+// ── Data quality ────────────────────────────────────────────────────────────
+
+/**
+ * The team-workbook template's placeholder venture name, lowercased.
+ *
+ * Treated as no name at all. Compared in lowercase because it is typed by hand
+ * in 42 separate workbooks and the capitalisation drifts.
+ */
+export const UNNAMED_VENTURE = 'type your venture name'
+
+// ── Mesa Flea strip ─────────────────────────────────────────────────────────
+
+/**
+ * When the strip changes state. The instant it counts to lives in `TV_Cohort`;
+ * only the *shape* of the escalation is a build decision.
+ */
+export const AWARE_AT_MS = 14 * 24 * 60 * 60 * 1000
+export const URGENT_AT_MS = 7 * 24 * 60 * 60 * 1000
+export const FINAL_HOUR_AT_MS = 60 * 60 * 1000
+
+/** One second normally; ~30fps in the final hour, where milliseconds are shown. */
+export const TICK_MS = 1_000
+export const TICK_FAST_MS = 33
 
 // ── Logos ───────────────────────────────────────────────────────────────────
 
