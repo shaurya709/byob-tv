@@ -1,7 +1,6 @@
 'use client'
 
 import Image from 'next/image'
-import { motion } from 'motion/react'
 
 import { VentureLogo } from '@/components/VentureLogo'
 import { formatRupees, ordinal } from '@/lib/format'
@@ -42,8 +41,7 @@ function TeamName({ team }: { team: Team }) {
 
 function FirstPlace({ team }: { team: Team }) {
   return (
-    <motion.div
-      layout="position"
+    <div
       className="tv-panel-forest"
       style={{
         gridColumn: 2,
@@ -80,14 +78,13 @@ function FirstPlace({ team }: { team: Team }) {
       <div className="tv-figure" style={{ font: 'var(--t-tv-figure-1)' }}>
         {formatRupees(team.totalRevenue)}
       </div>
-    </motion.div>
+    </div>
   )
 }
 
 function RunnerUp({ team, rank, column }: { team: Team; rank: number; column: number }) {
   return (
-    <motion.div
-      layout="position"
+    <div
       className="tv-card-glass"
       style={{
         gridColumn: column,
@@ -119,17 +116,22 @@ function RunnerUp({ team, rank, column }: { team: Team; rank: number; column: nu
       <div className="tv-figure" style={{ font: 'var(--t-tv-figure-2)' }}>
         {formatRupees(team.totalRevenue)}
       </div>
-    </motion.div>
+    </div>
   )
 }
 
 /**
  * Ranks 4–10.
  *
- * **Grid cells, not a `<table>`.** Motion's layout animation applies a
+ * **No `layout` prop.** v1 reordered these with Motion's layout animation. v2
+ * does not: the sort input changes on most polls — a team's revenue ticking up
+ * by ₹200 without moving is enough — and layout animation answers every one of
+ * those with a shift. On a wall that reads as something having happened. The
+ * only thing that moves here is the boot kick, and it moves things explicitly.
+ *
+ * They stay grid cells rather than a `<table>` regardless: the kick applies a
  * transform, and a `<tr>` ignores it — measured in the admin dashboard across 30
- * animation frames with the transform present and the row never moving. Grid
- * children are ordinary boxes and travel properly.
+ * animation frames with the transform present and the row never moving.
  *
  * No venture name at this size; it would not be legible from across a corridor,
  * and a name too small to read is worse than no name at all.
@@ -150,10 +152,8 @@ function ChasingPack({ teams, fromRank }: { teams: readonly Team[]; fromRank: nu
       }}
     >
       {teams.map((team, index) => (
-        <motion.div
+        <div
           key={team.teamId}
-          layout="position"
-          transition={{ type: 'spring', stiffness: 260, damping: 30 }}
           className="tv-card-plain"
           style={{
             display: 'flex',
@@ -171,7 +171,7 @@ function ChasingPack({ teams, fromRank }: { teams: readonly Team[]; fromRank: nu
           <span className="tv-figure" style={{ font: 'var(--t-tv-figure-3)' }}>
             {formatRupees(team.totalRevenue)}
           </span>
-        </motion.div>
+        </div>
       ))}
     </div>
   )

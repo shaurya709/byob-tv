@@ -4,8 +4,10 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 
 import { POLL_INTERVAL_MS } from '@/config'
 import { fetchCsv, parseSnapshot, passesRowGate } from '@/lib/feed'
-import { readCsvCache, writeCsvCache } from '@/lib/storage'
-import type { Snapshot } from '@/lib/types'
+import { openWeek } from '@/lib/feed'
+import { detect } from '@/lib/overtake'
+import { enqueueKicks, readBoard, readCsvCache, writeBoard, writeCsvCache } from '@/lib/storage'
+import type { Snapshot, Team } from '@/lib/types'
 
 /**
  * The 60-second loop. The only module in the project that touches `fetch`,
@@ -24,10 +26,27 @@ import type { Snapshot } from '@/lib/types'
  */
 export type WallData = {
   snapshot: Snapshot | null
+  /** Bumped whenever kicks were queued, so the player knows to look. */
+  queueVersion: number
 }
 
-export function useWallData(): WallData {
+/**
+ * How a board ranks itself and how far down it cares about a change.
+ *
+ * Passed in by the page rather than looked up here, because the two boards rank
+ * on different figures and a shared answer would be wrong for one of them.
+ */
+export type BoardSpec = {
+  /** Storage namespace. `/podium` and `/weekly` must not share a memory. */
+  name: string
+  rank: (teams: readonly Team[]) => Team[]
+  earned: (team: Team) => number
+  watchTo: number
+}
+
+export function useWallData(board: BoardSpec): WallData {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null)
+  const [queueVersion, setQueueVersion] = useState(0)
   const running = useRef(false)
 
   /**
@@ -75,11 +94,31 @@ export function useWallData(): WallData {
       }
 
       writeCsvCache(raw)
+
+      // Detection runs only on a freshly gated fetch. The boot cache is
+      // render-only: reconciling it would emit nothing anyway, since detection
+      // is idempotent, and would cost a write for nothing.
+      const { name, rank, earned, watchTo } = board
+      const { state, events } = detect(readBoard(name), {
+        ranked: rank(fresh.teams),
+        week: openWeek(fresh.cohort),
+        watchTo,
+        earned,
+      })
+      writeBoard(name, state)
+      if (events.length > 0) {
+        enqueueKicks(name, events)
+        setQueueVersion((version) => version + 1)
+      }
+
       setSnapshot(fresh)
     } finally {
       running.current = false
     }
-  }, [])
+    // `board` is a module-level constant in each page, so this identity is
+    // stable and the 60-second interval below is never torn down and rebuilt.
+    // A page constructing its spec inline would restart the loop every render.
+  }, [board])
 
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | undefined
@@ -117,5 +156,5 @@ export function useWallData(): WallData {
     }
   }, [tick])
 
-  return { snapshot }
+  return { snapshot, queueVersion }
 }

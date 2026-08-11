@@ -1,4 +1,5 @@
-import type { CsvCache } from '@/lib/types'
+import { KICK_QUEUE_CAP } from '@/config'
+import type { BoardState, CsvCache, OvertakeEvent } from '@/lib/types'
 
 /**
  * The only module in the project that touches localStorage.
@@ -25,8 +26,18 @@ import type { CsvCache } from '@/lib/types'
 
 const PREFIX = 'byob-tv.v2'
 
+/**
+ * One key per write pattern, and one board state per board.
+ *
+ * `/podium` and `/weekly` rank on different figures, so they see different rank
+ * changes and must not share a memory of "what the board looked like". A single
+ * shared key would have each page overwriting the other's history and both
+ * animating nonsense.
+ */
 export const KEYS = {
   csv: `${PREFIX}.csv`,
+  board: (board: string) => `${PREFIX}.board.${board}`,
+  queue: (board: string) => `${PREFIX}.queue.${board}`,
 } as const
 
 /**
@@ -78,4 +89,74 @@ export function readCsvCache(): CsvCache | null {
 
 export function writeCsvCache(cache: CsvCache): void {
   writeJson(KEYS.csv, cache)
+}
+
+function isBoardState(value: unknown): value is BoardState {
+  if (typeof value !== 'object' || value === null) return false
+  const candidate = value as Partial<BoardState>
+  return (
+    (candidate.week === null || typeof candidate.week === 'number') &&
+    typeof candidate.ranks === 'object' &&
+    candidate.ranks !== null &&
+    typeof candidate.earned === 'object' &&
+    candidate.earned !== null
+  )
+}
+
+function isEventArray(value: unknown): value is OvertakeEvent[] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (event) =>
+        typeof event === 'object' &&
+        event !== null &&
+        typeof (event as OvertakeEvent).id === 'string' &&
+        typeof (event as OvertakeEvent).attacker === 'string',
+    )
+  )
+}
+
+/** `null` for absent, corrupt or wrong-shaped — all of which mean "seed and stay quiet". */
+export function readBoard(board: string): BoardState | null {
+  return readJson(KEYS.board(board), isBoardState)
+}
+
+export function writeBoard(board: string, state: BoardState): void {
+  writeJson(KEYS.board(board), state)
+}
+
+/**
+ * Append, replacing any event with the same id, then keep the newest
+ * `KICK_QUEUE_CAP`.
+ *
+ * Dropping from the *front* is the whole policy: when more overtakes arrive than
+ * the wall can show, the ones worth showing are the recent ones. An animation of
+ * a rank change that has since been superseded is a lie told slowly.
+ */
+export function enqueueKicks(board: string, events: readonly OvertakeEvent[]): void {
+  if (events.length === 0) return
+  const queued = readJson(KEYS.queue(board), isEventArray) ?? []
+  const fresh = [...queued]
+  for (const event of events) {
+    const at = fresh.findIndex((existing) => existing.id === event.id)
+    if (at === -1) fresh.push(event)
+    else fresh[at] = event
+  }
+  writeJson(KEYS.queue(board), fresh.slice(-KICK_QUEUE_CAP))
+}
+
+/**
+ * Take the next event, removing it.
+ *
+ * **Consumed on play-start, not on completion.** If the rotation moves on one
+ * second into a three-second kick, that event is gone. The alternative livelocks:
+ * a slide given less time than one animation would replay the same kick every
+ * rotation forever and everything behind it would starve.
+ */
+export function takeKick(board: string): OvertakeEvent | null {
+  const queued = readJson(KEYS.queue(board), isEventArray) ?? []
+  const next = queued[0]
+  if (next === undefined) return null
+  writeJson(KEYS.queue(board), queued.slice(1))
+  return next
 }

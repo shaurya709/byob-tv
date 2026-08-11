@@ -2,8 +2,9 @@
 
 import { AsOf } from '@/components/AsOf'
 import { Podium } from '@/components/Podium'
+import { WATCH_RANKS_PODIUM } from '@/config'
 import { rankTeams } from '@/lib/ranking'
-import { useWallData } from '@/lib/useWallData'
+import { useWallData, type BoardSpec } from '@/lib/useWallData'
 
 /**
  * Slide 1 — the absolute leaderboard, at rest.
@@ -12,8 +13,15 @@ import { useWallData } from '@/lib/useWallData'
  * on the shared boot-kick component. This file is deliberately inert until then
  * rather than carrying a half-ported v1 animation.
  */
+const BOARD: BoardSpec = {
+  name: 'podium',
+  rank: rankTeams,
+  earned: (team) => team.totalRevenue,
+  watchTo: WATCH_RANKS_PODIUM,
+}
+
 export default function PodiumPage() {
-  const { snapshot } = useWallData()
+  const { snapshot } = useWallData(BOARD)
 
   return (
     <main className="tv-frame">

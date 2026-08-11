@@ -62,3 +62,42 @@ export type CsvCache = {
   feedCsv: string
   cohortCsv: string
 }
+
+/**
+ * A rank changing hands: the one thing on this wall that animates.
+ *
+ * Carries both ventures' names rather than just their ids, so the animation
+ * never has to look a team up in a snapshot that may have moved on since the
+ * event was queued.
+ */
+export type OvertakeEvent = {
+  /** `week:attacker:toRank`. Stable, so the same overtake seen twice replaces itself. */
+  id: string
+  attacker: TeamId
+  attackerName: string
+  defender: TeamId
+  defenderName: string
+  fromRank: number
+  toRank: number
+}
+
+/**
+ * What the wall last saw a board look like.
+ *
+ * `week` is stored beside the ranks because a new challenge week zeroes every
+ * team's week revenue at once. Without it the board would reshuffle completely
+ * on Monday at 00:00 IST and every one of those shifts would read as an
+ * overtake — forty boot kicks celebrating a reset.
+ */
+export type BoardState = {
+  week: number | null
+  ranks: Readonly<Record<TeamId, number>>
+  /**
+   * The figure the board ranks on, per team, as it stood.
+   *
+   * Stored alongside the ranks because a rank can improve without the team doing
+   * anything — when the team above it falls, everyone below rises a place. Ranks
+   * alone cannot tell that apart from a climb.
+   */
+  earned: Readonly<Record<TeamId, number>>
+}

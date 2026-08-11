@@ -35,7 +35,7 @@ const HOT = 'var(--green-600)'
  * first change and nobody would notice until a heading pointed at the wrong
  * column.
  */
-const ROW: React.CSSProperties = {
+export const ROW: React.CSSProperties = {
   display: 'grid',
   gridTemplateColumns: 'var(--w-rank) auto var(--w-name) var(--w-week) var(--w-today)',
   alignItems: 'center',

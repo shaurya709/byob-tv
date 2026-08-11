@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { readFileSync } from 'node:fs'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, expect, it } from 'vitest'
@@ -146,5 +147,23 @@ describe('formatting', () => {
       '13th',
       '21st',
     ])
+  })
+})
+
+/**
+ * The executable form of "the board does not move unless a rank changed".
+ *
+ * Motion's `layout` prop answers any change in a laid-out child with a shift
+ * animation — including a team's week revenue ticking up by ₹200 without moving,
+ * which happens on most polls. On a wall that reads as movement, and movement
+ * here is supposed to mean something happened. The rule is that the board tree
+ * carries no `layout` prop at all; the kick moves things explicitly instead.
+ */
+describe('silent reflow', () => {
+  it('no component in the board tree uses Motion layout animation', () => {
+    for (const file of ['VenturePill.tsx', 'WeeklyLeaderboard.tsx', 'Podium.tsx']) {
+      const source = readFileSync(`${process.cwd()}/components/${file}`, 'utf8')
+      expect(source, file).not.toMatch(/\blayout(Id)?\b\s*[=:]|\blayout\}/)
+    }
   })
 })

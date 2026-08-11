@@ -82,6 +82,50 @@ export const FINAL_HOUR_AT_MS = 60 * 60 * 1000
 export const TICK_MS = 1_000
 export const TICK_FAST_MS = 33
 
+// ── End of day ──────────────────────────────────────────────────────────────
+
+/**
+ * The sheet's timezone, hardcoded.
+ *
+ * Every "today" and "this week" figure on the wall was computed by a spreadsheet
+ * running in Asia/Kolkata, so the wall's own day has to start and end there too.
+ * Never the browser's locale — see `lib/schedule.ts`.
+ */
+export const IST_TIMEZONE = 'Asia/Kolkata'
+
+/** The podium marks the end of the trading day from this hour, IST, until midnight. */
+export const EOD_FROM_HOUR_IST = 18
+
+// ── Overtakes ───────────────────────────────────────────────────────────────
+
+/**
+ * How far down each board a rank change is worth animating.
+ *
+ * The weekly board watches its whole first column; a change at rank 34 is real
+ * but nobody is watching that far down, and animating it would spend the wall's
+ * one interrupt on it. The podium animates rank 1 and nothing else.
+ */
+export const WATCH_RANKS_WEEKLY = 20
+export const WATCH_RANKS_PODIUM = 1
+
+/**
+ * How many overtakes may be waiting at once. FIFO, oldest dropped.
+ *
+ * Four, not ten. Each kick runs about three seconds, so ten would mean half a
+ * minute of continuous animation after one busy fetch — and by the end of it the
+ * board underneath would be two fetches stale. Currency beats completeness.
+ */
+export const KICK_QUEUE_CAP = 4
+
+/**
+ * One kick, start to finish, in milliseconds.
+ *
+ * The seven beats inside `BootKick` are declarative delays that sum to this; the
+ * playback hook only needs the total. Three seconds is the ceiling: the wall's
+ * job is to be a leaderboard, and it should be one again quickly.
+ */
+export const KICK_MS = 3_000
+
 // ── Logos ───────────────────────────────────────────────────────────────────
 
 /**
