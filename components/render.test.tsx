@@ -4,7 +4,7 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, expect, it } from 'vitest'
 
-import { Podium, visibleTeams } from '@/components/Podium'
+import { Podium, podiumTeams } from '@/components/Podium'
 import { VenturePill } from '@/components/VenturePill'
 import { WeeklyLeaderboard, columnsOf } from '@/components/WeeklyLeaderboard'
 import { HOT_TODAY_MIN } from '@/config'
@@ -46,36 +46,54 @@ describe('Podium', () => {
     expect(text).toContain('Aurora Bakes')
     expect(text).toContain('Kite Coffee')
     expect(text).toContain('Solstice')
-    expect(text).toContain('1ST')
     expect(text).toContain(formatRupees(240_000))
+    // The caption that separates this slide from `/weekly`. Without it the only
+    // difference between the two boards is which numbers happen to be larger.
+    expect(text.toLowerCase()).toContain('total revenue')
+  })
+
+  it('ranks 4-10 land in the strip, in order', () => {
+    const all = teams().map((row, index) => ({ ...row, totalRevenue: 1_000 * (42 - index) }))
+    const text = render(<Podium ranked={rankTeams(competingTeams(all))} />)
+    expect(text).toContain('Venture 4')
+    expect(text).toContain('Venture 10')
+    // Rank 11 is off the board entirely — this is a top ten, not a leaderboard
+    // that trails off.
+    expect(text).not.toContain('Venture 11')
   })
 
   it('renders the waiting board when nobody has traded', () => {
     const text = render(<Podium ranked={rankTeams(teams())} />)
     // The structure still reads as "the leaderboard, waiting" — never a "no
-    // data" message, which tells a passer-by the wall is broken.
-    expect(text).toContain('1ST')
-    expect(text).toContain(formatRupees(0))
+    // data" message, which tells a passer-by the wall is broken. A dash rather
+    // than ₹0: zero asserts the team traded and earned nothing.
+    expect(text).toContain('—')
+    expect(text).not.toContain(formatRupees(0))
     expect(text.toLowerCase()).not.toContain('no data')
+  })
+
+  it('renders three tiles with no feed at all', () => {
+    const text = render(<Podium ranked={[]} />)
+    // Three dashes, one per tile. An empty first paint is a real state and the
+    // podium holds its shape through it rather than assembling on screen.
+    expect(text.match(/—/g)).toHaveLength(3)
   })
 })
 
-describe('visibleTeams', () => {
-  it('shows only trading teams once anyone is trading', () => {
-    expect(visibleTeams(rankTeams(TRADING)).map((team) => team.teamId)).toEqual([
+describe('podiumTeams', () => {
+  it('never shows more than ten', () => {
+    const all = teams().map((row, index) => ({ ...row, totalRevenue: 1000 * (42 - index) }))
+    expect(podiumTeams(rankTeams(all))).toHaveLength(10)
+  })
+
+  it('keeps the order it is handed', () => {
+    // No filtering of its own — it ranks nothing and hides nobody, so the three
+    // trading teams lead purely because the comparator put them there.
+    expect(podiumTeams(rankTeams(TRADING)).slice(0, 3).map((row) => row.teamId)).toEqual([
       'SLE-C401',
       'SLE-C402',
       'SLE-C403',
     ])
-  })
-
-  it('shows the full structure before anyone trades', () => {
-    expect(visibleTeams(rankTeams(teams()))).toHaveLength(10)
-  })
-
-  it('never shows more than ten', () => {
-    const all = teams().map((team, index) => ({ ...team, totalRevenue: 1000 * (42 - index) }))
-    expect(visibleTeams(rankTeams(all))).toHaveLength(10)
   })
 })
 

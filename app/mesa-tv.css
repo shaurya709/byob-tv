@@ -163,6 +163,50 @@
   --t-tv-cal-mid: 700 clamp(9px, 0.85vw, 18px) / 1 var(--font-sans);
   --t-tv-cal-timer: 700 clamp(9px, 0.8vw, 17px) / 1 var(--font-sans);
 
+  /* ========= PODIUM BAND =========
+
+     `/podium` is one crowned tile flanked by two smaller ones, over a strip of
+     ranks 4–10. Sizes are stated in `vw` like the rest of the wall, tuned so
+     each lands on its brief target at exactly 1920: 25vw is 480px, 22.92vw is
+     440px, and so on. A `px` set here would compose correctly on the TV and
+     wrongly in every dev window, which is the one thing the whole file's
+     `vw` convention exists to prevent.
+
+     The flanks are 80px (4.17vw) shorter *and* dropped 80px, so all three
+     tiles share a bottom edge while first place stands a head above the
+     others. That shared baseline is what makes it read as a podium rather
+     than as three cards of unequal size. */
+  --w-podium-1: 25vw;
+  --h-podium-1: 22.92vw;
+  --w-podium-2: 19.8vw;
+  --h-podium-2: 18.75vw;
+  --s-podium-gap: 2.08vw;
+
+  /* The board's horizontal extent: the three tiles and the two gaps between
+     them, 1320px at 1920. The strip below is set to exactly this so ranks
+     4–10 read as a continuation of the podium and not as a second object. */
+  --w-podium-board: calc(var(--w-podium-1) + 2 * var(--w-podium-2) + 2 * var(--s-podium-gap));
+
+  /* The strip's pill track, derived the same way `--w-pill` is on the weekly
+     board: the board width less the rank column and the three gaps around it,
+     so `ROW_OUTER`'s arithmetic holds at podium dimensions. */
+  --w-podium-pill: calc(var(--w-podium-board) - var(--w-rank) - 3 * var(--s-3));
+  --w-podium-total: 8vw;
+
+  /* Podium type. Heavy — 800, the top of MesaBody's declared axis — because a
+     rank numeral at this size is a shape before it is a number. */
+  --t-tv-podium-rank-1: 800 clamp(56px, 6.25vw, 130px) / 1 var(--font-sans);
+  --t-tv-podium-rank-2: 800 clamp(42px, 4.69vw, 98px) / 1 var(--font-sans);
+  --t-tv-podium-name-1: 600 clamp(16px, 1.46vw, 30px) / 1.15 var(--font-sans);
+  --t-tv-podium-name-2: 600 clamp(13px, 1.15vw, 24px) / 1.15 var(--font-sans);
+  --t-tv-podium-figure-1: 800 clamp(24px, 2.19vw, 46px) / 1 var(--font-sans);
+  --t-tv-podium-figure-2: 800 clamp(18px, 1.67vw, 35px) / 1 var(--font-sans);
+  /* The "TOTAL REVENUE" caption, on the tiles and over the strip's figure
+     column. Same role and same size as the weekly board's column headings. */
+  --t-tv-podium-label: 700 clamp(9px, 0.573vw, 12px) / 1 var(--font-sans);
+  --t-tv-podium-row-name: 500 clamp(12px, 1.15vw, 24px) / 1.1 var(--font-sans);
+  --t-tv-podium-row-figure: 600 clamp(12px, 1.15vw, 24px) / 1 var(--font-sans);
+
   --track-tv-tight: -0.02em;
 
   /* ========= A NOTE ON --bright-green =========
@@ -244,6 +288,28 @@
     background: var(--tv-pill-fill);
     border: var(--stroke-thin) solid var(--tv-pill-stroke);
     border-radius: calc(var(--h-row) / 2);
+  }
+
+  /* First place on `/podium`.
+
+     Deep Teal rather than the Deep Forest Green `.tv-panel-forest` uses: this
+     is the only full-bleed dark object on the frame, and Deep Teal is the
+     deepest brand surface, so it carries the most weight available without
+     inventing anything. Pair it with `.theme-teal` on the same element and the
+     foreground tokens inside flip with it — `--fg1` becomes white, `--fg3`
+     becomes Mint 300 — instead of each child naming a light colour by hand. */
+  .tv-podium-crown {
+    background: var(--deep-teal);
+    border-radius: var(--radius-xl);
+  }
+
+  /* Second and third. White, so the crown is the only dark mass on the frame,
+     and a Border Mint hairline to give the tile an edge without a fill that
+     would start to compete with it. */
+  .tv-podium-flank {
+    background: var(--white);
+    border: var(--stroke-thin) solid var(--border-mint);
+    border-radius: var(--radius-lg);
   }
 
   /* Ranks 4-10. Quieter again: a hairline rule, no fill. */
