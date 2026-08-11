@@ -246,7 +246,10 @@ export function BootKick({
                 position: 'absolute',
                 top: '18%',
                 left: MARK * 0.7,
-                width: MARK * 1.7,
+                // Half what it was. At full size it covered the defender's
+                // venture name at the strike and read as the subject of the
+                // frame rather than as the instrument.
+                width: MARK * 0.85,
                 // Below the mark, which is what lets it start hidden and swing
                 // out rather than appear.
                 zIndex: 0,
