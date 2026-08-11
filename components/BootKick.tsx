@@ -62,9 +62,18 @@ const MARK = 30
  */
 const TRAVEL_Y = cubicBezier(0.22, 0.68, 0.24, 1)
 
-/** Sway in px, scaled by how far there is to climb. Zero for a single-rank climb. */
-const SWAY_BACK = -6
-const SWAY_THROUGH = 4
+/**
+ * Sway in px at the `w = 1` cap, scaled down by how far there is to climb. Zero
+ * for a single-rank climb.
+ *
+ * The ratio between them is the read — a body climbing under its own effort
+ * leans back further than it overshoots — so they move together or not at all.
+ * The magnitudes were 6 and 4, which measured correctly and were invisible: at
+ * Δ=3 that is a ±2px lean, and nothing 2px wide survives six metres. Scaled by
+ * 2.5 so the widest throw is about half a logo across.
+ */
+const SWAY_BACK = -15
+const SWAY_THROUGH = 10
 
 /** Where a rank's row sits inside its column, in the board's own units. */
 function rowTop(rank: number, perColumn: number): string {
