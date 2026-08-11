@@ -68,19 +68,27 @@ export const HOT_TODAY_MIN = 5_000
  */
 export const UNNAMED_VENTURE = 'type your venture name'
 
-// ── Mesa Flea strip ─────────────────────────────────────────────────────────
+// ── Mesa Flea calendar countdown ────────────────────────────────────────────
 
 /**
- * When the strip changes state. The instant it counts to lives in `TV_Cohort`;
- * only the *shape* of the escalation is a build decision.
+ * When the calendar changes mode. The instant it counts to lives in `TV_Cohort`;
+ * only the *shape* of the escalation is a build decision. The transitions
+ * themselves are computed in one place: `computeCountdownState` in
+ * lib/countdown.ts.
  */
-export const AWARE_AT_MS = 14 * 24 * 60 * 60 * 1000
-export const URGENT_AT_MS = 7 * 24 * 60 * 60 * 1000
-export const FINAL_HOUR_AT_MS = 60 * 60 * 1000
+export const DAYS_ONLY_FROM_MS = 15 * 24 * 60 * 60 * 1000
+export const TIMER_UNDER_MS = 24 * 60 * 60 * 1000
 
-/** One second normally; ~30fps in the final hour, where milliseconds are shown. */
+/**
+ * How long the Flea itself runs — 10:00 to 18:00 IST assumed, like the opening
+ * time. While it runs the calendar says LIVE NOW; after it ends the calendar
+ * leaves the wall entirely.
+ */
+export const FLEA_EVENT_DURATION_MS = 8 * 60 * 60 * 1000
+
+/** Once a second while the live timer shows seconds; once a minute before that. */
 export const TICK_MS = 1_000
-export const TICK_FAST_MS = 33
+export const TICK_SLOW_MS = 60_000
 
 // ── End of day ──────────────────────────────────────────────────────────────
 

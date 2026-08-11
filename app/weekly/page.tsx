@@ -55,9 +55,11 @@ export default function WeeklyPage() {
         padding: 'var(--s-10) var(--s-12)',
       }}
     >
-      {/* No week number from the sheet means no label. The board is still
-          correct and still worth showing; captioning it "Week ?" would not be. */}
-      <WallHeader snapshot={snapshot} label={week === null ? undefined : `Week ${week}`} />
+      {/* No week number from the sheet means no heading. The board is still
+          correct and still worth showing; captioning it "BYOB Week ?" would not
+          be. The number itself is `current_open_week` from `TV_Cohort`, never a
+          hardcoded 4. */}
+      <WallHeader snapshot={snapshot} label={week === null ? undefined : `BYOB Week ${week}`} />
 
       {/* The board is not dimmed during a kick. Forty rows going grey is a
           full-frame takeover in everything but name, and slide 2's kick is meant

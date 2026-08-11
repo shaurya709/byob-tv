@@ -9,10 +9,11 @@ import type { Snapshot } from '@/lib/types'
  * The thin strip across the top of both slides: Mesa on the left, provenance on
  * the right.
  *
- * The `label` slot is where a slide says what it is showing — `/weekly` puts
- * its challenge week there. Nothing goes in it by default: on `/podium` the
- * board is self-evident, and a caption added because the corner looked bare is
- * exactly the filler this wall does not carry.
+ * The `label` slot is the slide's heading — `/weekly` puts "BYOB Week 4"
+ * there, set as a real heading in Deep Teal rather than a corner caption.
+ * Nothing goes in it by default: on `/podium` the board is self-evident, and a
+ * heading added because the corner looked bare is exactly the filler this wall
+ * does not carry.
  *
  * The right-hand group is the wall's whole apparatus: how long until the Flea,
  * and when the numbers underneath were last refreshed. Both are ambient — the
@@ -30,30 +31,33 @@ export function WallHeader({ snapshot, label }: { snapshot: Snapshot | null; lab
         height: 'var(--h-header)',
       }}
     >
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--s-6)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-6)' }}>
         <Image
           src="/brand/logo-pg-green.png"
           alt="Mesa School of Business"
           width={148}
           height={52}
-          style={{ height: '1.5vw', width: 'auto', alignSelf: 'center' }}
+          style={{ height: '1.5vw', width: 'auto' }}
           unoptimized
         />
         {label !== undefined && (
-          <span
+          <h1
             style={{
-              font: 'var(--t-tv-card-context)',
-              letterSpacing: 'var(--track-overline)',
+              font: 'var(--t-tv-heading)',
+              letterSpacing: 'var(--track-tv-heading)',
               textTransform: 'uppercase',
-              color: 'var(--fg-muted)',
+              color: 'var(--deep-teal)',
+              margin: 0,
             }}
           >
             {label}
-          </span>
+          </h1>
         )}
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 'var(--s-5)' }}>
+      {/* Centred, not baseline: the calendar page is a block with no text
+          baseline of its own, and baseline alignment would hang it low. */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-5)' }}>
         <FleaStrip at={snapshot === null ? null : fleaInstant(snapshot.cohort)} />
         <AsOf snapshot={snapshot} />
       </div>

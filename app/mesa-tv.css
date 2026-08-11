@@ -116,7 +116,10 @@
   --w-week: 5.9vw;
   --w-today: 4.8vw;
 
-  --t-tv-row-rank: 700 clamp(12px, 1.15vw, 24px) / 1 var(--font-sans);
+  /* Weight 500, matching the venture name beside it: the rank went from a
+     bold tiered accent to quiet board apparatus in Midnight Charcoal, and a
+     700 number next to a 500 name read as a fortieth emphasis. */
+  --t-tv-row-rank: 500 clamp(12px, 1.15vw, 24px) / 1 var(--font-sans);
   --t-tv-row-name: 500 clamp(12px, 1.15vw, 24px) / 1.1 var(--font-sans);
   --t-tv-row-week: 600 clamp(12px, 1.15vw, 24px) / 1 var(--font-sans);
   --t-tv-row-today: 500 clamp(11px, 1.05vw, 22px) / 1 var(--font-sans);
@@ -138,10 +141,23 @@
   --tv-pill-fill: rgba(17, 33, 33, 0.03);
   --tv-pill-stroke: rgba(17, 33, 33, 0.08);
 
-  /* The Mesa Flea strip. Label and figure sized to sit on the header baseline
-     with the as-of stamp, never taller than the Mesa lockup beside it. */
+  /* The slide heading — "BYOB WEEK 4" on the weekly board. A real heading, not
+     a corner label: sized to read as one at six metres while staying inside
+     the header band, so the forty rows underneath never move. Its glyphs stand
+     roughly two row-texts tall; sizing it to two full row *boxes* (4.6vw) was
+     measured to overflow the 3.4vw band and push rank 20 off the frame. */
+  --t-tv-heading: 700 clamp(22px, 2.4vw, 50px) / 1 var(--font-sans);
+  --track-tv-heading: 0.04em;
+
+  /* The Mesa Flea calendar. The label sits beside the page; the page itself is
+     sized to the header band, and the figures inside step down as they get
+     longer — a day count, then days-and-hours, then a full ticking clock. */
   --t-tv-strip-label: 700 clamp(10px, 0.85vw, 18px) / 1 var(--font-sans);
-  --t-tv-strip-figure: 600 clamp(12px, 1.1vw, 23px) / 1 var(--font-mono);
+  --h-tv-cal: clamp(30px, 2.6vw, 54px);
+  --t-tv-cal-day: 700 clamp(13px, 1.2vw, 25px) / 1 var(--font-sans);
+  --t-tv-cal-unit: 700 clamp(8px, 0.7vw, 14px) / 1 var(--font-sans);
+  --t-tv-cal-mid: 700 clamp(9px, 0.85vw, 18px) / 1 var(--font-sans);
+  --t-tv-cal-timer: 700 clamp(9px, 0.8vw, 17px) / 1 var(--font-sans);
 
   --track-tv-tight: -0.02em;
 
@@ -159,13 +175,14 @@
      Use `--green-600` for a positive figure on this wall: same hue, one step
      deeper, already a brand token, roughly 3.1:1 on white. `VenturePill` does.
 
-     The same trap applies to `--tangerine-glow`, which is why ranks 1-3 use
-     `--tangerine-600`. */
+     The same trap applies to `--tangerine-glow`: where this wall needs
+     tangerine — the calendar's LIVE NOW — it uses `--tangerine-600`. */
 }
 
-/* The only animation defined in CSS rather than in Motion. It runs for weeks at
-   a time on the Flea strip, unrelated to any state change, and handing that to a
-   JS animation loop would keep the main thread busy forever for a fade. */
+/* The only animation defined in CSS rather than in Motion. It runs for the
+   whole event day on the calendar's LIVE NOW, unrelated to any state change,
+   and handing that to a JS animation loop would keep the main thread busy
+   forever for a fade. */
 @keyframes tv-breathe {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.55; }

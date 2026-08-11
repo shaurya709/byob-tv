@@ -20,11 +20,11 @@ import type { Team } from '@/lib/types'
  * row's columns line up whatever is in them, and so a row can be lifted out and
  * animated without the ones around it reflowing.
  *
- * ── Only two things are ever emphasised ──
+ * ── Only one thing is ever emphasised ──
  *
- * The weekly podium (ranks 1–3) and a strong day (today ≥ ₹5,000). Everything
- * else is one muted weight. With forty rows on a wall, a third emphasis would
- * mean nothing is emphasised.
+ * A strong day (today ≥ ₹5,000). Everything else — the rank number included,
+ * ranks 1–3 the same as rank 40 — is one uniform treatment. With forty rows on
+ * a wall, a second emphasis would mean nothing is emphasised.
  */
 
 /**
@@ -535,7 +535,6 @@ export function VenturePill({
   /** Called once, by the attacker's row, when the last beat finishes. */
   onSettled?: () => void
 }) {
-  const podium = rank <= 3
   const hot = team.todayRevenue >= HOT_TODAY_MIN
   // Rows without a cue carry no animation at all — during most kicks that is
   // most of the board. Only the two contestants collapse, and only the rows the
@@ -602,7 +601,9 @@ export function VenturePill({
         className="tv-figure"
         style={{
           font: 'var(--t-tv-row-rank)',
-          color: podium ? 'var(--tangerine-600)' : 'var(--fg-muted)',
+          // One colour for all forty. The rank is board apparatus, and apparatus
+          // that changes colour at rank 3 is a second emphasis system.
+          color: 'var(--midnight-charcoal)',
           textAlign: 'right',
         }}
       >
