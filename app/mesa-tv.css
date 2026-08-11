@@ -126,6 +126,13 @@
      they read as apparatus rather than as a fortieth entry. */
   --t-tv-col-head: 700 clamp(9px, 0.78vw, 16px) / 1 var(--font-sans);
 
+  /* The row pill. Both are `--midnight-charcoal` at low alpha — the same base
+     the system's own `--border` is mixed from, so this introduces no new hue.
+     The stroke is what draws the shape; the fill is barely there, because forty
+     filled pills would turn a typographic board into a table. */
+  --tv-pill-fill: rgba(17, 33, 33, 0.03);
+  --tv-pill-stroke: rgba(17, 33, 33, 0.08);
+
   /* The Mesa Flea strip. Label and figure sized to sit on the header baseline
      with the as-of stamp, never taller than the Mesa lockup beside it. */
   --t-tv-strip-label: 700 clamp(10px, 0.85vw, 18px) / 1 var(--font-sans);
@@ -202,6 +209,15 @@
     backdrop-filter: blur(var(--blur-glass)) saturate(1.1);
     border: var(--stroke-thin) solid var(--border);
     border-radius: var(--radius-lg);
+  }
+
+  /* One per row on the weekly board, at all times — not only during a kick.
+     Fully rounded ends, so the closed state at the end of Beat A is a circle
+     around the logo rather than a rectangle that has to become one. */
+  .tv-pill {
+    background: var(--tv-pill-fill);
+    border: var(--stroke-thin) solid var(--tv-pill-stroke);
+    border-radius: calc(var(--h-row) / 2);
   }
 
   /* Ranks 4-10. Quieter again: a hairline rule, no fill. */

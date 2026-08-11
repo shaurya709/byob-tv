@@ -33,14 +33,20 @@ import type { Team } from '@/lib/types'
 const HOT = 'var(--green-600)'
 
 /**
- * The row grid, shared with the column heading so the labels sit exactly over
- * the figures they name. Two copies of this template would drift apart on the
+ * A row is a rank number and then a pill, and the two are separate boxes.
+ *
+ * The rank is board apparatus — it belongs to the leaderboard, not to the team —
+ * so it sits *outside* the pill. That is also what puts the logo at the pill's
+ * own left edge, which is what lets the pill close around it.
+ *
+ * Both halves are shared with the column heading so the labels sit exactly over
+ * the figures they name. Two copies of these templates would drift apart on the
  * first change and nobody would notice until a heading pointed at the wrong
  * column.
  */
-export const ROW: React.CSSProperties = {
+export const ROW_OUTER: React.CSSProperties = {
   display: 'grid',
-  gridTemplateColumns: 'var(--w-rank) auto var(--w-name) var(--w-week) var(--w-today)',
+  gridTemplateColumns: 'var(--w-rank) auto',
   alignItems: 'center',
   gap: 'var(--s-3)',
   paddingInline: 'var(--s-3)',
@@ -50,6 +56,15 @@ export const ROW: React.CSSProperties = {
   // distance.
   width: 'max-content',
   marginInline: 'auto',
+}
+
+export const PILL_INNER: React.CSSProperties = {
+  display: 'grid',
+  gridTemplateColumns: 'auto var(--w-name) var(--w-week) var(--w-today)',
+  alignItems: 'center',
+  gap: 'var(--s-3)',
+  paddingInline: 'var(--s-3)',
+  height: '100%',
 }
 
 /**
@@ -69,12 +84,14 @@ export function ColumnHeading() {
     textAlign: 'right',
   }
   return (
-    <div style={{ ...ROW, height: 'var(--h-col-head)', alignItems: 'end' }}>
+    <div style={{ ...ROW_OUTER, height: 'var(--h-col-head)', alignItems: 'end' }}>
       <span />
-      <span style={{ width: 30 }} />
-      <span />
-      <span style={label}>This week</span>
-      <span style={label}>Today</span>
+      <div style={{ ...PILL_INNER, alignItems: 'end' }}>
+        <span style={{ width: 30 }} />
+        <span />
+        <span style={label}>This week</span>
+        <span style={label}>Today</span>
+      </div>
     </div>
   )
 }
@@ -161,24 +178,7 @@ export function VenturePill({
   const reportSettled = role === 'attacker' ? onSettled : undefined
 
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns:
-          'var(--w-rank) auto var(--w-name) var(--w-week) var(--w-today)',
-        // Every track is fixed, so the row is exactly as wide as its content and
-        // can be centred in its half of the frame. All forty rows then share one
-        // set of column positions — a ragged left edge across twenty rows is
-        // unreadable at distance.
-        width: 'max-content',
-        marginInline: 'auto',
-        alignItems: 'center',
-        gap: 'var(--s-3)',
-        height: 'var(--h-row)',
-        paddingInline: 'var(--s-3)',
-        borderRadius: 'var(--radius-sm)',
-      }}
-    >
+    <div style={{ ...ROW_OUTER, height: 'var(--h-row)' }}>
       <span
         className="tv-figure"
         style={{
@@ -190,7 +190,8 @@ export function VenturePill({
         {rank}
       </span>
 
-      <VentureLogo team={team} size={30} />
+      <div className="tv-pill" style={PILL_INNER}>
+        <VentureLogo team={team} size={30} />
 
       <motion.span
         {...detail}
@@ -240,7 +241,8 @@ export function VenturePill({
             rows of ₹0 every morning is noise, and the column is there to say
             who is moving today — silence is the honest answer for the rest. */}
         {team.todayRevenue > 0 ? formatRupees(team.todayRevenue) : ''}
-      </motion.span>
+        </motion.span>
+      </div>
     </div>
   )
 }
