@@ -63,6 +63,27 @@ const MARK = 30
 const TRAVEL_Y = cubicBezier(0.22, 0.68, 0.24, 1)
 
 /**
+ * Beat 3 — the wind-up.
+ *
+ * ── The boot enters by rotation, never by opacity ──
+ *
+ * There is no opacity animation on it anywhere. It starts cocked back at −78°
+ * with its heel pinned at the mark's edge, where the mark occludes it, and the
+ * rotation is what carries it into view. A fade would announce that a graphic
+ * had arrived; a swing announces that a leg is being drawn back.
+ *
+ * That only works because the boot sits *below* the mark in paint order, which
+ * is what the two `zIndex` values in the logo cell are for.
+ *
+ * ── Why it arrives slowing ──
+ *
+ * The curve accelerates into the cocked position and eases as it gets there.
+ * Anticipation needs a moment of stillness at the top or the wind-up reads as
+ * the first half of the strike and the beat disappears.
+ */
+const WIND_UP = cubicBezier(0.34, 0, 0.68, 0.6)
+
+/**
  * Sway in px at the `w = 1` cap, scaled down by how far there is to climb. Zero
  * for a single-rank climb.
  *
@@ -195,16 +216,16 @@ export function BootKick({
                 times: [0, at(BEATS.collapse)[1], ...at(BEATS.settle, 0.25, 0.5, 0.75), 1],
                 ease: 'easeOut',
               }}
-              style={{ transformOrigin: 'center bottom' }}
+              style={{ transformOrigin: 'center bottom', position: 'relative', zIndex: 1 }}
             >
               <VentureLogo team={attacker} size={MARK} />
             </motion.div>
 
             {/* Only ever visible for the wind-up and the strike. */}
             <motion.div
-              initial={{ rotate: -14, scaleX: 0.78 }}
+              initial={{ rotate: -78, scaleX: 0.78 }}
               animate={{
-                rotate: [-14, -14, -14, -4, -4, -4],
+                rotate: [-78, -78, -16, -4, -4, -4],
                 scaleX: [0.78, 0.78, 0.78, 1, 1, 1],
               }}
               transition={{
@@ -212,24 +233,27 @@ export function BootKick({
                 times: [
                   0,
                   at(BEATS.windUp)[0],
-                  at(BEATS.windUp, 0.4)[1],
+                  at(BEATS.windUp)[1],
                   at(BEATS.strike)[1],
                   at(BEATS.punt, 0.5)[1],
                   1,
                 ],
+                // Only the wind-up segment is specified here. The rest keeps the
+                // default it already had, so beat 4 is untouched.
+                ease: ['linear', WIND_UP, 'easeOut', 'easeOut', 'easeOut'],
               }}
               style={{
                 position: 'absolute',
                 top: '18%',
                 left: MARK * 0.7,
                 width: MARK * 1.7,
-                zIndex: 1,
-                transformOrigin: 'left center',
-                // Hidden for this pass. Its fade was rising during the travel
-                // window and pulling the eye off the climb, and beat 3 removes
-                // the fade entirely anyway — the boot is meant to enter by
-                // rotation from behind the mark, never by opacity.
-                opacity: 0,
+                // Below the mark, which is what lets it start hidden and swing
+                // out rather than appear.
+                zIndex: 0,
+                // The heel. The hinge sits at the mark's edge, low, so this is a
+                // leg swinging from the hip rather than a sprite spinning about
+                // its middle.
+                transformOrigin: '0% 82%',
               }}
             >
               <Image
