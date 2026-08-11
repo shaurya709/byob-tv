@@ -51,16 +51,13 @@ export default function WeeklyPage() {
           correct and still worth showing; captioning it "Week ?" would not be. */}
       <WallHeader snapshot={snapshot} label={week === null ? undefined : `Week ${week}`} />
 
+      {/* The board is not dimmed during a kick. Forty rows going grey is a
+          full-frame takeover in everything but name, and slide 2's kick is meant
+          to be an event *inside* the leaderboard — the two rows involved clear
+          their own details, and that is the whole focus beat. Dimming stays on
+          the podium, where the contest genuinely is the frame. */}
       <div style={{ position: 'relative' }}>
-        <div
-          style={{
-            height: '100%',
-            opacity: kick === null ? 1 : 0.16,
-            transition: 'opacity 0.35s var(--ease-out)',
-          }}
-        >
-          <WeeklyLeaderboard teams={teams} kick={kick} />
-        </div>
+        <WeeklyLeaderboard teams={teams} kick={kick} />
         {kick !== null && <BootKick event={kick} teams={teams} perColumn={COLUMN_LENGTH} onSettled={settled} />}
       </div>
 
