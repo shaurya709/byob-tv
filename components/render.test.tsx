@@ -125,11 +125,54 @@ describe('Podium', () => {
     expect(text.toLowerCase()).not.toContain('no data')
   })
 
-  it('renders three tiles with no feed at all', () => {
+  it('renders three pillars with no feed at all', () => {
     const text = render(<Podium ranked={[]} />)
-    // Three dashes, one per tile. An empty first paint is a real state and the
-    // podium holds its shape through it rather than assembling on screen.
+    // Three dashes, one per pillar. An empty first paint is a real state and
+    // the podium holds its shape through it rather than assembling on screen.
     expect(text.match(/—/g)).toHaveLength(3)
+  })
+
+  it('carries none of the weekly board pill', () => {
+    // `.tv-pill` is /weekly's language — forty rows that close around their own
+    // mark during a kick. Borrowing it here made slide 1 look like a shorter
+    // slide 2. This is the executable form of "do not borrow it back".
+    const all = teams().map((row, index) => ({ ...row, totalRevenue: 1_000 * (42 - index) }))
+    const host = document.createElement('div')
+    document.body.append(host)
+    const root = createRoot(host)
+    act(() => root.render(<Podium ranked={rankTeams(competingTeams(all))} />))
+    expect(host.querySelectorAll('.tv-pill')).toHaveLength(0)
+    expect(host.querySelectorAll('.tv-pod-shaft')).toHaveLength(3)
+    // A capital and a base on each.
+    expect(host.querySelectorAll('.tv-pod-slab')).toHaveLength(6)
+    act(() => root.unmount())
+    host.remove()
+  })
+
+  it('gives each of the three marks an idle timeline', () => {
+    const host = document.createElement('div')
+    document.body.append(host)
+    const root = createRoot(host)
+    act(() => root.render(<Podium ranked={rankTeams(TRADING)} />))
+    expect(host.querySelectorAll('[class*="tv-idle-"]')).toHaveLength(3)
+    act(() => root.unmount())
+    host.remove()
+  })
+
+  it('idles a venture the same way every time, seeded off its id', () => {
+    // A mark that moved differently after an overtake would read as a different
+    // venture — the same reasoning that assigns its tint.
+    const first = () => {
+      const host = document.createElement('div')
+      document.body.append(host)
+      const root = createRoot(host)
+      act(() => root.render(<Podium ranked={rankTeams(TRADING)} />))
+      const cls = host.querySelector('[class*="tv-idle-"]')?.className ?? ''
+      act(() => root.unmount())
+      host.remove()
+      return cls
+    }
+    expect(first()).toBe(first())
   })
 })
 

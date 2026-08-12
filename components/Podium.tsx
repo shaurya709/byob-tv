@@ -2,42 +2,55 @@
 
 import { VentureLogo } from '@/components/VentureLogo'
 import { formatRupees } from '@/lib/format'
+import { hashTeamId } from '@/lib/seed'
 import type { Team } from '@/lib/types'
 
 /**
- * Slide 1 — the absolute leaderboard: a crowned tile flanked by second and
- * third, over a strip carrying ranks 4–10.
+ * Slide 1 — the absolute leaderboard: three pillars, and ranks 4–10 below.
  *
- * **First place is the anchor and everything else is subordinate to it.** It is
- * the only dark mass on the frame, the only tile with a full-bleed brand
- * surface, and the tallest thing on the board. Rank is carried three ways at
- * once — surface, size, and position on a shared baseline — so a phone photo of
- * one corner still ranks and greyscale compression cannot take it away.
+ * Each venture's mark stands on a column with a capital and a base, and idles
+ * there. **The three pillars are identical in size.** Rank is carried by the
+ * green ramp, by the mark's diameter and by the numeral — never by height.
+ * Three tiles of unequal height was the previous design, and with nothing
+ * underneath them they read as three unrelated cards rather than as a podium.
  *
- * **No `layout` prop, and nothing animated at all.** The strip's rows are the
- * same pill the weekly board uses, but they are inert here: this slide is at
- * rest, and the boot kick lands on it in a later commit.
+ * ── What this deliberately spends ──
+ *
+ * This wall's rule is that movement means something happened, and the whole
+ * overtake kick rests on it. A permanently idling mark spends that rule. It
+ * was chosen knowingly: the idle is slow and small where the kick is fast,
+ * large and directional, so the two stay distinguishable. If the kick ever
+ * stops landing once both are on screen together, the idle is what gives.
+ *
+ * **No `layout` prop**, here or anywhere in the board tree — there is a source
+ * scan in render.test.tsx that fails the build on one. The idle is CSS
+ * keyframes on `transform` alone, so it is compositor work rather than a JS
+ * loop running for the weeks this page stays open without reloading.
  */
 
 const TOP = 10
 const PODIUM_PLACES = 3
 
-/**
- * The strip's mark, matching the weekly board's row exactly. Ranks 4–10 sit at
- * the same scale as every row on `/weekly`, which is the point — the audience
- * has to read the two slides as one board showing two figures.
- */
+/** The strip's mark, matching the weekly board's row exactly. The *scale*
+    matches so the two boards feel like one wall; the decoration differs so
+    they read as two different boards. */
 const STRIP_LOGO = 30
 
+/** The mark on a pillar. First place's is larger — one of the two things left
+    carrying rank now that all three columns are the same height. */
+const POD_LOGO_FIRST = 132
+const POD_LOGO_REST = 104
+
+const IDLE_TIMELINES = ['tv-idle-1', 'tv-idle-2', 'tv-idle-3'] as const
+
 /**
- * Who is on the board.
+ * Who is on the board. The top ten of whatever it is handed, and nothing else.
  *
- * The top ten of whatever it is handed, and nothing else. **The three tiles
- * render whether or not anyone is trading**: a podium with second and third
- * missing tells a passer-by the wall is broken, where three tiles reading "—"
- * tell them the cohort has not started. Filtering the spares and ranking are
- * both the caller's job — this component ranks nothing, so the sort stays the
- * single authority on order.
+ * The three pillars render whether or not anyone is trading: a podium with
+ * second and third missing tells a passer-by the wall is broken, where three
+ * pillars reading "—" tell them the cohort has not started. Filtering the
+ * spares and ranking are both the caller's job — this component ranks nothing,
+ * so the sort stays the single authority on order.
  */
 export function podiumTeams(ranked: readonly Team[]): Team[] {
   return ranked.slice(0, TOP)
@@ -46,7 +59,7 @@ export function podiumTeams(ranked: readonly Team[]): Team[] {
 /**
  * An em dash, not `₹0`.
  *
- * Zero is a figure, and a tile carrying one asserts that the team traded and
+ * Zero is a figure, and a pillar carrying one asserts that the team traded and
  * earned nothing. Before the cohort opens that is false for all forty of them.
  * The dash says "no figure yet", which is the only true thing available.
  */
@@ -55,28 +68,35 @@ function revenueOf(team: Team | undefined): string {
   return formatRupees(team.totalRevenue)
 }
 
-function nameOf(team: Team | undefined): string {
-  if (team === undefined) return ''
-  return team.ventureName || team.teamId
+/**
+ * Which of the three idle timelines this mark runs.
+ *
+ * Seeded off the team id, so a venture always idles the same way — exactly as
+ * it always gets the same tint, and for the same reason: a mark that moved
+ * differently after an overtake would read as a different venture.
+ */
+function idleOf(team: Team | undefined, place: number): string {
+  const seed = team === undefined ? place : hashTeamId(team.teamId)
+  return IDLE_TIMELINES[seed % IDLE_TIMELINES.length]
 }
 
 /**
  * "TOTAL REVENUE", over every figure on the slide.
  *
  * `/podium` ranks on all-time revenue and `/weekly` on the week's, and the two
- * slides rotate on the same screen minutes apart. Without this the only
- * difference between them is which numbers happen to be larger. Same size and
- * same treatment as the weekly board's column headings, so it reads as the same
- * piece of apparatus rather than as a second labelling system.
+ * rotate on one screen minutes apart. Without this the only difference between
+ * them is which numbers happen to be larger.
  */
-function Caption({ tone }: { tone: string }) {
+function Caption({ align }: { align: 'center' | 'right' }) {
   return (
     <span
       style={{
-        font: 'var(--t-tv-podium-label)',
+        font: 'var(--t-tv-pod-label)',
         letterSpacing: 'var(--track-overline)',
         textTransform: 'uppercase',
-        color: tone,
+        color: 'var(--fg-muted)',
+        textAlign: align,
+        display: 'block',
       }}
     >
       Total revenue
@@ -85,228 +105,210 @@ function Caption({ tone }: { tone: string }) {
 }
 
 /**
- * A name too long for its tile is clipped, not wrapped.
+ * One pillar: a mark, a capital, a shaft carrying the rank, a base, then the
+ * name and the figure.
  *
- * Every tile is a fixed height with a fixed stack inside it, so a second line
- * would push the figure below it out of the tile — and the figure is the reason
- * the tile exists. `minWidth: 0` is what actually lets the clip happen: this is
- * a flex child, whose automatic minimum size is its content, so without it the
- * element grows past the tile instead of truncating inside it.
+ * The mark sits in a fixed-height row and is bottom-aligned inside it. That is
+ * what lets first place have a larger mark while all three capitals still land
+ * on one line — aligning the marks by their tops instead would stagger every
+ * slab, shaft and figure across the frame.
  */
-function TileName({ team, font, tone }: { team: Team | undefined; font: string; tone: string }) {
-  return (
-    <span
-      style={{
-        font,
-        color: tone,
-        textAlign: 'center',
-        width: '100%',
-        minWidth: 0,
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {nameOf(team)}
-    </span>
-  )
-}
+function Pillar({ team, place }: { team: Team | undefined; place: number }) {
+  const first = place === 1
+  const logo = first ? POD_LOGO_FIRST : POD_LOGO_REST
 
-/**
- * One podium tile.
- *
- * The two variants differ only in surface and scale, so they are one component:
- * a crown and a flank that drifted apart would be the first thing to go wrong
- * on this slide, and nobody watching a wall would report it.
- *
- * The empty box where a logo would go is deliberate. It holds the stack's
- * geometry steady between "no feed yet" and the first snapshot, so the tile
- * does not visibly reassemble itself on the wall's first paint — and it is
- * empty rather than a placeholder mark, because a grey circle is filler and
- * this wall does not carry any.
- */
-function Tile({
-  team,
-  place,
-  crown,
-}: {
-  team: Team | undefined
-  place: number
-  /** First place: the dark surface, the larger scale, and the head above the rest. */
-  crown: boolean
-}) {
-  const logo = crown ? 120 : 90
   return (
     <div
-      className={crown ? 'theme-teal tv-podium-crown' : 'tv-podium-flank'}
       style={{
-        width: crown ? 'var(--w-podium-1)' : 'var(--w-podium-2)',
-        height: crown ? 'var(--h-podium-1)' : 'var(--h-podium-2)',
+        width: 'var(--w-pod)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center',
-        gap: crown ? 'var(--s-4)' : 'var(--s-3)',
-        padding: 'var(--s-5)',
-        // The tile is a fixed box and the stack inside it is measured to fit;
-        // this is the guarantee that a surprise — a font that loads a step
-        // heavier, a figure one digit longer — is clipped by the tile rather
-        // than spilling onto the tile beside it.
-        overflow: 'hidden',
       }}
     >
-      <span
-        className="tv-figure"
-        style={{
-          font: crown ? 'var(--t-tv-podium-rank-1)' : 'var(--t-tv-podium-rank-2)',
-          // Tangerine Glow on the dark tile, Deep Teal on the light ones: the
-          // numeral is the loudest mark in each tile, and on the crown it is
-          // the one warm thing on the whole frame.
-          color: crown ? 'var(--tangerine-glow)' : 'var(--deep-teal)',
-        }}
-      >
-        {place}
-      </span>
-
-      {team === undefined ? (
-        <div style={{ width: logo, height: logo }} />
-      ) : (
-        <VentureLogo team={team} size={logo} />
-      )}
-
-      <TileName
-        team={team}
-        font={crown ? 'var(--t-tv-podium-name-1)' : 'var(--t-tv-podium-name-2)'}
-        // `--fg1` under `.theme-teal` is white; on a white tile it is Midnight
-        // Charcoal, so the flanks name Deep Teal explicitly. The brief asks for
-        // Deep Teal type and for the crown's text to be light — on a Deep Teal
-        // surface only one of those can hold, and legibility is the one that
-        // matters at six metres.
-        tone={crown ? 'var(--fg1)' : 'var(--deep-teal)'}
-      />
-
+      {/* The mark's row. Its height is first place's diameter whatever this
+          pillar's own mark measures, so the capital line below is shared. */}
       <div
         style={{
+          height: POD_LOGO_FIRST,
           display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 'var(--s-1)',
+          alignItems: 'flex-end',
+          justifyContent: 'center',
+          marginBottom: 'var(--s-4)',
         }}
       >
-        {/* Mint 300 on the dark tile — `--fg3` under `.theme-teal` — rather
-            than the muted teal the light tiles use, which measures about 3.8:1
-            on Deep Teal and disappears down a corridor. */}
-        <Caption tone={crown ? 'var(--fg3)' : 'var(--fg-muted)'} />
+        {/* An empty box where a mark would go holds the stack's geometry steady
+            between "no feed yet" and the first snapshot, so the pillar does not
+            visibly assemble itself on the wall's first paint. Empty rather than
+            a placeholder mark — a grey circle is filler, and this wall carries
+            none. */}
+        {team === undefined ? (
+          <div style={{ width: logo, height: logo }} />
+        ) : (
+          <div className={idleOf(team, place)} style={{ willChange: 'transform' }}>
+            <VentureLogo team={team} size={logo} />
+          </div>
+        )}
+      </div>
+
+      <div
+        className="tv-pod-slab"
+        style={{ width: 'var(--w-pod-slab)', height: 'var(--h-pod-slab)' }}
+      />
+      <div
+        className="tv-pod-shaft"
+        style={{
+          width: 'var(--w-pod-shaft)',
+          height: 'var(--h-pod-shaft)',
+          display: 'flex',
+          justifyContent: 'center',
+          paddingTop: 'var(--s-4)',
+        }}
+      >
         <span
           className="tv-figure"
           style={{
-            font: crown ? 'var(--t-tv-podium-figure-1)' : 'var(--t-tv-podium-figure-2)',
-            color: 'var(--tangerine-600)',
+            font: 'var(--t-tv-pod-rank)',
+            // Light on the deep pillar, dark on the two light ones — the same
+            // rule VentureLogo already applies to its own light tints.
+            color: first ? 'var(--soft-mint)' : 'var(--deep-teal)',
           }}
         >
-          {revenueOf(team)}
+          {place}
         </span>
+      </div>
+      <div
+        className="tv-pod-slab"
+        style={{ width: 'var(--w-pod-slab)', height: 'var(--h-pod-slab)' }}
+      />
+
+      <div style={{ marginTop: 'var(--s-5)', width: '100%' }}>
+        <span
+          style={{
+            font: 'var(--t-tv-pod-name)',
+            color: 'var(--deep-teal)',
+            display: 'block',
+            textAlign: 'center',
+            // Clipped, never wrapped: every pillar is a fixed stack, and a
+            // second line pushes the figure out of it — and the figure is the
+            // reason the pillar exists.
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {team === undefined ? '' : team.ventureName || team.teamId}
+        </span>
+        <div style={{ marginTop: 'var(--s-2)' }}>
+          <Caption align="center" />
+          <span
+            className="tv-figure"
+            style={{
+              font: 'var(--t-tv-pod-figure)',
+              color: 'var(--tangerine-600)',
+              display: 'block',
+              textAlign: 'center',
+              marginTop: 'var(--s-1)',
+            }}
+          >
+            {revenueOf(team)}
+          </span>
+        </div>
       </div>
     </div>
   )
 }
 
 /**
- * The three tiles, on one baseline.
+ * The three pillars, 2 · 1 · 3 outward from the centre — the arrangement
+ * everyone already knows from a real podium, so nobody has to work out the
+ * order.
  *
- * `flex-end` is what makes this a podium: the flanks are 80px shorter than the
- * crown, so aligning the bottoms puts their top edges 80px lower without either
- * offset being written down anywhere. Second on the left and third on the
- * right, reading outward from the centre — the arrangement everyone already
- * knows from a real podium, so nobody has to work out the order.
+ * `perspective` lives here because the idle's glance is a `rotateY`; without a
+ * perspective ancestor that flattens into a horizontal squash and the mark
+ * looks like it is being crushed rather than turning to look at something.
+ *
+ * The ramp is applied as two custom properties per pillar, which `.tv-pod-shaft`
+ * and `.tv-pod-slab` read. That keeps the colours themselves in `:root` rather
+ * than spelling six of them out here.
  */
 function PodiumBand({ places }: { places: (Team | undefined)[] }) {
   const [first, second, third] = places
+  const pods = [
+    { team: second, place: 2, fill: 'var(--pod-2)', slab: 'var(--slab-2)' },
+    { team: first, place: 1, fill: 'var(--pod-1)', slab: 'var(--slab-1)' },
+    { team: third, place: 3, fill: 'var(--pod-3)', slab: 'var(--slab-3)' },
+  ]
+
   return (
     <div
       style={{
         display: 'flex',
-        alignItems: 'flex-end',
+        alignItems: 'flex-start',
         justifyContent: 'center',
-        gap: 'var(--s-podium-gap)',
+        gap: 'var(--s-pod-gap)',
+        perspective: '900px',
       }}
     >
-      <Tile team={second} place={2} crown={false} />
-      <Tile team={first} place={1} crown />
-      <Tile team={third} place={3} crown={false} />
+      {pods.map((pod) => (
+        <div
+          key={pod.place}
+          style={{ '--pod-fill': pod.fill, '--slab-fill': pod.slab } as React.CSSProperties}
+        >
+          <Pillar team={pod.team} place={pod.place} />
+        </div>
+      ))}
     </div>
   )
 }
 
 /**
- * The strip's row geometry, the weekly board's `ROW_OUTER` and `PILL_INNER` at
- * podium dimensions.
- *
- * Same arithmetic — rank track, pill track, and the three gaps around them —
- * so the rank sits *outside* the pill here exactly as it does on `/weekly`, and
- * the pill's own left edge is where the logo starts. The only thing that
- * changes is the width the pill is asked to fill: `--w-podium-pill` is derived
- * from the podium band's extent, so the strip's ends land under the outer edges
- * of second and third place.
- *
- * They are not imported from `VenturePill` because that row carries the kick's
- * whole animation surface and four columns this slide does not have. Sharing
- * the *tokens* is what keeps the two boards honest; sharing the component would
- * mean threading a second geometry through every beat of the kick.
- */
-const STRIP_OUTER: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: 'var(--w-rank) auto',
-  alignItems: 'center',
-  gap: 'var(--s-3)',
-  paddingInline: 'var(--s-3)',
-  width: 'calc(var(--w-rank) + var(--w-podium-pill) + 3 * var(--s-3))',
-  marginInline: 'auto',
-}
-
-const STRIP_INNER: React.CSSProperties = {
-  display: 'grid',
-  gridTemplateColumns: `${STRIP_LOGO}px minmax(0, 1fr) var(--w-podium-total)`,
-  alignItems: 'center',
-  gap: 'var(--s-3)',
-  paddingInline: 'var(--s-3)',
-  height: '100%',
-  overflow: 'hidden',
-}
-
-/**
  * Ranks 4–10.
  *
- * Seven rows, not the seven side-by-side tiles this slide used to carry: a row
- * is the shape the audience already reads on `/weekly`, and a horizontal strip
- * made ranks 4 and 10 look like peers of each other rather than a descending
- * list. The venture name comes back at this size too — the row is wide enough
- * to carry it, and a rank with no name on it is a number about nobody.
+ * **No pill.** `.tv-pill` is the weekly board's language — forty rows that
+ * close around their own mark during a kick — and borrowing it here made slide
+ * 1 look like a shorter slide 2. A hairline between rows is enough. The row
+ * height and the mark still match `/weekly` exactly, so the scale reads as one
+ * wall while the decoration says these are two different boards.
+ *
+ * The figures are black here and gold only on the podium. Gold on all ten
+ * would make the top three ordinary.
  */
 function Strip({ teams, fromRank }: { teams: readonly Team[]; fromRank: number }) {
   // An empty strip carries no heading. Apparatus describing absence is the same
   // filler as a "no data" message, in a smaller typeface.
   if (teams.length === 0) return null
 
+  const row: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: `var(--w-rank) ${STRIP_LOGO}px minmax(0, 1fr) var(--w-pod-total)`,
+    alignItems: 'center',
+    gap: 'var(--s-3)',
+    height: 'var(--h-row)',
+  }
+
   return (
-    <div style={{ display: 'grid', gridAutoRows: 'var(--h-row)', alignContent: 'start' }}>
-      {/* The caption sits over the figures it names, on the strip's own grid,
-          for the reason the weekly board's headings do: two copies of this
-          template would drift apart on the first change and nobody would notice
-          until a label pointed at the wrong column. */}
-      <div style={{ ...STRIP_OUTER, height: 'var(--h-col-head)', alignItems: 'end' }}>
+    <div style={{ width: 'var(--w-pod-board)', marginInline: 'auto' }}>
+      {/* The caption sits on the row's own grid so it lands over the figures it
+          names. Two copies of this template would drift apart on the first
+          change, and nobody would notice until a label pointed at the wrong
+          column. */}
+      <div style={{ ...row, height: 'var(--h-col-head)', alignItems: 'end' }}>
         <span />
-        <div style={{ ...STRIP_INNER, alignItems: 'end' }}>
-          <span />
-          <span />
-          <span style={{ textAlign: 'right' }}>
-            <Caption tone="var(--fg-muted)" />
-          </span>
-        </div>
+        <span />
+        <span />
+        <Caption align="right" />
       </div>
 
       {teams.map((team, index) => (
-        <div key={team.teamId} style={{ ...STRIP_OUTER, height: 'var(--h-row)' }}>
+        <div
+          key={team.teamId}
+          style={{
+            ...row,
+            borderBottom:
+              index === teams.length - 1 ? 'none' : 'var(--stroke-hair) solid var(--border)',
+          }}
+        >
           <span
             className="tv-figure"
             style={{
@@ -319,32 +321,29 @@ function Strip({ teams, fromRank }: { teams: readonly Team[]; fromRank: number }
           >
             {fromRank + index}
           </span>
-
-          <div className="tv-pill" style={STRIP_INNER}>
-            <VentureLogo team={team} size={STRIP_LOGO} />
-            <span
-              style={{
-                font: 'var(--t-tv-podium-row-name)',
-                color: 'var(--fg1)',
-                textAlign: 'center',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {team.ventureName || team.teamId}
-            </span>
-            <span
-              className="tv-figure"
-              style={{
-                font: 'var(--t-tv-podium-row-figure)',
-                color: 'var(--tangerine-600)',
-                textAlign: 'right',
-              }}
-            >
-              {revenueOf(team)}
-            </span>
-          </div>
+          <VentureLogo team={team} size={STRIP_LOGO} />
+          <span
+            style={{
+              font: 'var(--t-tv-pod-row-name)',
+              color: 'var(--fg1)',
+              textAlign: 'center',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {team.ventureName || team.teamId}
+          </span>
+          <span
+            className="tv-figure"
+            style={{
+              font: 'var(--t-tv-pod-row-figure)',
+              color: 'var(--midnight-charcoal)',
+              textAlign: 'right',
+            }}
+          >
+            {revenueOf(team)}
+          </span>
         </div>
       ))}
     </div>
@@ -353,19 +352,18 @@ function Strip({ teams, fromRank }: { teams: readonly Team[]; fromRank: number }
 
 export function Podium({ ranked }: { ranked: readonly Team[] }) {
   const visible = podiumTeams(ranked)
-  // Explicit indices, not a destructure of `visible`: the three tiles have to
+  // Explicit indices, not a destructure of `visible`: the three pillars have to
   // exist before the feed does, and `slice` on an empty list yields nothing to
-  // destructure. `undefined` is the tile's empty state, and it is a real one.
+  // destructure. `undefined` is the pillar's empty state, and it is a real one.
   const places = [visible[0], visible[1], visible[2]]
 
   return (
     <div
       style={{
         display: 'grid',
-        // The band, the breathing room between, and the strip. `alignContent`
-        // centres the three in whatever height the frame leaves, which is where
-        // the slide's resting margin comes from — it is not padding anyone had
-        // to measure.
+        // The band and the strip. `alignContent` centres the pair in whatever
+        // height the frame leaves, which is where the slide's resting margin
+        // comes from — it is not padding anyone had to measure.
         gridTemplateRows: 'auto auto',
         alignContent: 'center',
         gap: 'var(--s-10)',
