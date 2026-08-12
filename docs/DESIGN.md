@@ -382,11 +382,15 @@ already covers the realistic failure (a wrong timezone). A laptop's clock is NTP
 ## 8. Slides
 
 **`/podium`** — 1st centred and larger, 2nd left, 3rd right, ranks 4–10 in a strip below.
-Reuse the dashboard's proven treatment: first place on `panel-forest theme-dark` with the
-Mesa lockup top-left, 2nd/3rd on frosted glass, **rank written in words** so a greyscale
-crop still reads. Ranks 4–10 reorder with `layout="position"` — **as grid rows, not a
-`<table>`**: the dashboard measured 30 frames of a `<tr>` ignoring the layout transform
-and sitting still (`components/Standings.tsx:263`).
+That arrangement still holds; **the treatment described in the rest of this paragraph does
+not.** It was superseded once by the pillars and again by the cards that replaced them — see
+`docs/superpowers/specs/2026-08-12-podium-cards.md`, which is the live design. First place is
+a green card with a medal, not `panel-forest` with a lockup; there is no frosted glass; rank
+is a numeral, not a word. What survives verbatim is the reason the word was chosen — that a
+greyscale crop still has to rank — which the card now answers with size and a green ramp
+instead. Ranks 4–10 reorder **as grid rows, not a `<table>`**: the dashboard measured 30
+frames of a `<tr>` ignoring the layout transform and sitting still
+(`components/Standings.tsx:263`).
 
 Empty states per brief §6.3: fetch failure keeps last data and logs; fewer than 10
 revenue-earning teams shows only those; no revenue at all still shows the structure at

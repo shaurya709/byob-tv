@@ -125,26 +125,31 @@ describe('Podium', () => {
     expect(text.toLowerCase()).not.toContain('no data')
   })
 
-  it('renders three pillars with no feed at all', () => {
+  it('renders three cards with no feed at all', () => {
     const text = render(<Podium ranked={[]} />)
-    // Three dashes, one per pillar. An empty first paint is a real state and
-    // the podium holds its shape through it rather than assembling on screen.
+    // Three dashes, one per card. An empty first paint is a real state and the
+    // board holds its shape through it rather than assembling on screen.
     expect(text.match(/—/g)).toHaveLength(3)
   })
 
-  it('carries none of the weekly board pill', () => {
-    // `.tv-pill` is /weekly's language — forty rows that close around their own
-    // mark during a kick. Borrowing it here made slide 1 look like a shorter
-    // slide 2. This is the executable form of "do not borrow it back".
+  it('draws three cards and seven bars, and borrows nothing from /weekly', () => {
+    // `.tv-pill` is /weekly's language — rows that close around their own mark.
+    // Borrowing it here made slide 1 look like a shorter slide 2. This is the
+    // executable form of "do not borrow it back".
+    //
+    // The counts are the shape of the slide: three floating cards for the
+    // podium places and one bar per rank 4-10. They replace an assertion on the
+    // pillars' shafts and slabs, which is the same claim about the design that
+    // preceded this one.
     const all = teams().map((row, index) => ({ ...row, totalRevenue: 1_000 * (42 - index) }))
     const host = document.createElement('div')
     document.body.append(host)
     const root = createRoot(host)
     act(() => root.render(<Podium ranked={rankTeams(competingTeams(all))} />))
     expect(host.querySelectorAll('.tv-pill')).toHaveLength(0)
-    expect(host.querySelectorAll('.tv-pod-shaft')).toHaveLength(3)
-    // A capital and a base on each.
-    expect(host.querySelectorAll('.tv-pod-slab')).toHaveLength(6)
+    expect(host.querySelectorAll('.tv-pod-card')).toHaveLength(3)
+    expect(host.querySelectorAll('.tv-pod-medal')).toHaveLength(3)
+    expect(host.querySelectorAll('.tv-pod-bar')).toHaveLength(7)
     act(() => root.unmount())
     host.remove()
   })

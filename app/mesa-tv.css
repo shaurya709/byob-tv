@@ -255,109 +255,151 @@
   --w-tv-cal-stroke: 5;
   --t-tv-cal-figure: 800 clamp(11px, 1vw, 21px) / 1 var(--font-sans);
 
-  /* ========= PODIUM PILLARS =========
-
-     `/podium` is three columns with a capital and a base, standing apart, each
-     carrying a venture's mark on top of it. Sizes are stated in `vw` like the
-     rest of the wall, tuned so each lands on its target at exactly 1920:
-     19.79vw is 380px, 11.98vw is 230px, and so on. A `px` set here would
-     compose correctly on the TV and wrongly in every dev window, which is the
-     one thing this file's `vw` convention exists to prevent.
-
-     **The shafts step down by rank and share one ground line**, because that
-     is what a podium is. First place stands tallest in the middle, second and
-     third descend either side, and the bases all land on the same floor — the
-     shared baseline is what makes the three read as one object rather than as
-     three cards. Colour, mark diameter and numeral reinforce the order; they
-     do not have to carry it alone.
-
-     The slabs are deliberately wider than the shaft — a 14px overhang each
-     side. That is the whole difference between reading as a column and reading
-     as a bar.
-
-     **The gap you see is not `--s-pod-gap`.** It is that gap plus the empty
-     margin either side of the shaft inside its own column, because the column
-     is as wide as the venture name under it while the shaft is not. Halving
-     the visible gap therefore meant widening the shafts as well as closing the
-     columns up: 250px of daylight became 125px.
-
-     **The podium is sized to leave the strip room, not the other way round.**
-     These are the top ten of the cohort and the seven names below the podium
-     have to be legible from the same distance as the three on it. The band was
-     cut twice to pay for that.
-
-     One trap worth knowing if you retune these: the `--s-*` spacing scale is
-     fixed px, not `vw`. Every gap and padding on the frame therefore stays put
-     while these shrink, so a band that merely fits at 1920 will overlap the
-     header at 1600 — measured at -15.8px before this was budgeted properly.
-     Leave real slack, and check 1600x900 as well as 1920x1080. */
-  --w-pod: 19.79vw;
-  --w-pod-shaft: 15.63vw;
-  --w-pod-slab: 17.08vw;
-  --h-pod-shaft-1: 8.5vw;
-  --h-pod-shaft-2: 6.6vw;
-  --h-pod-shaft-3: 5.2vw;
-  --h-pod-slab: 0.63vw;
-  --s-pod-gap: 2.34vw;
-
-  /* The board's horizontal extent: three pillars and the two gaps between
-     them, 1320px at 1920. The strip below is set to exactly this so ranks
-     4–10 read as a continuation of the podium and not as a second object. */
-  --w-pod-board: calc(3 * var(--w-pod) + 2 * var(--s-pod-gap));
-  --w-pod-total: 9vw;
-
-  /* A rule between strip rows. This separates rows; it does not draw a shape
-     around them, which is what `.tv-pill` does on the weekly board. */
+  /* The thinnest line the wall draws. **Not a podium token**, though it lived in
+     the podium block until the pillars were removed and nearly took it with
+     them — `VentureLogo` and the dev flip trigger both ask for it. */
   --stroke-hair: 1px;
 
-  /* ── The strip's own scale ──
+  /* ========= PODIUM — three floating cards, then seven ranked bars =========
 
-     **Deliberately not `--h-row`.** That token is 2.3vw because the weekly
-     board puts *forty* rows on one frame, in two columns of twenty. This strip
-     carries seven, in one column, and inheriting the forty-row height left the
-     top ten looking like an afterthought squeezed under the podium — cramped
-     type, no air, and a third of the frame empty.
+     **The pillars are gone.** `/podium` was three columns with a capital and a
+     base, standing on a shared ground line; the slide is now three cards that
+     float, and ranks 4–10 as bars. The reasoning that built the pillars — that
+     a shared floor is what makes three objects read as one podium — was sound
+     for a podium and is simply not what this slide is any more. The superseded
+     design is docs/superpowers/specs/2026-08-12-podium-pillars-design.md.
 
-     So the row keeps the weekly board's *language* — rank outside, mark, name
-     centred, figure right — at the size seven rows can actually afford. The
-     podium above was shrunk to pay for it. */
-  --h-pod-row: 3.0vw;
-  --h-pod-col-head: 1.67vw;
-  --w-pod-rank: 2.6vw;
+     Sizes stay `vw` like the rest of the wall. A `px` here would compose
+     correctly on the TV and wrongly in every dev window, which is the one thing
+     this file's `vw` convention exists to prevent.
+
+     ── The card ──
+
+     A green card with the venture's mark floating on it, its name and its total
+     underneath, and the rank as a medal pinned over the top-left corner. Rank is
+     carried three ways at once — the card's size, the depth of its green, and
+     the medal — so a greyscale crop still ranks, and so does a crop that loses
+     the medal.
+
+     The card is **wider than the mark needs**, and that is deliberate: the
+     widest thing in it is the venture name, not the disc. "The Pitlane
+     Collective" at `--t-tv-pod-name` wants about 250px, and a card sized to the
+     disc alone would have to clip it.
+
+     ── The vertical budget, and the trap in it ──
+
+     Measured from the running frame at 1920x1080: 1000px of content box, 65.3px
+     of header, so the board gets 934.7px. The four bands below sum to about
+     880px at 1920, which leaves ~27px of clearance under the header.
+
+     That slack is not spare — it is the budget, and **the medal spends part of
+     it before the card does**. The medal hangs about a third of its own diameter
+     above the card's top edge, so the clearance that matters is the card's less
+     the overhang: measured at the first pass, a card sitting a comfortable 26px
+     under the header put its medal 3.9px under it. `measure-fit.mjs` measures
+     the medal for that reason.
+
+     The `--s-*` scale is fixed px and does not shrink with these `vw` sizes, so
+     the gaps hold their width while everything else contracts and the tightest
+     frame is **1600x900**, not the smallest one. Measured on the pillars before
+     this was budgeted: -15.8px of clearance at 1600, on a band that looked
+     perfect at 1920. Re-run `scripts/measure-fit.mjs` after touching any height
+     here.
+
+     ── The size step is what carries first place ──
+
+     18.6 against 14.8 is a 1.52x mark, not the 1.31x the first pass had. Three
+     cards a few percent apart read as three cards; the reference this is drawn
+     from makes the winner unmistakably bigger and lets second and third be
+     identical twins, which is also what a real podium does. */
+  --w-pod-card-1: 17.4vw;    /* 334px @1920 */
+  --w-pod-card-r: 13vw;      /* 250px */
+  --h-pod-card-1: 18.6vw;    /* 357px — mark 214px */
+  --h-pod-card-r: 14.8vw;    /* 284px — mark 141px */
+
+  /* How much green shows around the mark. */
+  --s-pod-card-inset: var(--s-5);
+
+  /* The white ring around the mark, drawn *outside* its box.
+
+     It has to be budgeted rather than added, for the reason the weekly board's
+     green preview learned the hard way: a ring drawn outside the element still
+     lands on whatever is under it, so the mark shrinks by twice the ring rather
+     than the card growing by it. Without the ring a dark logo on a dark card
+     loses its edge entirely, and the fallback initial discs — which are tinted
+     from a set that includes deep teal — disappear outright. */
+  --s-pod-ring: 0.28vw;
+
+  /* The name, the caption and the figure, as one block. Constant across all
+     three cards, so the row-to-row difference is absorbed **entirely by the
+     mark** — the same rule the weekly grid follows, and the reason three cards
+     of different sizes still read as one system. */
+  --h-pod-card-text: 4.8vw;
+
+  --s-pod-gap: 2.6vw;
+  --d-pod-medal: 3.2vw;
+
+  /* The board's horizontal extent: three cards and the two gaps between them,
+     987px at 1920. The strip below is set to exactly this, so ranks 4–10 read
+     as a continuation of the top three and not as a second object. */
+  --w-pod-board: calc(
+    var(--w-pod-card-1) + 2 * var(--w-pod-card-r) + 2 * var(--s-pod-gap)
+  );
+  --w-pod-total: 9vw;
+
+  /* ── The bar's own scale ──
+
+     **Deliberately not the weekly board's row height.** That board puts *forty*
+     rows on one frame; this strip carries seven, and inheriting the forty-row
+     height left the top ten looking like an afterthought squeezed under the
+     podium — cramped type, no air, and a third of the frame empty.
+
+     3.35vw is 64.3px, which is what a 48px mark needs to sit inside a bar with
+     air above and below it. The mark cannot go under about 50px: below that the
+     wordmarks stop resolving into anything and become coloured dots.
+
+     The gap between bars is `--s-1`, not `--s-2`. Four bars' worth of extra gap
+     is 24px, and at 1600x900 that is the whole clearance. */
+  --h-pod-row: 3.15vw;
+  --s-pod-row-gap: var(--s-1);
+  --h-pod-col-head: 1.2vw;
+  --w-pod-rank: 3.4vw;
+  --d-pod-row-logo: 2.5vw;
 
   /* ── The ramp ──
 
      Deepest at first place, lightest at third, with second genuinely between
      them — a real green family rather than one colour desaturated three times.
 
-     Two of the three are brand tokens outright. Only the middle is derived,
-     and it is derived by formula rather than written as a literal, which is
-     what keeps the never-hardcode-a-hex rule intact. 62% is the closest single
-     mix to the approved swatch (#2E8A55); no ratio reproduces it exactly,
-     because that colour does not sit on the line between the two tokens. If
-     pod 2 reads dull beside pod 3, raise the ratio toward 68% — do not
-     introduce a literal.
+     **Every step still carries white type**, which is what caps the ratio. The
+     pillars could afford `--bright-green` at third place because a filled shape
+     has no contrast floor; a card with a name and a figure on it does. Measured
+     on the third step: white 5.4:1 and `--tangerine-200` 3.6:1, and it is the
+     tangerine that binds — at 55% the figure drops to 3.0:1, which is the AA
+     large floor exactly and no margin at all for a TV's own gamma.
 
-     Each slab is the next darker step of the same ramp, so a slab is always
-     "this pillar, in shadow" and never a second decorative system. An earlier
-     draft made them tangerine and they read as applied ornament. */
+     Even steps, 0 / 28 / 50, because the first pass used 0 / 22 / 45 and the
+     step from first to second was too small to see across a corridor — first
+     and second read as the same green with different marks on them.
+
+     Derived by formula rather than written as a literal, which is what keeps
+     the never-hardcode-a-hex rule intact. */
   --pod-1: var(--deep-forest-green);
-  --pod-2: color-mix(in srgb, var(--green-600) 62%, var(--deep-forest-green));
-  --pod-3: var(--bright-green);
-  --slab-1: var(--deep-teal);
-  --slab-2: var(--pod-1);
-  --slab-3: var(--pod-2);
+  --pod-2: color-mix(in srgb, var(--green-600) 28%, var(--deep-forest-green));
+  --pod-3: color-mix(in srgb, var(--green-600) 50%, var(--deep-forest-green));
 
   /* Podium type. Heavy — 800, the top of MesaBody's declared axis — because a
      rank numeral at this size is a shape before it is a number. */
-  --t-tv-pod-rank: 800 clamp(24px, 2.6vw, 55px) / 1 var(--font-sans);
+  --t-tv-pod-rank: 800 clamp(20px, 1.9vw, 40px) / 1 var(--font-sans);
   --t-tv-pod-name: 600 clamp(13px, 1.3vw, 27px) / 1.15 var(--font-sans);
   --t-tv-pod-figure: 800 clamp(18px, 2vw, 42px) / 1 var(--font-sans);
-  /* The "TOTAL REVENUE" caption, on the pillars and over the strip's figure
+  /* The "TOTAL REVENUE" caption, on the cards and over the strip's figure
      column. Same role and same size as the weekly board's column headings. */
   --t-tv-pod-label: 700 clamp(9px, 0.65vw, 14px) / 1 var(--font-sans);
-  --t-tv-pod-row-rank: 500 clamp(13px, 1.45vw, 30px) / 1 var(--font-sans);
-  --t-tv-pod-row-name: 500 clamp(13px, 1.5vw, 31px) / 1.1 var(--font-sans);
+  --t-tv-pod-row-rank: 700 clamp(13px, 1.45vw, 30px) / 1 var(--font-sans);
+  /* 600, not 500. The bars are a leaderboard rather than a table of contents,
+     and at 500 the seven names read as caption text sitting inside a graphic. */
+  --t-tv-pod-row-name: 600 clamp(13px, 1.5vw, 31px) / 1.1 var(--font-sans);
   --t-tv-pod-row-figure: 700 clamp(13px, 1.55vw, 32px) / 1 var(--font-sans);
 
   /* ── Idle intensity: "playful" ──
@@ -391,13 +433,11 @@
      tangerine — the dial's final day, every podium figure — it uses
      `--tangerine-600`.
 
-     **Amended for the podium.** Pod 3 uses `--bright-green` as a large filled
-     shape on white, with a dark numeral on it. The 1.9:1 figure above is a
-     *text* contrast measurement and does not govern a filled pillar; the real
-     risk there is a soft edge against white, which is checked by measuring the
-     running app rather than assumed — see
-     docs/superpowers/specs/2026-08-12-podium-pillars-design.md. The ban still
-     stands, unchanged, for any figure or label set in it. */
+     **The podium's exemption is withdrawn.** Pod 3 used to be `--bright-green`
+     outright — legitimately, because a filled pillar carrying only a dark
+     numeral has no text-contrast floor to fail. The card that replaced it
+     carries a name *and* a figure, so it does, and the ramp now stops at a mix.
+     Nothing on this wall sets `--bright-green` any more. */
 }
 
 /* Animations defined in CSS rather than in Motion, for one shared reason: each
@@ -922,18 +962,127 @@
     }
   }
 
-  /* A pillar's shaft, and its capital and base.
+  /* ── One of the three floating cards ──
 
-     The colour arrives per-pillar as an inline `--pod-fill` / `--slab-fill`,
+     The colour and both dimensions arrive per-card as inline custom properties,
      so one class serves all three and the ramp itself stays up in `:root`
-     rather than being spelled out three times in the component. */
-  .tv-pod-shaft {
+     rather than being spelled out three times in the component.
+
+     **`--d-pod-logo` must be declared here, on the card, and never in `:root`.**
+     `--h-pod-card` is set per card by the component, so a `calc()` written at
+     `:root` substitutes an `--h-pod-card` that does not exist there, becomes
+     invalid at computed-value time, and silently hands every mark a junk size.
+     The weekly grid was written that way once: rows 1–2 rendered marks at
+     10.3 x 16px and rows 3–4 at 153.6px, on a page that otherwise looked
+     entirely correct.
+
+     `min()`, because which axis binds is not fixed. At the current sizes both
+     cards are height-bound — the card is deliberately wider than the mark needs
+     so the venture name has room — but a card retuned taller would flip to
+     width-bound, and the expression says so rather than assuming.
+
+     **No `overflow: hidden`.** The medal hangs off the top-left corner. */
+  .tv-pod-card {
+    position: relative;
+    width: var(--w-pod-card);
+    height: var(--h-pod-card);
     background: var(--pod-fill);
-    border-radius: var(--radius-xs);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    --d-pod-logo: min(
+      calc(
+        var(--h-pod-card) - var(--h-pod-card-text) - 2 * var(--s-pod-card-inset) - 2 *
+          var(--s-pod-ring)
+      ),
+      calc(var(--w-pod-card) - 2 * var(--s-pod-card-inset) - 2 * var(--s-pod-ring))
+    );
   }
 
-  .tv-pod-slab {
-    background: var(--slab-fill);
+  /* The mark's white ring, and the shadow that makes it float off the card.
+
+     `box-shadow`, not `border` and not `filter`: a border would change the box
+     the idle animation transforms, and a filter of any kind forces the used
+     value of `transform-style` to `flat` — which is what silently destroyed the
+     weekly board's disc flip when a `drop-shadow` was tried there. */
+  .tv-pod-mark {
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 var(--s-pod-ring) var(--white),
+      0 10px 22px color-mix(in srgb, var(--deep-teal) 45%, transparent);
+  }
+
+  /* The rank medal, pinned over the card's top-left corner.
+
+     Top-*left*, where the weekly board's rank numerals also sit. The reference
+     this is drawn from puts it on the right; the wall already has an answer to
+     "where does rank live", and two answers on two slides that rotate minutes
+     apart is worse than either one. */
+  .tv-pod-medal {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: var(--d-pod-medal);
+    height: var(--d-pod-medal);
+    top: calc(var(--d-pod-medal) * -0.28);
+    left: calc(var(--d-pod-medal) * -0.28);
+    border-radius: 50%;
+    background: var(--tangerine-glow);
+    color: var(--deep-teal);
+    font: var(--t-tv-pod-rank);
+    /* The white ring is what lifts the medal off the green rather than letting
+       it read as a hole punched in the card. */
+    box-shadow:
+      0 0 0 calc(var(--s-pod-ring) * 0.8) var(--white),
+      var(--shadow-md);
+  }
+
+  /* ── One bar, ranks 4–10 ──
+
+     Two blocks with daylight between them: a green tab carrying the rank, and a
+     mint bar carrying the mark, the name and the figure. The tab is the
+     reference's signature — a rank that sits *beside* the row rather than
+     inside it — and the daylight is what stops the pair reading as one pill.
+
+     Quiet on purpose. The three cards above are the story; seven bars in a
+     strong fill would flatten that back out, which is the same reason the
+     pillars' strip refused `.tv-pill`. */
+  .tv-pod-tab {
+    display: grid;
+    place-items: center;
+    width: var(--w-pod-rank);
+    height: 100%;
+    background: var(--deep-forest-green);
+    color: var(--white);
+    border-radius: var(--radius-sm);
+    /* The bars float too, one step quieter than the cards — `--shadow-sm`
+       against the cards' `--shadow-lg`. Without it seven mint rectangles sit
+       flat on a white page while the three things above them hover, and the
+       slide reads as two unrelated treatments rather than one board. */
+    box-shadow: var(--shadow-sm);
+  }
+
+  .tv-pod-bar {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    flex: 1;
+    min-width: 0;
+    background: var(--soft-mint);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* The figure gets its own block inside the bar — the reference's third
+     element. On a mint bar a white block reads as a distinct surface without
+     adding a hue, and it is what makes seven figures scan as a column. */
+  .tv-pod-total {
+    display: grid;
+    place-items: center end;
+    width: var(--w-pod-total);
+    align-self: stretch;
+    margin: var(--s-2);
+    padding-inline: var(--s-3);
+    background: var(--white);
     border-radius: var(--radius-xs);
   }
 
@@ -959,9 +1108,4 @@
     }
   }
 
-  /* Ranks 4-10. Quieter again: a hairline rule, no fill. */
-  .tv-card-plain {
-    border: var(--stroke-thin) solid var(--border);
-    border-radius: var(--radius-md);
-  }
 }

@@ -1,7 +1,21 @@
 # `/podium` — pillars, a green ramp, and a progress dial
 
+> **SUPERSEDED, 12 August 2026.** The pillars are gone. `/podium` is now three
+> floating cards and seven ranked bars — see
+> `docs/superpowers/specs/2026-08-12-podium-cards.md`.
+>
+> Read this document for the reasoning, which mostly survives: the green ramp,
+> the "rank is said more than once" rule, the strip refusing `.tv-pill`, and the
+> fixed-px spacing trap all carried over intact. What did not survive is §2's
+> central claim — that a shared ground line is what makes three objects read as
+> one podium. That is true of a podium, and the slide is not one any more.
+>
+> §5's `--h-row` note is also stale twice over: it was already corrected once
+> when `/weekly` became a 4 × 10 grid with four row heights, and neither board
+> shares a row height with the other now.
+
 **Date:** 12 August 2026
-**Status:** approved in brainstorm, not yet implemented
+**Status:** superseded — implemented in `fb434cb`…`9c6f4f8`, replaced by the cards
 **Supersedes:** the podium described in `docs/DESIGN.md` §8 ("1st centred and larger, 2nd left,
 3rd right, ranks 4–10 in a strip below", on `panel-forest` and frosted glass, rank written in words)
 

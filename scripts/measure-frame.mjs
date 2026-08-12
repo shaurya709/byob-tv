@@ -6,8 +6,8 @@
  *
  * Reach for this after any change to a board's geometry, colour or motion. It
  * answers the questions a DOM assertion cannot: did anything leave the frame,
- * are the three pillars actually identical, did `color-mix()` resolve to three
- * distinct greens, are the marks really on different idle timelines.
+ * do the three podium cards actually step in size, did `color-mix()` resolve to
+ * three distinct greens, are the marks really on different idle timelines.
  *
  * Everything here is read back from the running page. `docs/DESIGN.md` §9 and
  * AGENTS.md both say the same thing and it has been earned three times over:
@@ -78,16 +78,22 @@ const report = await page.evaluate(() => {
       },
     },
 
-    // Podium pillars. Identical size is the design's core claim; the ramp
-    // stepping is the other.
-    shafts: [...document.querySelectorAll('.tv-pod-shaft')].map((el) => ({
+    // The three podium cards. **Size stepping and the green ramp are the
+    // design's two claims about rank**, and both are read back here rather than
+    // trusted: the ramp is three `color-mix()` results that have to resolve to
+    // three *distinct* luminances, and the first pass at it stepped so little
+    // that first and second read as the same green from across a corridor.
+    //
+    // This replaced a reading of `.tv-pod-shaft` and `.tv-pod-slab`, whose claim
+    // was the opposite one — that the three pillars were identical in size.
+    cards: [...document.querySelectorAll('.tv-pod-card')].map((el) => ({
       ...box(el),
       fill: getComputedStyle(el).backgroundColor,
       luminance: luminance(getComputedStyle(el).backgroundColor),
     })),
-    slabTops: [...document.querySelectorAll('.tv-pod-slab')]
-      .filter((_, i) => i % 2 === 0)
-      .map((el) => n(el.getBoundingClientRect().y)),
+    medalTops: [...document.querySelectorAll('.tv-pod-medal')].map((el) =>
+      n(el.getBoundingClientRect().y),
+    ),
 
     // Three marks must never share a timeline, or they move in lockstep.
     idle: [...document.querySelectorAll('[class*="tv-idle-"]')].map((el) => {

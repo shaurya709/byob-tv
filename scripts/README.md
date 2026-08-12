@@ -32,7 +32,7 @@ node scripts/measure-fit.mjs [url]
 ```
 
 Renders the slide at four viewports and reports header clearance, bottom air,
-row height, strip width, pillar gap and overflow count.
+row height, strip width, the gap between the podium cards, and overflow count.
 
 **Reach for it after changing any height, gap or type size.** This is the one
 that catches what a single 1920×1080 check cannot.
@@ -56,14 +56,14 @@ node scripts/measure-frame.mjs http://localhost:3000/weekly weekly.png
 ```
 
 Dumps JSON: viewport and scroll extent, every element leaving the frame, the
-header and dial, pillar geometry and **resolved fill luminance**, idle timeline
+header and dial, podium-card geometry and **resolved fill luminance**, idle timeline
 names and durations, mark sizes, `.tv-pill` count, strip rows, and which font
 faces actually loaded.
 
 **Reach for it after any change to geometry, colour or motion.** It answers
-what a DOM assertion cannot: did anything leave the frame, are the pillars
-genuinely identical, did `color-mix()` resolve to three *distinct* greens, are
-the three marks really on different idle timelines.
+what a DOM assertion cannot: did anything leave the frame, do the three podium
+cards genuinely step in size, did `color-mix()` resolve to three *distinct*
+greens, are the three marks really on different idle timelines.
 
 Two notes earned the hard way:
 

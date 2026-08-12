@@ -54,19 +54,34 @@ for (const [width, height] of SIZES) {
     // is now only the detail base sitting at the cell's *bottom*. Measuring that
     // reported 207.5px of clearance on a grid whose real top was 24px under the
     // header — a comfortable number that described the wrong edge.
+    //
+    // **The medal, not just the card.** The medal hangs about a third of its own
+    // diameter above the card's top-left corner, so the card's own top edge is
+    // not the topmost thing on the slide. Measured while this said `.tv-pod-card`
+    // alone: 26.1px of clearance reported on a board whose medal was 3.9px under
+    // the header — a comfortable number describing the wrong edge, which is the
+    // same failure the `.tv-card` selector had on /weekly.
+    //
+    // The mark is deliberately *not* in this list: it bobs, so its top depends
+    // on which animation frame the measurement caught.
     const tops = [
-      ...document.querySelectorAll('[class*="tv-idle-"], .tv-pod-slab, .tv-card-cell'),
+      ...document.querySelectorAll('.tv-pod-medal, .tv-pod-card, .tv-card-cell'),
     ].map((el) => el.getBoundingClientRect().top)
-    const shafts = [...document.querySelectorAll('.tv-pod-shaft')].map((el) =>
+    const cards = [...document.querySelectorAll('.tv-pod-card')].map((el) =>
       el.getBoundingClientRect(),
     )
-    const rows = [...document.querySelectorAll('main > div > div:last-child > div')]
+    // The strip's own rows, addressed by class rather than by position. The
+    // structural selector this replaced (`main > div > div:last-child > div`)
+    // silently started counting the caption row as row one when the strip gained
+    // a column heading, and a measurement that quietly describes a different
+    // element is worse than no measurement.
+    const rows = [...document.querySelectorAll('.tv-pod-bar')]
     const last = rows.at(-1)?.getBoundingClientRect()
-    const sorted = [...shafts].sort((a, b) => a.x - b.x)
+    const sorted = [...cards].sort((a, b) => a.x - b.x)
     return {
       clearance: header && tops.length ? n(Math.min(...tops) - header.bottom) : null,
       bottomAir: last ? n(innerHeight - last.bottom) : null,
-      rowH: rows.length > 1 ? n(rows[1].getBoundingClientRect().height) : null,
+      rowH: rows.length ? n(rows[0].getBoundingClientRect().height) : null,
       stripW: rows.length ? n(rows[0].getBoundingClientRect().width) : null,
       pillarGap: sorted.length === 3 ? n(sorted[1].left - sorted[0].right) : null,
       // Anything genuinely leaving the frame. **Elements an ancestor already
