@@ -167,49 +167,80 @@
   --w-tv-cal-stroke: 5;
   --t-tv-cal-figure: 800 clamp(11px, 1vw, 21px) / 1 var(--font-sans);
 
-  /* ========= PODIUM BAND =========
+  /* ========= PODIUM PILLARS =========
 
-     `/podium` is one crowned tile flanked by two smaller ones, over a strip of
-     ranks 4–10. Sizes are stated in `vw` like the rest of the wall, tuned so
-     each lands on its brief target at exactly 1920: 25vw is 480px, 22.92vw is
-     440px, and so on. A `px` set here would compose correctly on the TV and
-     wrongly in every dev window, which is the one thing the whole file's
-     `vw` convention exists to prevent.
+     `/podium` is three columns with a capital and a base, standing apart, each
+     carrying a venture's mark on top of it. Sizes are stated in `vw` like the
+     rest of the wall, tuned so each lands on its target at exactly 1920:
+     19.79vw is 380px, 11.98vw is 230px, and so on. A `px` set here would
+     compose correctly on the TV and wrongly in every dev window, which is the
+     one thing this file's `vw` convention exists to prevent.
 
-     The flanks are 80px (4.17vw) shorter *and* dropped 80px, so all three
-     tiles share a bottom edge while first place stands a head above the
-     others. That shared baseline is what makes it read as a podium rather
-     than as three cards of unequal size. */
-  --w-podium-1: 25vw;
-  --h-podium-1: 22.92vw;
-  --w-podium-2: 19.8vw;
-  --h-podium-2: 18.75vw;
-  --s-podium-gap: 2.08vw;
+     **All three pillars are identical in size.** Rank is carried by the colour
+     ramp, by the mark's diameter and by the numeral — never by height. Three
+     tiles of unequal height was the previous design, and it read as three
+     unrelated cards rather than as one podium.
 
-  /* The board's horizontal extent: the three tiles and the two gaps between
+     The slabs are deliberately wider than the shaft. That overhang is the
+     whole difference between reading as a column and reading as a bar. */
+  --w-pod: 19.79vw;
+  --w-pod-shaft: 11.46vw;
+  --w-pod-slab: 12.92vw;
+  --h-pod-shaft: 11.98vw;
+  --h-pod-slab: 0.73vw;
+  --s-pod-gap: 4.69vw;
+
+  /* The board's horizontal extent: three pillars and the two gaps between
      them, 1320px at 1920. The strip below is set to exactly this so ranks
      4–10 read as a continuation of the podium and not as a second object. */
-  --w-podium-board: calc(var(--w-podium-1) + 2 * var(--w-podium-2) + 2 * var(--s-podium-gap));
+  --w-pod-board: calc(3 * var(--w-pod) + 2 * var(--s-pod-gap));
+  --w-pod-total: 8vw;
 
-  /* The strip's pill track, derived the same way `--w-pill` is on the weekly
-     board: the board width less the rank column and the three gaps around it,
-     so `ROW_OUTER`'s arithmetic holds at podium dimensions. */
-  --w-podium-pill: calc(var(--w-podium-board) - var(--w-rank) - 3 * var(--s-3));
-  --w-podium-total: 8vw;
+  /* A rule between strip rows. This separates rows; it does not draw a shape
+     around them, which is what `.tv-pill` does on the weekly board. */
+  --stroke-hair: 1px;
+
+  /* ── The ramp ──
+
+     Deepest at first place, lightest at third, with second genuinely between
+     them — a real green family rather than one colour desaturated three times.
+
+     Two of the three are brand tokens outright. Only the middle is derived,
+     and it is derived by formula rather than written as a literal, which is
+     what keeps the never-hardcode-a-hex rule intact. 62% is the closest single
+     mix to the approved swatch (#2E8A55); no ratio reproduces it exactly,
+     because that colour does not sit on the line between the two tokens. If
+     pod 2 reads dull beside pod 3, raise the ratio toward 68% — do not
+     introduce a literal.
+
+     Each slab is the next darker step of the same ramp, so a slab is always
+     "this pillar, in shadow" and never a second decorative system. An earlier
+     draft made them tangerine and they read as applied ornament. */
+  --pod-1: var(--deep-forest-green);
+  --pod-2: color-mix(in srgb, var(--green-600) 62%, var(--deep-forest-green));
+  --pod-3: var(--bright-green);
+  --slab-1: var(--deep-teal);
+  --slab-2: var(--pod-1);
+  --slab-3: var(--pod-2);
 
   /* Podium type. Heavy — 800, the top of MesaBody's declared axis — because a
      rank numeral at this size is a shape before it is a number. */
-  --t-tv-podium-rank-1: 800 clamp(56px, 6.25vw, 130px) / 1 var(--font-sans);
-  --t-tv-podium-rank-2: 800 clamp(42px, 4.69vw, 98px) / 1 var(--font-sans);
-  --t-tv-podium-name-1: 600 clamp(16px, 1.46vw, 30px) / 1.15 var(--font-sans);
-  --t-tv-podium-name-2: 600 clamp(13px, 1.15vw, 24px) / 1.15 var(--font-sans);
-  --t-tv-podium-figure-1: 800 clamp(24px, 2.19vw, 46px) / 1 var(--font-sans);
-  --t-tv-podium-figure-2: 800 clamp(18px, 1.67vw, 35px) / 1 var(--font-sans);
-  /* The "TOTAL REVENUE" caption, on the tiles and over the strip's figure
+  --t-tv-pod-rank: 800 clamp(30px, 3.33vw, 70px) / 1 var(--font-sans);
+  --t-tv-pod-name: 600 clamp(14px, 1.35vw, 28px) / 1.15 var(--font-sans);
+  --t-tv-pod-figure: 800 clamp(20px, 2.19vw, 46px) / 1 var(--font-sans);
+  /* The "TOTAL REVENUE" caption, on the pillars and over the strip's figure
      column. Same role and same size as the weekly board's column headings. */
-  --t-tv-podium-label: 700 clamp(9px, 0.573vw, 12px) / 1 var(--font-sans);
-  --t-tv-podium-row-name: 500 clamp(12px, 1.15vw, 24px) / 1.1 var(--font-sans);
-  --t-tv-podium-row-figure: 600 clamp(12px, 1.15vw, 24px) / 1 var(--font-sans);
+  --t-tv-pod-label: 700 clamp(9px, 0.573vw, 12px) / 1 var(--font-sans);
+  --t-tv-pod-row-name: 500 clamp(12px, 1.15vw, 24px) / 1.1 var(--font-sans);
+  --t-tv-pod-row-figure: 600 clamp(12px, 1.15vw, 24px) / 1 var(--font-sans);
+
+  /* ── Idle intensity: "playful" ──
+
+     Unitless, so one set of keyframes serves any intensity through `calc()`.
+     Amplitude resolves to px, the other two to deg. */
+  --idle-amp: 16;
+  --idle-turn: 34;
+  --idle-tilt: 9;
 
   --track-tv-tight: -0.02em;
 
@@ -228,16 +259,86 @@
      deeper, already a brand token, roughly 3.1:1 on white. `VenturePill` does.
 
      The same trap applies to `--tangerine-glow`: where this wall needs
-     tangerine — the calendar's LIVE NOW — it uses `--tangerine-600`. */
+     tangerine — the dial's final day, every podium figure — it uses
+     `--tangerine-600`.
+
+     **Amended for the podium.** Pod 3 uses `--bright-green` as a large filled
+     shape on white, with a dark numeral on it. The 1.9:1 figure above is a
+     *text* contrast measurement and does not govern a filled pillar; the real
+     risk there is a soft edge against white, which is checked by measuring the
+     running app rather than assumed — see
+     docs/superpowers/specs/2026-08-12-podium-pillars-design.md. The ban still
+     stands, unchanged, for any figure or label set in it. */
 }
 
-/* The only animation defined in CSS rather than in Motion. It runs for the
-   whole event day on the calendar's LIVE NOW, unrelated to any state change,
-   and handing that to a JS animation loop would keep the main thread busy
-   forever for a fade. */
+/* Animations defined in CSS rather than in Motion, for one shared reason: each
+   runs forever, unrelated to any state change, and handing a permanent loop to
+   a JS animation loop would keep the main thread busy for the life of a page
+   that never reloads. Everything event-driven is still Motion's. */
 @keyframes tv-breathe {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.55; }
+}
+
+/* ── The podium idle ──
+
+   Three timelines built from one repertoire — bob, glance left, glance right,
+   double-take, tilt — so the marks read as alive rather than as a loop. The
+   glance is a `rotateY` under a container `perspective`, which turns the
+   mark's *face*; sliding it sideways instead reads as drift, not as looking.
+
+   Durations differ (17s / 19s / 23s) rather than merely being offset, so the
+   three never fall into step and the pattern does not visibly repeat. Which
+   timeline a venture gets is seeded from its team id, so a venture always
+   idles the same way — see lib/seed.ts.
+
+   **This spends the wall's central rule**, that movement means something
+   happened. It was chosen knowingly: the idle is slow and small where the kick
+   is fast, large and directional, so the two stay distinguishable. If the kick
+   ever stops landing once both are on screen, the idle is what gives.
+
+   Transform only, so this is compositor work rather than layout — forty
+   minutes of reflow a day would be the alternative. */
+
+@keyframes tv-idle-1 {
+  0%, 4%   { transform: translateY(0) rotateY(0deg) rotate(0deg); }
+  9%       { transform: translateY(calc(var(--idle-amp) * -1px)); }
+  15%      { transform: translateY(0); }
+  20%      { transform: translateY(calc(var(--idle-amp) * -0.55px)); }
+  26%, 33% { transform: translateY(0); }
+  40%, 52% { transform: translateY(calc(var(--idle-amp) * -0.2px)) rotateY(calc(var(--idle-turn) * -1deg)); }
+  59%, 68% { transform: translateY(0) rotateY(0deg); }
+  76%      { transform: translateY(calc(var(--idle-amp) * -0.8px)) rotate(calc(var(--idle-tilt) * -1deg)); }
+  84%      { transform: translateY(0) rotate(calc(var(--idle-tilt) * -0.3deg)); }
+  92%, 100% { transform: translateY(0) rotate(0deg); }
+}
+
+@keyframes tv-idle-2 {
+  0%, 7%   { transform: translateY(0) rotateY(0deg) rotate(0deg); }
+  14%, 24% { transform: rotateY(calc(var(--idle-turn) * 1deg)) rotate(calc(var(--idle-tilt) * 0.25deg)); }
+  31%      { transform: rotateY(0deg) rotate(0deg); }
+  37%      { transform: translateY(calc(var(--idle-amp) * -1px)); }
+  43%, 49% { transform: translateY(0); }
+  /* The double-take: a glance, back, then commit to the look. */
+  54%      { transform: rotateY(calc(var(--idle-turn) * -0.45deg)); }
+  59%      { transform: rotateY(0deg); }
+  66%, 79% { transform: translateY(calc(var(--idle-amp) * -0.25px)) rotateY(calc(var(--idle-turn) * -1deg)) rotate(calc(var(--idle-tilt) * -0.3deg)); }
+  87%, 100% { transform: translateY(0) rotateY(0deg) rotate(0deg); }
+}
+
+@keyframes tv-idle-3 {
+  0%       { transform: translateY(0) rotateY(0deg) rotate(0deg); }
+  5%       { transform: translateY(calc(var(--idle-amp) * -0.75px)); }
+  10%      { transform: translateY(0); }
+  15%      { transform: translateY(calc(var(--idle-amp) * -0.9px)); }
+  20%      { transform: translateY(0); }
+  25%      { transform: translateY(calc(var(--idle-amp) * -0.5px)); }
+  31%, 38% { transform: translateY(0); }
+  /* The sweep: all the way left, across to right, then home. */
+  46%, 53% { transform: rotateY(calc(var(--idle-turn) * -1deg)); }
+  63%, 70% { transform: rotateY(calc(var(--idle-turn) * 1deg)); }
+  78%      { transform: rotate(calc(var(--idle-tilt) * 1deg)); }
+  86%, 100% { transform: rotateY(0deg) rotate(0deg); }
 }
 
 @layer components {
@@ -294,26 +395,34 @@
     border-radius: calc(var(--h-row) / 2);
   }
 
-  /* First place on `/podium`.
+  /* A pillar's shaft, and its capital and base.
 
-     Deep Teal rather than the Deep Forest Green `.tv-panel-forest` uses: this
-     is the only full-bleed dark object on the frame, and Deep Teal is the
-     deepest brand surface, so it carries the most weight available without
-     inventing anything. Pair it with `.theme-teal` on the same element and the
-     foreground tokens inside flip with it — `--fg1` becomes white, `--fg3`
-     becomes Mint 300 — instead of each child naming a light colour by hand. */
-  .tv-podium-crown {
-    background: var(--deep-teal);
-    border-radius: var(--radius-xl);
+     The colour arrives per-pillar as an inline `--pod-fill` / `--slab-fill`,
+     so one class serves all three and the ramp itself stays up in `:root`
+     rather than being spelled out three times in the component. */
+  .tv-pod-shaft {
+    background: var(--pod-fill);
+    border-radius: var(--radius-xs);
   }
 
-  /* Second and third. White, so the crown is the only dark mass on the frame,
-     and a Border Mint hairline to give the tile an edge without a fill that
-     would start to compete with it. */
-  .tv-podium-flank {
-    background: var(--white);
-    border: var(--stroke-thin) solid var(--border-mint);
-    border-radius: var(--radius-lg);
+  .tv-pod-slab {
+    background: var(--slab-fill);
+    border-radius: var(--radius-xs);
+  }
+
+  .tv-idle-1 { animation: tv-idle-1 17s ease-in-out infinite; }
+  .tv-idle-2 { animation: tv-idle-2 19s ease-in-out infinite -6s; }
+  .tv-idle-3 { animation: tv-idle-3 23s ease-in-out infinite -13s; }
+
+  /* Someone will eventually drive this wall from a machine with the OS
+     reduce-motion setting on, and a permanently moving mark is precisely what
+     that setting exists to stop. */
+  @media (prefers-reduced-motion: reduce) {
+    .tv-idle-1,
+    .tv-idle-2,
+    .tv-idle-3 {
+      animation: none;
+    }
   }
 
   /* Ranks 4-10. Quieter again: a hairline rule, no fill. */
