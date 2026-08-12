@@ -67,15 +67,18 @@ const PLACES = {
 type Place = keyof typeof PLACES
 
 /**
- * The mark's share of the white disc it sits in.
+ * The mark's share of the white mount it sits in.
  *
- * Not 100%. Every source logo is already a circle with its own ground — Xoco's
- * is deep red, snackerly's is cream — so a mark drawn to the disc's edge hides
- * the disc entirely and the treatment would exist only for the teams without
- * artwork. At 82% the white reads as a mount that every card shares, and a dark
- * mark keeps an edge against a dark card.
+ * **93%, up from 82%.** The mount exists so a cream logo has an edge against a
+ * dark card, and a thin ring does that as well as a thick one — at 82% the white
+ * was reading as part of the mark rather than as a border around it, which made
+ * every logo look like it had been shrunk inside its own circle.
+ *
+ * Still not 100%: every source logo is already a circle with its own ground, so
+ * a mark drawn flush to the mount's edge hides the mount entirely and the
+ * treatment would exist only for the teams without artwork.
  */
-const MARK_IN_DISC = 0.82
+const MARK_IN_DISC = 0.93
 
 /**
  * Who is on the board. The top ten of whatever it is handed, and nothing else.
@@ -431,9 +434,14 @@ export function Podium({ ranked }: { ranked: readonly Team[] }) {
         ref={row}
         style={{
           display: 'flex',
+          // `flex-end` keeps the three bases on one line; `align-self: center`
+          // then centres that whole block in the column, so the white space
+          // falls above *and* below the podium rather than all above it. The
+          // row is content-height for the same reason — given `100%` it would
+          // hang from the column's floor again.
           alignItems: 'flex-end',
+          alignSelf: 'center',
           gap: 'var(--s-pod-gap)',
-          height: '100%',
           minWidth: 0,
           minHeight: 0,
           // Centres the group's mass rather than its box — see `useCentroidShift`.

@@ -330,13 +330,20 @@
      turns out too faint on the wall, the fix that keeps the colour is a darker
      edge on the glyph rather than a different gold.
 
-     Bronze is the only one off its specified value, and it has now been wrong in
-     both directions. `#B07542` sat too close to `--tangerine-600` and read as
-     brand orange; `#CD6237` fixed that by rotating the hue 13° redder, which is
-     the direction that reads as orange harder still. **Separation should come
-     from depth, not hue**, and measured in Lab it does: at essentially
-     tangerine's own hue, a darker duller `#865D37` is ΔE 28.9 from it, against
-     14.0 for the specified value and 21.3 for the red-shifted one.
+     Bronze has now been wrong in three directions, and the third correction is
+     the interesting one. `#B07542` sat too close to `--tangerine-600`;
+     `#CD6237` rotated 13° redder, which reads as orange harder still; `#865D37`
+     separated properly on depth (ΔE 28.9 in Lab) and read as **brown** rather
+     than as a metal.
+
+     `#AF602C` is the balance: ΔE 15.9 from tangerine and 31.6 from gold,
+     saturated and light enough to read as copper. True bronze — `#CD7F32` —
+     measures ΔE 5.1 from `--tangerine-600` and is simply not distinguishable
+     from it, so it cannot be used however right the name is.
+
+     What makes the smaller separation safe is the ramp. The metals are gradients
+     now and tangerine is a flat fill wherever it appears, so the two read as
+     different *materials* before their hues are compared at all.
 
      ── Three literals, and that is now the whole exemption ──
 
@@ -347,7 +354,7 @@
      literal this file is claiming an exemption for and not using. */
   --metal-gold: #D9A441;
   --metal-silver: #A8AFB5;
-  --metal-bronze: #865D37;
+  --metal-bronze: #AF602C;
 
 
   /* ========= PODIUM — a spine, three cards on plinths, seven pills =========
@@ -412,14 +419,14 @@
      accident, `column-gap: var(--w-pod-half-gap)` fell back to `normal` rather
      than failing, the halves touched, and the board still rendered plausibly. */
   --w-pod-half-gap: 2.6vw;
-  /* **12.5vw, not 6.** At 6 the tallest pillar came to 685px in a 963px column
-     and left 278px of dead white above it — the podium read as sitting in the
-     bottom of its half while the list beside it ran the full height. The riser
-     is what fills that: two of them lift first place to within about 30px of the
-     column's top, and the staircase reads 1.00 : 0.74 : 0.47 rather than the
-     shallow 1.00 : 0.83 : 0.66 it had. Rank 3 is untouched — it is still exactly
-     its own content, and the height all comes from the steps above it. */
-  --h-pod-riser: 12.5vw;
+  /* **5.5vw.** This has been tuned from both ends. At 6vw and bottom-anchored
+     the podium read as sitting in the floor of its half with all the white
+     above; at 12.5vw it filled the half and the pillars read as long boxes with
+     a small mark in them. The height is back down and the *whole group* is
+     centred instead, so the white space falls above and below it. Rank 3 is
+     untouched throughout — it is its own content, and every extra pixel is in
+     the steps above it. */
+  --h-pod-riser: 5.5vw;
   --h-pod-foot: 1.5vw;
   --s-pod-gap: 1.6vw;
   /* **Equal to `--w-pod-half-gap`, and that is the point.** The podium sits in
@@ -444,7 +451,9 @@
   /* One diameter for all three. The cards are the same width now, so the mark is
      width-bound on every one of them and a per-place size would only mean two of
      the three were not filling their card. */
-  --d-pod-disc: 8.6vw;
+  /* Up from 8.6vw. On the taller pillars the mark was covering under a fifth of
+     the card and the pillar read as a long empty box with a badge in it. */
+  --d-pod-disc: 9.6vw;
 
   /* The badge, as a share of its card's width. The short cards' is a *larger*
      share so that all three badges land at a similar absolute size — a badge
