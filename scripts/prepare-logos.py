@@ -146,7 +146,7 @@ def main():
         path = os.path.join(SRC, name)
         if not os.path.isfile(path) or name.startswith("."):
             continue
-        match = re.match(r"team\s*(\d+)\.(jpg|jpeg|png)$", name, re.IGNORECASE)
+        match = re.match(r"team\s*(\d+)\s*\.(jpg|jpeg|png)$", name, re.IGNORECASE)
         if match is None:
             skipped.append(name)
             continue

@@ -207,8 +207,8 @@ export const KICK_MS = 3_000
  *
  * Because presence is known ahead of the render, no broken image is ever
  * requested and there is no error-handler flash. A team not in this list gets
- * the coloured initial, which is a first-class treatment — **24 of 42 logos
- * exist**, so it still carries nearly half the wall.
+ * the coloured initial, which is a first-class treatment — **28 of 42 logos
+ * exist**, so it now carries two thirds of the wall.
  *
  * These files are generated, not dropped in by hand: `scripts/prepare-logos.py`
  * masks every circular source logo to a disc with transparent corners, so it
@@ -222,10 +222,12 @@ export const KICK_MS = 3_000
  * venture names and every one agrees — Team 1 is Dosa Crisps, Team 15 is
  * CHAKHA NA?, Team 34 is In Between Sips by Kaappitalism, and so on.
  *
- * Two source files carry no team number — ROLLIN and UNHINGED — and neither
- * name is in the feed. They are almost certainly `SLE-C422` and `SLE-C435`, the
- * only unnamed non-spare workbooks, but nothing says which is which, so neither
- * is placed. See the docstring in `scripts/prepare-logos.py`.
+ * ROLLIN and UNHINGED were the two that could not be placed from the feed — no
+ * such venture names are published — and they are now assigned by hand to
+ * `SLE-C422` and `SLE-C435` respectively, by the person who knows. `Team 30` and
+ * `Team 7` arrived in the same batch, and both re-confirm the mapping
+ * independently: 30 is The Chips n Dip Story against `SLE-C430`'s "The Chips n
+ * Dips Story", and 7 is Wake & Wyze against `SLE-C407`'s.
  */
 export const LOGOS: readonly TeamId[] = [
   'SLE-C401',
@@ -234,6 +236,7 @@ export const LOGOS: readonly TeamId[] = [
   'SLE-C404',
   'SLE-C405',
   'SLE-C406',
+  'SLE-C407',
   'SLE-C408',
   'SLE-C409',
   'SLE-C410',
@@ -243,12 +246,15 @@ export const LOGOS: readonly TeamId[] = [
   'SLE-C418',
   'SLE-C419',
   'SLE-C420',
+  'SLE-C422',
   'SLE-C423',
   'SLE-C426',
   'SLE-C427',
   'SLE-C429',
+  'SLE-C430',
   'SLE-C433',
   'SLE-C434',
+  'SLE-C435',
   'SLE-C436',
   'SLE-C438',
   'SLE-C440',
