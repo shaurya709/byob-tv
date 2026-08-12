@@ -398,7 +398,14 @@
      family are size and the negative tracking, and both are spent here.
 
      `--font-serif` does reach 900, and BYOB is the one place it is used. */
-  --t-pod-byob: 900 clamp(38px, 5.4vw, 112px) / 1.02 var(--font-serif);
+  /* **Archivo Black, and only here.** A third family, bundled in `app/fonts/`
+     and scoped to one word — see the note in `layout.tsx` for why that rule is
+     bent rather than broken. The weight is `400` because Archivo Black *is* the
+     900: there is no axis, so nothing can render it lighter by accident. This
+     replaced MesaSerif at 900, which was the heaviest thing this wall could
+     draw. */
+  --t-pod-byob: 400 clamp(38px, 5.4vw, 112px) / 1.02 var(--font-display-black),
+    var(--font-serif);
   --t-pod-count: 800 clamp(30px, 4.2vw, 88px) / 1 var(--font-sans);
   --t-pod-fig-1: 800 clamp(44px, 6.1vw, 128px) / 1 var(--font-sans);
   --t-pod-fig-r: 800 clamp(26px, 3.5vw, 74px) / 1 var(--font-sans);
@@ -1020,8 +1027,11 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: var(--s-pod-top) var(--s-5) var(--s-6);
+    /* The head padding is smaller than the board's, because the lockup now
+       leads the spine and a logo needs less air above it than a card does. */
+    padding: var(--s-8) var(--s-5) var(--s-6);
     color: var(--white);
+    gap: var(--s-8);
     /* The as-of stamp asks for `--fg-muted` through `.tv-ticker`, and that token
        is a dark-surface value — charcoal-grey on Deep Forest is nearly invisible.
        Redefining the token here rather than overriding the class is what
@@ -1046,12 +1056,16 @@
   /* **The colour is set here, not inherited from the spine.** The design system
      gives `h1`-`h4` a colour of their own, unlayered, so an inherited `--white`
      loses to it and the wordmark renders charcoal on Deep Forest — present,
-     invisible, and passing every check. AGENTS.md lists this trap by name. */
+     invisible, and passing every check. AGENTS.md lists this trap by name.
+
+     Archivo Black is wider and heavier than the serif it replaced, so the
+     tracking comes off: a face this dense needs the counters to breathe rather
+     than the letters to. */
   .tv-pod-byob {
     font: var(--t-pod-byob);
     color: var(--white);
     text-align: center;
-    letter-spacing: 0.02em;
+    letter-spacing: 0;
   }
 
   .tv-pod-rule {

@@ -73,8 +73,18 @@ height, Manrope 800 carries **80% of its ink** and sets 8% narrower. The two
 levers that recover some of that without a second font family are size and the
 negative tracking, and both are spent.
 
-`--font-serif` does reach 900, and `BYOB` is the one place it appears — so the
-one element that can carry the design's weight exactly does.
+**`BYOB` is set in Archivo Black**, a third family added by decision after the
+first build and scoped to that one word. It is *bundled* — a 9.8KB latin woff2 in
+`app/fonts/` with its OFL licence — never linked: a `fonts.googleapis.com`
+request is a runtime network dependency on a wall that runs unattended for weeks,
+and a font that fails to load silently falls back to Helvetica on a screen nobody
+is watching closely enough to notice.
+
+Single weight, and that is the point: Archivo Black *is* the 900, so there is no
+axis and nothing can render it lighter by accident. It replaced MesaSerif at 900,
+which was the heaviest thing this wall could previously draw. A side effect worth
+knowing: nothing on `/podium` uses the serif any more, and the browser confirms
+it — `mesaSerifVariable` reports `unloaded` on this slide.
 
 ## 5. The countdown: one brain, two presentations
 
@@ -105,7 +115,8 @@ displaying a defect its own risk list asks to prevent:
   fires. It stays because a venture can be renamed from a spreadsheet on any
   Tuesday.
 - **Card 3's wordmark spills past its white circle.** Every mark is contained.
-- **The spec's 4.5% masthead.** 86px cannot hold stacked serif `BYOB`. The image
+- **The spec's 4.5% masthead.** 86px cannot hold stacked `BYOB` at any weight.
+  The image
   measures 12.5% and the image wins; the spec's own author agreed.
 
 Two further deviations, both deliberate and both small:
@@ -116,18 +127,21 @@ Two further deviations, both deliberate and both small:
 - **The short cards' disc is 9.8vw, not the image's 10.1vw.** At 10.1 it leaves
   itself 1px in a short card at 2000×1100 and spills over its own venture name.
 
-## 7. The masthead foot is a colophon, and every line earns its place
+## 7. The spine's furniture, and what it lost
 
-The lockup, because this is a Mesa campus wall and the brand does not leave it.
-The as-of stamp, because the wall shows no error state by design — a failed fetch
-keeps the last good data and goes on rendering perfectly healthy stale numbers
-for days, and this stamp is the only thing that makes that visible. And "Total
-revenue" **once**, because `/podium` ranks on all-time and `/weekly` on the
-week's, and without it the only difference between two slides minutes apart is
-which numbers happen to be larger.
+**The lockup leads the spine.** It began in the colophon at the foot and was
+moved to the head, which is where every other Mesa surface puts it and where the
+eye enters a left-hand band; everything below slid down behind it.
 
-Once, not per card. Three cards each captioned with the same two words is
-apparatus repeating itself.
+The as-of stamp closes the spine, because the wall shows no error state by design
+— a failed fetch keeps the last good data and goes on rendering perfectly healthy
+stale numbers for days, and this stamp is the only thing that makes that visible.
+
+**"Total revenue" was here and has been removed**, by decision. It was the one
+line telling a passer-by that these figures are all-time where `/weekly`'s are
+the week's, and the two slides rotate on one screen minutes apart — so the
+ambiguity it covered is now uncovered. Recorded rather than argued: if a figure
+is ever misread between the two boards, this is the line that went.
 
 ## 8. Contrast, measured off the running page
 

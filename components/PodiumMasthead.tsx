@@ -112,6 +112,22 @@ function Countdown({ at }: { at: Date | null }) {
 export function PodiumMasthead({ snapshot }: { snapshot: Snapshot | null }) {
   return (
     <aside className="tv-pod-spine">
+      {/* **The lockup leads.** It sat in the colophon at the foot and has moved
+          to the head of the spine, which is where every other Mesa surface puts
+          it and where the eye enters a left-hand band. Everything below has slid
+          down behind it.
+
+          The reversed lockup, because the spine is Deep Forest — the
+          green-on-white file the shared header uses is invisible here. */}
+      <Image
+        src="/brand/logo-pg-white.png"
+        alt="Mesa School of Business"
+        width={448}
+        height={128}
+        style={{ width: '62%', height: 'auto' }}
+        unoptimized
+      />
+
       {/* One letter per line rather than `writing-mode: vertical-rl`, which
           rotates the glyphs onto their side. These stand upright and stack,
           which is the only version that stays readable at a glance. */}
@@ -124,8 +140,8 @@ export function PodiumMasthead({ snapshot }: { snapshot: Snapshot | null }) {
       </h1>
 
       {/* The rule sits between identity and stake. `auto` margins above and
-          below are what distribute the spine's slack — the three zones hold
-          their own proportions and the air between them absorbs the frame. */}
+          below are what distribute the spine's slack — the zones hold their own
+          proportions and the air between them absorbs the frame. */}
       <div
         style={{
           marginBlock: 'auto',
@@ -140,28 +156,17 @@ export function PodiumMasthead({ snapshot }: { snapshot: Snapshot | null }) {
         <Countdown at={snapshot === null ? null : fleaInstant(snapshot.cohort)} />
       </div>
 
-      <div
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 'var(--s-3)',
-          width: '100%',
-        }}
-      >
-        <span className="tv-pod-label">Total revenue</span>
-        {/* The reversed lockup, because the spine is Deep Forest. The green-on
-            -white file used in the shared header is invisible here. */}
-        <Image
-          src="/brand/logo-pg-white.png"
-          alt="Mesa School of Business"
-          width={448}
-          height={128}
-          style={{ width: '62%', height: 'auto' }}
-          unoptimized
-        />
-        <AsOf snapshot={snapshot} />
-      </div>
+      {/* **"Total revenue" is gone from here**, by decision. It was the one line
+          telling a passer-by that these figures are all-time where `/weekly`'s
+          are the week's, and the two slides rotate on one screen minutes apart —
+          so the ambiguity it covered is now uncovered. Recorded rather than
+          argued: if a figure is ever misread between the two boards, this is the
+          line that went.
+
+          What stays is the as-of stamp, which is load-bearing for a different
+          reason: the wall shows no error state, so a failed fetch renders
+          perfectly healthy stale numbers for days and this is the only tell. */}
+      <AsOf snapshot={snapshot} />
     </aside>
   )
 }

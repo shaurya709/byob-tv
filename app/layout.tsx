@@ -3,8 +3,8 @@ import localFont from 'next/font/local'
 import './globals.css'
 
 /**
- * Both faces are self-hosted, so the wall makes **no runtime request to a font
- * CDN**. That matters more here than in a normal app: this runs unattended for
+ * All three faces are self-hosted, so the wall makes **no runtime request to a
+ * font CDN**. That matters more here than in a normal app: this runs unattended for
  * weeks, and a font request that fails silently falls back to Georgia or
  * Helvetica on a screen nobody is watching closely enough to notice.
  *
@@ -48,6 +48,37 @@ const mesaSerifVariable = localFont({
   variable: '--font-mesa-serif',
 })
 
+/**
+ * Archivo Black, for `BYOB` in `/podium`'s masthead and nothing else.
+ *
+ * **A third family, added deliberately and scoped to one word.** The rule this
+ * bends is a real one — two families is what keeps two TVs setting the same
+ * frame identically — so this is not a general display face. It is a wordmark,
+ * it appears once, and it is the only thing on either wall that uses it.
+ *
+ * It is *bundled*, not linked. The 9.8KB latin subset sits in `app/fonts/` next
+ * to the other two with its OFL licence, because a `fonts.googleapis.com` link
+ * would put a runtime network dependency on a wall that runs unattended for
+ * weeks — and a font request that fails silently falls back to Helvetica on a
+ * screen nobody is watching closely enough to notice.
+ *
+ * Single weight, and that is the point: Archivo Black *is* the 900. There is no
+ * axis to set, so nothing here can accidentally render it lighter. It replaced
+ * MesaSerif at 900, which was the heaviest thing this wall could previously
+ * draw.
+ *
+ * The const is not named `archivoBlack` for the same reason `mesaBody` is not
+ * named `Manrope`: `next/font/local` derives the CSS family name from it, and a
+ * name matching a real family risks merging with any `local()` rule that shares
+ * it.
+ */
+const displayBlack = localFont({
+  src: './fonts/ArchivoBlack-Regular.woff2',
+  weight: '400',
+  display: 'block',
+  variable: '--font-display-black',
+})
+
 export const metadata: Metadata = {
   title: 'BYOB Wall',
   description: 'Live leaderboard and Mesa Flea countdown for BYOB Cohort 2026.',
@@ -65,7 +96,10 @@ export const metadata: Metadata = {
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-IN" className={`${mesaBody.variable} ${mesaSerifVariable.variable}`}>
+    <html
+      lang="en-IN"
+      className={`${mesaBody.variable} ${mesaSerifVariable.variable} ${displayBlack.variable}`}
+    >
       <body>{children}</body>
     </html>
   )
