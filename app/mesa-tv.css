@@ -392,7 +392,7 @@
   /* How far the numeral hangs off the card, as a share of its own cap height and
      its own width. It **sits on the corner** rather than inset from it, so it
      breaks two edges at once. */
-  --k-pod-num-up: 0.54;
+  --k-pod-num-up: 0.59;
   /* How far the numeral hangs off the card's left edge, as a share of its own
      cap.
 
@@ -407,8 +407,8 @@
      a neighbour 33px to its left, and the daylight between a numeral and the
      card it is *not* part of is the thing that stops it being read as that
      card's. Measured below, not estimated. */
-  --k-pod-num-left: 0.32;
-  --k-pod-num-left-r: 0.26;
+  --k-pod-num-left: 0.37;
+  --k-pod-num-left-r: 0.31;
 
   /* One cycle: the sweep, then the rest. **Both got longer, and the rest got
      longer by more.** At 7s the highlight crossed in 2.7s and came back every
