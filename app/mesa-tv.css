@@ -535,8 +535,14 @@
      invisible. The ring gives every mark an edge without touching the tint
      itself, which has to stay constant across both slides: a venture that
      changed colour between the podium and the board would read as two ventures. */
+  /* Rounded at the base as well as the top. The top two corners are clipped by
+     the card's own radius and `overflow: hidden`, so only the bottom two have to
+     be asked for — left flat they gave the panel two sharp corners against the
+     text block while the card around it was rounded on all four, which read as
+     an unfinished block rather than as the card's own top half. */
   .tv-card-panel {
     background: var(--tv-card-panel);
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
   }
 
   .tv-card-mark {
