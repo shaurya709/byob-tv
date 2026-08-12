@@ -55,8 +55,13 @@ npm run build        # next build
   authority on order.
 - Challenge weeks 1–8, anchored **20 July 2026** (not the 21st). Mesa Flea: 6 September
   2026, 10:00 IST assumed. Capital repayment: 30 September 2026.
-- A team with an empty `venture_name` never fires a trigger. The wall does not celebrate
-  `SLE-C407`.
+- A team with an empty `venture_name` **does** fire a trigger, like any other. This line
+  previously claimed the opposite; `lib/overtake.ts` never enforced it, and the behaviour
+  it describes is not the one we want — an unnamed team that overtakes has still overtaken.
+  The card carries its Team ID rather than a blank, so the wall celebrates `SLE-C407` by
+  name-or-ID rather than not at all. Decided in
+  `docs/superpowers/specs/2026-08-12-weekly-card-grid.md` §3; the doc was corrected to
+  match the code, not the other way round.
 - Currency: `Intl.NumberFormat('en-IN')` — `₹1,04,500`, not `₹104,500`.
 
 ## Traps that report nothing

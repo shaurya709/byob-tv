@@ -182,6 +182,15 @@ Row height stays `--h-row` (44.16px), shared with `/weekly`, and the mark stays 
 right kind of consistency: the *scale* matches so the two boards feel like one wall, while the
 *decoration* differs so they read as two different boards.
 
+> **Superseded on implementation, 12 Aug 2026.** The sharing was tried and rejected on measured
+> evidence. Inheriting the forty-row height left the top ten looking like an afterthought squeezed
+> under the podium — cramped type, no air, a third of the frame empty — so the strip runs on its own
+> `--h-pod-row: 3.0vw` and the podium above was shrunk to pay for it. The reasoning is recorded at
+> `app/mesa-tv.css`. `/weekly` has since become a 4 × 10 card grid with four row heights and no
+> `--h-row` at all, so there is no longer a row on `/weekly` for this one to match. The two boards
+> are held together by screenshotting both at 1920, not by a shared token. See
+> `docs/superpowers/specs/2026-08-12-weekly-card-grid.md` §4.
+
 Columns, left to right: rank (`--midnight-charcoal`) · 30px logo · venture name, centred · total
 revenue, right-aligned, black. A right-aligned `TOTAL REVENUE` caption sits above the figure column
 and renders only when there is at least one row under it.
