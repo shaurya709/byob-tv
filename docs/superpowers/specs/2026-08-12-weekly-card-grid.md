@@ -81,8 +81,22 @@ at 1920 has been measured at −15.8px of clearance at 1600 × 900.
 
 ## 2. Card anatomy
 
-**Top half: the team's logo.** Centred, contained, never cropped or stretched. Logos
-vary in aspect ratio, so fit within the half rather than filling it.
+**Top half: the team's logo, on a Deep Forest Green panel.** Centred, contained, never
+cropped or stretched. Logos vary in aspect ratio, so fit within the half rather than
+filling it.
+
+The panel is `var(--deep-forest-green)` — the logomark token, and the same green the card
+back uses when it flips, so a card caught mid-flip is one object in one colour rather than
+two. It bleeds to the card's top edges; an inset panel reads as a swatch laid on a card
+rather than as the card's own top half.
+
+**Every mark carries a soft-mint hairline on the panel.** Two of `VentureLogo`'s six
+identity tints — Deep Forest Green and Deep Teal — are the panel's own colour or near it,
+so without a ring those ventures would show a letter floating on green with the tile that
+carries their identity invisible. The ring gives every mark an edge without touching the
+tint, which has to stay constant across both slides: a venture that changed colour between
+the podium and the board would read as two ventures. Those cards are still the lowest
+contrast on the board and are the price of the green panel.
 
 **Bottom half: the venture name and both revenue figures.**
 
@@ -91,6 +105,13 @@ numbers per team, and `HOT_TODAY_MIN` (₹5,000) drives the board's single empha
 Both survive the redesign. Week revenue is the larger figure — it is the number the
 board exists to show — with today's beneath it, carrying the hot emphasis when it
 crosses the threshold.
+
+**Today's figure is labelled; the week's is not.** The list this replaces put "This week"
+and "Today" above the two figure columns. A card has nowhere to put column headings, so two
+bare rupee amounts would leave a passer-by no way to tell which is which. A small `TODAY`
+tag rides the figure itself, and appears **only when there is a figure** — a permanent
+caption over an empty line is apparatus describing absence, and it would be describing it
+on all forty cards on a quiet morning.
 
 **If the bottom half is tight, the space comes out of the logo half, never out of a
 figure.** This is what makes the text block a *fixed* height, identical in all forty

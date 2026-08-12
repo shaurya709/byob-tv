@@ -49,7 +49,10 @@ export function VentureCard({ team, rank }: { team: Team; rank: number }) {
         height: '100%',
         display: 'grid',
         gridTemplateRows: `minmax(0, 1fr) var(--h-card-text)`,
-        padding: 'var(--s-card-pad)',
+        // **No padding on the card.** The green panel has to reach the card's
+        // own edges, and a padded card would leave a white gutter around it that
+        // reads as a swatch laid on the card rather than as the card's top half.
+        // The text block carries its own padding instead.
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -68,8 +71,8 @@ export function VentureCard({ team, rank }: { team: Team; rank: number }) {
       <div
         style={{
           position: 'absolute',
-          top: 'var(--s-card-pad)',
-          left: 'var(--s-card-pad)',
+          top: 'var(--s-card-inset)',
+          left: 'var(--s-card-inset)',
           minWidth: 'var(--d-card-badge)',
           height: 'var(--d-card-badge)',
           paddingInline: 'calc(var(--d-card-badge) * 0.22)',
@@ -93,18 +96,21 @@ export function VentureCard({ team, rank }: { team: Team; rank: number }) {
           real diameter. Checking the *width* against the ~50px threshold would
           pass trivially while the mark sat under it — see the correction in
           docs/superpowers/specs/2026-08-12-weekly-card-grid.md §1. */}
-      <div style={{ display: 'grid', placeItems: 'center', minHeight: 0 }}>
-        <VentureLogo team={team} size="var(--d-card-logo)" />
+      <div className="tv-card-panel" style={{ display: 'grid', placeItems: 'center', minHeight: 0 }}>
+        <div className="tv-card-mark">
+          <VentureLogo team={team} size="var(--d-card-logo)" />
+        </div>
       </div>
 
       <div
         style={{
           display: 'grid',
           gridTemplateRows: 'auto auto auto',
-          alignContent: 'end',
+          alignContent: 'center',
           justifyItems: 'center',
           gap: 'calc(var(--s-1) / 2)',
           minWidth: 0,
+          paddingInline: 'var(--s-card-inset)',
         }}
       >
         {/* An unnamed team shows its Team ID. It is identity, not a missing
@@ -134,9 +140,21 @@ export function VentureCard({ team, rank }: { team: Team; rank: number }) {
           {team.weekRevenue > 0 ? formatRupees(team.weekRevenue) : '—'}
         </div>
 
-        {/* Today, carrying the wall's one emphasis. Also blank rather than ₹0 —
-            silence is the honest answer for a team that has not sold today, and
-            the column exists to say who is moving. */}
+        {/* Today, carrying the wall's one emphasis.
+
+            **Labelled, because the card has no column headings.** The list this
+            replaced put "This week" and "Today" above the two figure columns; a
+            card has nowhere to put them, so two bare rupee amounts on one card
+            would give a passer-by no way to know which is which. The label rides
+            the figure instead of sitting above the board.
+
+            It appears only when there is a figure. A permanent "TODAY" caption
+            over an empty line is apparatus describing absence, and today it
+            would be describing it on all forty cards — the live feed currently
+            has zero teams with a today figure at all.
+
+            Blank rather than ₹0, for the same reason as the week: silence is the
+            honest answer for a team that has not sold today. */}
         <div
           className="tv-figure"
           style={{
@@ -146,9 +164,26 @@ export function VentureCard({ team, rank }: { team: Team; rank: number }) {
             // sits on one line across all forty cards instead of dropping half a
             // line on the thirty-five teams that have not traded today.
             minHeight: '1em',
+            display: 'flex',
+            alignItems: 'baseline',
+            gap: 'calc(var(--s-1) * 0.75)',
           }}
         >
-          {team.todayRevenue > 0 ? formatRupees(team.todayRevenue) : ''}
+          {team.todayRevenue > 0 && (
+            <>
+              <span
+                style={{
+                  font: 'var(--t-tv-card-label)',
+                  letterSpacing: 'var(--track-overline)',
+                  textTransform: 'uppercase',
+                  color: 'var(--fg-muted)',
+                }}
+              >
+                Today
+              </span>
+              {formatRupees(team.todayRevenue)}
+            </>
+          )}
         </div>
       </div>
     </div>

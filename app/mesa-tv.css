@@ -137,11 +137,23 @@
 
      44.3vw holds >=10px of clearance at every size `scripts/measure-fit.mjs`
      renders, and the tightest is 1600x900, not the smallest. Re-run it after
-     touching any of the four. */
-  --h-card-1: 12.4vw;   /* 238px @1920 */
-  --h-card-2: 11.5vw;   /* 221px */
-  --h-card-3: 10.6vw;   /* 204px */
-  --h-card-4: 9.8vw;    /* 188px — logo half 93px, well above the ~50px floor */
+     touching any of the four.
+
+     ── Round 2: steeper, because rank 1 did not read as winning ──
+
+     The first ramp stepped 0.9vw and it was not enough — the four rows looked
+     like four rows rather than a hierarchy. The step is now 1.7vw, which is
+     what actually separates them: row 1's mark is 2.3x row 4's (155.6 against
+     68.5) where it used to be 1.5x, and the card itself is 1.6x the height.
+
+     Row 4 carries the cost and is at 8.5vw, close to its floor: its mark
+     measures 54.4px at 1600x900 against the ~50px legibility threshold. **That
+     is the number that stops the ramp getting steeper** — not the fit, which
+     still has room. Steepening further means taking it from rows 2 and 3. */
+  --h-card-1: 13.6vw;   /* 261px @1920 — mark hits the card-width cap */
+  --h-card-2: 11.9vw;   /* 228px */
+  --h-card-3: 10.2vw;   /* 196px */
+  --h-card-4: 8.5vw;    /* 163px — mark 68.5px, and 54.4px at 1600x900 */
 
   /* The grid's own spacing. Fixed px, and therefore the `--s-*` trap: these
      hold their size while every `vw` above shrinks, so the ramp has less room
@@ -149,6 +161,16 @@
      catches it. */
   --s-card-gap: var(--s-3);
   --s-card-pad: var(--s-2);
+
+  /* How far the mark is held off the green panel's edges. The panel itself
+     bleeds to the card's edges — a green section inset on all four sides reads
+     as a swatch sitting on a card rather than as the card's own top half. */
+  --s-card-inset: var(--s-2);
+
+  /* The logo panel. Deep Forest Green is the logomark token — the same green the
+     card back will use when the flip lands, so a card mid-flip is one object in
+     one colour rather than two. */
+  --tv-card-panel: var(--deep-forest-green);
 
   /* ── The text block is a fixed height on all forty cards ──
 
@@ -172,8 +194,12 @@
      exists to show. */
   --t-tv-card-name: 500 clamp(11px, 0.95vw, 20px) / 1.15 var(--font-sans);
   --t-tv-card-week: 700 clamp(15px, 1.45vw, 30px) / 1 var(--font-sans);
-  --t-tv-card-today: 500 clamp(10px, 0.9vw, 19px) / 1 var(--font-sans);
-  --t-tv-card-today-hot: 700 clamp(10px, 0.9vw, 19px) / 1 var(--font-sans);
+  --t-tv-card-today: 600 clamp(11px, 1vw, 21px) / 1 var(--font-sans);
+  --t-tv-card-today-hot: 700 clamp(11px, 1vw, 21px) / 1 var(--font-sans);
+
+  /* The "TODAY" tag that rides the figure. Smaller than what it labels, so it
+     reads as apparatus rather than as a third number. */
+  --t-tv-card-label: 700 clamp(8px, 0.62vw, 13px) / 1 var(--font-sans);
   --t-tv-card-rank: 600 clamp(10px, 0.85vw, 18px) / 1 var(--font-sans);
 
   /* The rank badge, top-left, overlaying the logo half. Constant across the
@@ -495,9 +521,28 @@
      mark's rendered height, which is what actually shrinks. */
   .tv-card-row {
     --d-card-logo: min(
-      calc(var(--h-card) - var(--h-card-text) - 2 * var(--s-card-pad)),
-      calc(var(--w-card) - 2 * var(--s-card-pad))
+      calc(var(--h-card) - var(--h-card-text) - 2 * var(--s-card-inset)),
+      calc(var(--w-card) - 2 * var(--s-card-inset))
     );
+  }
+
+  /* The green section, bleeding to the card's top edges.
+
+     **Every mark gets a mint hairline.** The marks are forty unknown images and
+     six brand tints, and two of those tints — Deep Forest Green and Deep Teal —
+     are this panel's own colour or near it, so those cards would show a letter
+     floating on green with the tile that carries the venture's identity
+     invisible. The ring gives every mark an edge without touching the tint
+     itself, which has to stay constant across both slides: a venture that
+     changed colour between the podium and the board would read as two ventures. */
+  .tv-card-panel {
+    background: var(--tv-card-panel);
+  }
+
+  .tv-card-mark {
+    border-radius: calc(var(--d-card-logo) * 0.18);
+    box-shadow: 0 0 0 var(--stroke-thin)
+      color-mix(in srgb, var(--soft-mint) 45%, transparent);
   }
 
   /* One per team on the weekly board. Forty of these on one frame. */
