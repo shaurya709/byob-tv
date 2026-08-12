@@ -207,8 +207,8 @@ export const KICK_MS = 3_000
  *
  * Because presence is known ahead of the render, no broken image is ever
  * requested and there is no error-handler flash. A team not in this list gets
- * the coloured initial, which is a first-class treatment — **28 of 42 logos
- * exist**, so it now carries two thirds of the wall.
+ * the coloured initial, which is a first-class treatment — **32 of 42 logos
+ * exist**, so it now carries three quarters of the wall.
  *
  * These files are generated, not dropped in by hand: `scripts/prepare-logos.py`
  * masks every circular source logo to a disc with transparent corners, so it
@@ -228,6 +228,11 @@ export const KICK_MS = 3_000
  * `Team 7` arrived in the same batch, and both re-confirm the mapping
  * independently: 30 is The Chips n Dip Story against `SLE-C430`'s "The Chips n
  * Dips Story", and 7 is Wake & Wyze against `SLE-C407`'s.
+ *
+ * Teams 11, 12, 13 and 21 arrived later and confirm it four more times over,
+ * with no interpretation needed: Moh, XOCO, Honest Sweet and SoleMate are the
+ * published `venture_name` of `SLE-C411`, `SLE-C412`, `SLE-C413` and
+ * `SLE-C421` exactly. Twelve independent confirmations and no contradiction.
  */
 export const LOGOS: readonly TeamId[] = [
   'SLE-C401',
@@ -240,12 +245,16 @@ export const LOGOS: readonly TeamId[] = [
   'SLE-C408',
   'SLE-C409',
   'SLE-C410',
+  'SLE-C411',
+  'SLE-C412',
+  'SLE-C413',
   'SLE-C414',
   'SLE-C415',
   'SLE-C416',
   'SLE-C418',
   'SLE-C419',
   'SLE-C420',
+  'SLE-C421',
   'SLE-C422',
   'SLE-C423',
   'SLE-C426',
