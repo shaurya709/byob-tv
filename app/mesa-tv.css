@@ -496,39 +496,31 @@
 
   /* The travelling highlight itself, shared by the numerals and the feet so one
      sweep crosses a pillar's metal as a single event. */
-  /* ── The gloss ──
+  /* ── The lustre ──
 
-     **This is the shine that lives in the colour**, distinct from the highlight
-     that travels across it. It is a fixed band of white laid over the metal, and
-     the important part is that it only ever *adds* light: the base value stays
-     exactly itself in the shadow half, so the metal reads as pure gold rather
-     than as gold that has been shaded.
+     **A lighter tint of the metal, never white over it.** White laid on gold
+     does not brighten it, it desaturates it: the highlight came out cream, and
+     because the band was narrow it read as a pale stripe with edges rather than
+     as a lit surface. Here every stop is the metal itself mixed a little way
+     toward white, so the hue never leaves and the colour never goes grey.
 
-     **The band is centred on 50%**, so it sits across the middle of a numeral
-     and the middle of a foot rather than off toward one edge — it was peaking at
-     38% and read as lit from the left rather than as lustre.
+     Nothing darkens. The base value is the darkest thing in the ramp, which is
+     what "pure with shine" has to mean — the metal is either itself or itself
+     lit, and never itself shaded.
 
-     That is what the vertical ramp before this got wrong. It darkened the metal
-     at both ends to fake a curved surface and the result read as a dirtier
-     colour, not a shinier one. Lustre is a highlight, not a tonal range. */
-  --metal-gloss: linear-gradient(
-    104deg,
-    color-mix(in srgb, var(--white) 4%, transparent) 0%,
-    color-mix(in srgb, var(--white) 12%, transparent) 26%,
-    color-mix(in srgb, var(--white) 42%, transparent) 42%,
-    color-mix(in srgb, var(--white) 72%, transparent) 50%,
-    color-mix(in srgb, var(--white) 42%, transparent) 58%,
-    color-mix(in srgb, var(--white) 12%, transparent) 74%,
-    color-mix(in srgb, var(--white) 4%, transparent) 100%
-  );
+     The falloff is wide on purpose: 24% to 76% of the gradient is spent getting
+     into and out of the highlight, so there is no edge anywhere for the eye to
+     catch as a line. */
+  --k-metal-lit: 30%;
+  --k-metal-lit-peak: 40%;
 
   --metal-sweep: linear-gradient(
-    100deg,
-    transparent 34%,
-    color-mix(in srgb, var(--white) 70%, transparent) 47%,
-    color-mix(in srgb, var(--white) 88%, transparent) 50%,
-    color-mix(in srgb, var(--white) 70%, transparent) 53%,
-    transparent 66%
+    104deg,
+    transparent 22%,
+    color-mix(in srgb, var(--white) 18%, transparent) 40%,
+    color-mix(in srgb, var(--white) 34%, transparent) 50%,
+    color-mix(in srgb, var(--white) 18%, transparent) 60%,
+    transparent 78%
   );
   /* Side padding stays small: the name and the figure are centred and already
      tight for width, so padding here buys nothing and costs characters. The
@@ -751,8 +743,8 @@
    move the glyph. It repaints only the numeral's own box, three of them, for
    about a fifth of each cycle. */
 @keyframes tv-metal-sweep {
-  0% { background-position: 130% 0, 0 0, 0 0; }
-  30%, 100% { background-position: -30% 0, 0 0, 0 0; }
+  0% { background-position: 130% 0, 0 0; }
+  30%, 100% { background-position: -30% 0, 0 0; }
 }
 
 @keyframes tv-shine {
@@ -1418,8 +1410,17 @@
      metal twice in one colour rather than twice in two. */
   .tv-pod-foot {
     height: var(--h-pod-foot);
-    background-color: var(--pod-metal);
-    background-image: var(--metal-gloss);
+    background-image:
+    linear-gradient(
+      104deg,
+      var(--pod-metal) 0%,
+      var(--pod-metal) 24%,
+      color-mix(in srgb, var(--white) var(--k-metal-lit), var(--pod-metal)) 42%,
+      color-mix(in srgb, var(--white) var(--k-metal-lit-peak), var(--pod-metal)) 50%,
+      color-mix(in srgb, var(--white) var(--k-metal-lit), var(--pod-metal)) 58%,
+      var(--pod-metal) 76%,
+      var(--pod-metal) 100%
+    );
     border-radius: 0 0 var(--r-pod-card) var(--r-pod-card);
   }
 
@@ -1456,14 +1457,23 @@
          the flat metal that does not. The second layer is a gradient only
          because `background-image` cannot take a colour — it is the same value
          top to bottom. */
-      background-image: var(--metal-sweep), var(--metal-gloss),
-        linear-gradient(var(--pod-metal), var(--pod-metal));
+      background-image: var(--metal-sweep),
+    linear-gradient(
+      104deg,
+      var(--pod-metal) 0%,
+      var(--pod-metal) 24%,
+      color-mix(in srgb, var(--white) var(--k-metal-lit), var(--pod-metal)) 42%,
+      color-mix(in srgb, var(--white) var(--k-metal-lit-peak), var(--pod-metal)) 50%,
+      color-mix(in srgb, var(--white) var(--k-metal-lit), var(--pod-metal)) 58%,
+      var(--pod-metal) 76%,
+      var(--pod-metal) 100%
+    );
       /* 170%, not 260%: the sweep is only *visible* while the band overlaps the
          glyph, and a wider image spends most of its travel off both ends — at
          260% the highlight was on the numeral for about 0.4s in every 9s, which
          on a wall is a flicker nobody catches. */
-      background-size: 170% 100%, 100% 100%, 100% 100%;
-      background-position: 130% 0, 0 0, 0 0;
+      background-size: 170% 100%, 100% 100%;
+      background-position: 130% 0, 0 0;
       background-repeat: no-repeat;
       -webkit-background-clip: text;
       background-clip: text;
