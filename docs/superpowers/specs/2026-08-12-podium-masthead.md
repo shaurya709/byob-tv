@@ -133,6 +133,20 @@ Two further deviations, both deliberate and both small:
 moved to the head, which is where every other Mesa surface puts it and where the
 eye enters a left-hand band; everything below slid down behind it.
 
+**`BYOB` is 690px of a 1080 frame** — 64% of the spine's height — and the rule
+below it carries **equal air on both sides**, one token used twice. A rule with
+more air above than below reads as belonging to the countdown rather than as
+dividing identity from stake. It also means the countdown's position is a
+consequence of the wordmark's size rather than something set separately: growing
+`BYOB` pushes everything under it down.
+
+**What caps the wordmark is height, not width.** The widest letter fills about
+81% of the band's usable width, and the binding constraint is the as-of stamp at
+the foot — at 10.6vw the two came within 6.3px at 2000×1100, which is a collision
+rather than a tight fit. Filling that last 19% needs either a shorter stack, a
+`scaleX` that distorts the face, or a font with a width axis, and Archivo Black
+has none. Slack now measures 40.5 / 21.6 / 20.7px at the three real viewports.
+
 The as-of stamp closes the spine, because the wall shows no error state by design
 — a failed fetch keeps the last good data and goes on rendering perfectly healthy
 stale numbers for days, and this stamp is the only thing that makes that visible.

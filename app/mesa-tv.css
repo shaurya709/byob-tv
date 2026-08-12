@@ -404,8 +404,20 @@
      900: there is no axis, so nothing can render it lighter by accident. This
      replaced MesaSerif at 900, which was the heaviest thing this wall could
      draw. */
-  --t-pod-byob: 400 clamp(38px, 5.4vw, 112px) / 1.02 var(--font-display-black),
+  /* **Leading under 1.** Four letters stacked one per line have no descenders
+     between them and no words to separate, so the default line box leaves a
+     corridor of air the wordmark does not want. 0.86 closes the stack up, which
+     is what lets the letters be large enough to span the band without the four
+     of them costing more height than the spine has. */
+  --t-pod-byob: 400 clamp(52px, 10.45vw, 220px) / 0.86 var(--font-display-black),
     var(--font-serif);
+
+  /* The air between the lockup and the wordmark, and the air on **both** sides
+     of the tangerine rule. The second is one token used twice on purpose: a rule
+     with unequal air reads as belonging to whichever side is closer rather than
+     as dividing the two. */
+  --s-pod-spine-lead: 1.1vw;
+  --s-pod-spine-gap: 1.95vw;
   --t-pod-count: 800 clamp(30px, 4.2vw, 88px) / 1 var(--font-sans);
   --t-pod-fig-1: 800 clamp(44px, 6.1vw, 128px) / 1 var(--font-sans);
   --t-pod-fig-r: 800 clamp(26px, 3.5vw, 74px) / 1 var(--font-sans);
@@ -1029,9 +1041,8 @@
     align-items: center;
     /* The head padding is smaller than the board's, because the lockup now
        leads the spine and a logo needs less air above it than a card does. */
-    padding: var(--s-8) var(--s-5) var(--s-6);
+    padding: var(--s-8) var(--s-4) var(--s-5);
     color: var(--white);
-    gap: var(--s-8);
     /* The as-of stamp asks for `--fg-muted` through `.tv-ticker`, and that token
        is a dark-surface value — charcoal-grey on Deep Forest is nearly invisible.
        Redefining the token here rather than overriding the class is what

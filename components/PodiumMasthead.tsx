@@ -91,8 +91,19 @@ function Countdown({ at }: { at: Date | null }) {
   // closes up around the gap; there is no placeholder.
   if (text === null) return null
 
+  // One element rather than a fragment, so the caller can space the countdown
+  // as a block. Its three lines are one thing — a label, its figure, and its
+  // unit — and the air *inside* them is tighter than the air around them.
   return (
-    <>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: 'var(--s-2)',
+        width: '100%',
+      }}
+    >
       <span className="tv-pod-label">Mesa Flea</span>
       <span
         className="tv-figure"
@@ -105,7 +116,7 @@ function Countdown({ at }: { at: Date | null }) {
         {text.figure}
       </span>
       <span className="tv-pod-label">{text.label}</span>
-    </>
+    </div>
   )
 }
 
@@ -131,7 +142,11 @@ export function PodiumMasthead({ snapshot }: { snapshot: Snapshot | null }) {
       {/* One letter per line rather than `writing-mode: vertical-rl`, which
           rotates the glyphs onto their side. These stand upright and stack,
           which is the only version that stays readable at a glance. */}
-      <h1 className="tv-pod-byob" style={{ margin: 0 }} aria-label="BYOB">
+      <h1
+        className="tv-pod-byob"
+        style={{ margin: 0, marginTop: 'var(--s-pod-spine-lead)' }}
+        aria-label="BYOB"
+      >
         {['B', 'Y', 'O', 'B'].map((letter, index) => (
           <span key={index} style={{ display: 'block' }} aria-hidden>
             {letter}
@@ -139,16 +154,23 @@ export function PodiumMasthead({ snapshot }: { snapshot: Snapshot | null }) {
         ))}
       </h1>
 
-      {/* The rule sits between identity and stake. `auto` margins above and
-          below are what distribute the spine's slack — the zones hold their own
-          proportions and the air between them absorbs the frame. */}
+      {/* **The rule gets equal air on both sides**, and that is the point of
+          spelling both out as the same token rather than letting one of them be
+          whatever slack is left over. The rule separates identity from stake;
+          air that is bigger above than below makes it read as belonging to the
+          countdown rather than as dividing the two.
+
+          Which also means the countdown's position is now a *consequence* of how
+          tall BYOB is, rather than something set independently — growing the
+          wordmark pushes everything under it down, which is the behaviour asked
+          for. */}
       <div
         style={{
-          marginBlock: 'auto',
+          marginTop: 'var(--s-pod-spine-gap)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: 'var(--s-5)',
+          gap: 'var(--s-pod-spine-gap)',
           width: '100%',
         }}
       >
@@ -166,7 +188,13 @@ export function PodiumMasthead({ snapshot }: { snapshot: Snapshot | null }) {
           What stays is the as-of stamp, which is load-bearing for a different
           reason: the wall shows no error state, so a failed fetch renders
           perfectly healthy stale numbers for days and this is the only tell. */}
-      <AsOf snapshot={snapshot} />
+      {/* `auto` above pins the stamp to the foot and puts every remaining pixel
+          between it and the countdown. It is the one element here that should
+          absorb the slack: it is the quietest thing on the frame, and it is the
+          only one whose exact position carries no meaning. */}
+      <div style={{ marginTop: 'auto' }}>
+        <AsOf snapshot={snapshot} />
+      </div>
     </aside>
   )
 }
