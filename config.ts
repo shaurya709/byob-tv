@@ -21,10 +21,8 @@ import type { TeamId } from '@/lib/types'
  * them here means a fresh clone or a new Vercel project just works, rather than
  * deploying a wall that renders perfectly and fetches nothing.
  */
-export const FEED_CSV_URL: string =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZTHFUyVPNGcV0rsFtd45y9KxvT2Yh2Bj8qs6qMqIFrY8rTtqc9sqb_fKOUyi_Us1hnJWZhHN0n-_z/pub?gid=917272830&single=true&output=csv'
-export const COHORT_CSV_URL: string =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZTHFUyVPNGcV0rsFtd45y9KxvT2Yh2Bj8qs6qMqIFrY8rTtqc9sqb_fKOUyi_Us1hnJWZhHN0n-_z/pub?gid=359094552&single=true&output=csv'
+export const FEED_CSV_URL: string = 'http://localhost:3000/mock/feed.csv'
+export const COHORT_CSV_URL: string = 'http://localhost:3000/mock/cohort.csv'
 
 /**
  * The fewest usable rows a fetch may carry and still be trusted.
@@ -85,6 +83,21 @@ export const TIMER_UNDER_MS = 24 * 60 * 60 * 1000
  * leaves the wall entirely.
  */
 export const FLEA_EVENT_DURATION_MS = 8 * 60 * 60 * 1000
+
+/**
+ * When the programme started — 20 July 2026, 00:00 IST.
+ *
+ * **This is a third copy of a date that already lives in two sheet cells**
+ * (`TV_Feed!D2` — see docs/SHEET_SETUP.md) and in docs/DESIGN.md. It is here
+ * only because the Flea dial measures progress *from* somewhere, and the sheet
+ * publishes the Flea instant but not the programme's start. If the anchor ever
+ * moves, it moves here too.
+ *
+ * Publishing it as a cohort key would remove the duplication, and was
+ * deliberately not done: it changes the sheet contract for one decorative arc.
+ */
+export const PROGRAMME_START_ISO = '2026-07-20T00:00:00+05:30'
+export const PROGRAMME_START_MS = Date.parse(PROGRAMME_START_ISO)
 
 /** Once a second while the live timer shows seconds; once a minute before that. */
 export const TICK_MS = 1_000

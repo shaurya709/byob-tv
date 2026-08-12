@@ -24,7 +24,13 @@
  * day boundary.
  */
 
-import { DAYS_ONLY_FROM_MS, FLEA_EVENT_DURATION_MS, IST_TIMEZONE, TIMER_UNDER_MS } from '@/config'
+import {
+  DAYS_ONLY_FROM_MS,
+  FLEA_EVENT_DURATION_MS,
+  IST_TIMEZONE,
+  PROGRAMME_START_MS,
+  TIMER_UNDER_MS,
+} from '@/config'
 
 const DAY_MS = 86_400_000
 const HOUR_MS = 3_600_000
@@ -37,6 +43,15 @@ export type CountdownState = {
   /** The headline figure: day count in the day modes, whole seconds left in
       timer mode, `null` where there is no number to speak of. */
   numeric: number | null
+  /**
+   * How far through the programme we are: 0 at the anchor, 1 at the Flea.
+   *
+   * The dial's only input. Elapsed *programme* time rather than a trailing
+   * window, so a half-full ring means the cohort is half over. Clamped, so a
+   * wall booted before the cohort opens shows an empty ring rather than an arc
+   * running backwards.
+   */
+  progress: number
 }
 
 function pad(value: number): string {
@@ -57,15 +72,26 @@ function istDayNumber(ms: number): number {
   return Date.UTC(year, month - 1, day) / DAY_MS
 }
 
+function programmeProgress(fleaDatetime: number, now: number, programmeStart: number): number {
+  const span = fleaDatetime - programmeStart
+  // A Flea at or before the anchor is a misconfigured sheet, not a countdown.
+  // A full ring is the honest answer: there is no journey left to show.
+  if (span <= 0) return 1
+  return Math.min(1, Math.max(0, (now - programmeStart) / span))
+}
+
 export function computeCountdownState(
   fleaDatetime: number,
   now: number = Date.now(),
+  programmeStart: number = PROGRAMME_START_MS,
 ): CountdownState {
+  const progress = programmeProgress(fleaDatetime, now, programmeStart)
+
   if (now >= fleaDatetime + FLEA_EVENT_DURATION_MS) {
-    return { display: '', mode: 'hidden', numeric: null }
+    return { display: '', mode: 'hidden', numeric: null, progress: 1 }
   }
   if (now >= fleaDatetime) {
-    return { display: 'LIVE NOW', mode: 'live', numeric: null }
+    return { display: 'LIVE NOW', mode: 'live', numeric: null, progress: 1 }
   }
 
   const remaining = fleaDatetime - now
@@ -77,15 +103,16 @@ export function computeCountdownState(
       display: `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`,
       mode: 'timer',
       numeric: Math.floor(remaining / 1000),
+      progress,
     }
   }
 
   const wholeDays = Math.floor(remaining / DAY_MS)
   if (remaining < DAYS_ONLY_FROM_MS) {
     const hours = Math.floor((remaining % DAY_MS) / HOUR_MS)
-    return { display: `${wholeDays}D ${hours}H`, mode: 'daysHours', numeric: wholeDays }
+    return { display: `${wholeDays}D ${hours}H`, mode: 'daysHours', numeric: wholeDays, progress }
   }
 
   const days = istDayNumber(fleaDatetime) - istDayNumber(now)
-  return { display: String(days), mode: 'days', numeric: days }
+  return { display: String(days), mode: 'days', numeric: days, progress }
 }
