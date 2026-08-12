@@ -1,6 +1,7 @@
 import Image from 'next/image'
 
 import { LOGOS } from '@/config'
+import { hashTeamId } from '@/lib/seed'
 import type { Team } from '@/lib/types'
 
 /**
@@ -38,11 +39,7 @@ const TINTS = [
 const LIGHT_TINTS = new Set(['var(--tangerine-glow)', 'var(--mint-300)'])
 
 function tintFor(teamId: string): string {
-  let hash = 0
-  for (let index = 0; index < teamId.length; index += 1) {
-    hash = (hash * 31 + teamId.charCodeAt(index)) >>> 0
-  }
-  return TINTS[hash % TINTS.length]
+  return TINTS[hashTeamId(teamId) % TINTS.length]
 }
 
 /**
