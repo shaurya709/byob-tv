@@ -392,7 +392,7 @@
   /* How far the numeral hangs off the card, as a share of its own cap height and
      its own width. It **sits on the corner** rather than inset from it, so it
      breaks two edges at once. */
-  --k-pod-num-up: 0.44;
+  --k-pod-num-up: 0.54;
   /* How far the numeral hangs off the card's left edge, as a share of its own
      cap.
 
