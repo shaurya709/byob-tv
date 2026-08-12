@@ -162,7 +162,36 @@ export const KICK_MS = 3_000
  *
  * Because presence is known ahead of the render, no broken image is ever
  * requested and there is no error-handler flash. A team not in this list gets
- * the coloured initial square, which is a first-class treatment — currently
- * **zero of 42 logos exist**, so it is carrying the entire wall.
+ * the coloured initial square, which is a first-class treatment — **18 of 42
+ * logos exist**, so it still carries more than half the wall.
+ *
+ * These files are generated, not dropped in by hand: `scripts/prepare-logos.py`
+ * squares every source logo onto its own background colour so it can sit in a
+ * circular frame without being cropped. Re-run it when the source folder
+ * changes, and paste its output here.
+ *
+ * **The team-number mapping is unverified.** The source files are named "Team
+ * 17", not "SLE-C417", and the script assumes the obvious reading. Confirm it
+ * against `Team Links` before the wall goes live: the wrong venture's mark on
+ * the wall is worse than no mark at all.
  */
-export const LOGOS: readonly TeamId[] = []
+export const LOGOS: readonly TeamId[] = [
+  'SLE-C401',
+  'SLE-C402',
+  'SLE-C405',
+  'SLE-C406',
+  'SLE-C407',
+  'SLE-C408',
+  'SLE-C410',
+  'SLE-C412',
+  'SLE-C414',
+  'SLE-C415',
+  'SLE-C417',
+  'SLE-C418',
+  'SLE-C419',
+  'SLE-C420',
+  'SLE-C423',
+  'SLE-C424',
+  'SLE-C425',
+  'SLE-C426',
+]

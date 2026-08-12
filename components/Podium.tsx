@@ -36,8 +36,14 @@ const PODIUM_PLACES = 3
  * marks on a frame; this one shows seven, and matching its size made the top
  * ten look like a footnote under the podium. The row keeps `/weekly`'s
  * *structure* — rank outside, mark, name centred, figure right — at the scale
- * seven rows can afford. */
-const STRIP_LOGO = '2.08vw'
+ * seven rows can afford.
+ *
+ * 2.5vw is 48px at 1920, raised from 40 after rendering the real logos at
+ * every size the wall uses: below about 50px the wordmarks stop resolving into
+ * anything and become coloured dots. They are still only *recognisable* at
+ * this size, not readable — which is the deal the circular frame makes, and it
+ * holds because the venture's name is printed right beside the mark. */
+const STRIP_LOGO = '2.5vw'
 
 /** The mark on a pillar. First place's is larger — one of the two things left
     carrying rank now that all three columns are the same height. */
@@ -89,6 +95,33 @@ function revenueOf(team: Team | undefined): string {
  */
 function idleOf(place: number): string {
   return IDLE_TIMELINES[(place - 1) % IDLE_TIMELINES.length]
+}
+
+/**
+ * A mark in a circular frame.
+ *
+ * `VentureLogo` draws a rounded square, because that is what forty rows of
+ * `/weekly` want. This slide puts every mark in a disc instead — the shape the
+ * logos were prepared for by `scripts/prepare-logos.py`, which squares each
+ * one onto its own background colour so a circle can be filled rather than
+ * cropped. Clipping here rather than in the shared component leaves the weekly
+ * board exactly as it is.
+ */
+function Mark({ team, size, idle }: { team: Team; size: string; idle?: string }) {
+  return (
+    <div
+      className={idle}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: '50%',
+        overflow: 'hidden',
+        ...(idle === undefined ? {} : { willChange: 'transform' }),
+      }}
+    >
+      <VentureLogo team={team} size={size} />
+    </div>
+  )
 }
 
 /**
@@ -167,24 +200,7 @@ function Pillar({
         {team === undefined ? (
           <div style={{ width: logo, height: logo }} />
         ) : (
-          <div
-            className={idleOf(place)}
-            style={{
-              // Circular here, and only here. `VentureLogo` draws a rounded
-              // square because that is what forty rows of `/weekly` want; a
-              // mark standing on a plinth wants to be a disc, and the glance is
-              // a `rotateY` that reads as a turning face only on a round shape.
-              // Clipped by this wrapper rather than by changing the shared
-              // component, which would restyle every row of the weekly board.
-              width: logo,
-              height: logo,
-              borderRadius: '50%',
-              overflow: 'hidden',
-              willChange: 'transform',
-            }}
-          >
-            <VentureLogo team={team} size={logo} />
-          </div>
+          <Mark team={team} size={logo} idle={idleOf(place)} />
         )}
       </div>
 
@@ -366,7 +382,7 @@ function Strip({ teams, fromRank }: { teams: readonly Team[]; fromRank: number }
           >
             {fromRank + index}
           </span>
-          <VentureLogo team={team} size={STRIP_LOGO} />
+          <Mark team={team} size={STRIP_LOGO} />
           <span
             style={{
               font: 'var(--t-tv-pod-row-name)',

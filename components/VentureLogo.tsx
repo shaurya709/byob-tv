@@ -73,7 +73,20 @@ export function VentureLogo({ team, size }: { team: Team; size: number | string 
         // Intrinsic hints for the image loader only; the CSS below sizes it.
         width={200}
         height={200}
-        style={{ width: dim, height: dim, borderRadius: radius, objectFit: 'contain' }}
+        style={{
+          width: dim,
+          height: dim,
+          borderRadius: radius,
+          objectFit: 'contain',
+          // Every real logo carries its own background, baked in by
+          // `scripts/prepare-logos.py` so it can fill a circle. Several of
+          // those backgrounds are white or near-white, and on this wall's
+          // white page such a mark has no edge at all — it reads as a floating
+          // wordmark rather than as a venture's mark. The ring is the system's
+          // own translucent border: invisible on the dark logos, and the only
+          // thing giving the pale ones a shape.
+          boxShadow: 'inset 0 0 0 var(--stroke-hair) var(--border)',
+        }}
         unoptimized
       />
     )
