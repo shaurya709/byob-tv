@@ -21,8 +21,10 @@ import type { TeamId } from '@/lib/types'
  * them here means a fresh clone or a new Vercel project just works, rather than
  * deploying a wall that renders perfectly and fetches nothing.
  */
-export const FEED_CSV_URL: string = 'http://localhost:3000/mock/feed.csv'
-export const COHORT_CSV_URL: string = 'http://localhost:3000/mock/cohort.csv'
+export const FEED_CSV_URL: string =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZTHFUyVPNGcV0rsFtd45y9KxvT2Yh2Bj8qs6qMqIFrY8rTtqc9sqb_fKOUyi_Us1hnJWZhHN0n-_z/pub?gid=917272830&single=true&output=csv'
+export const COHORT_CSV_URL: string =
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZTHFUyVPNGcV0rsFtd45y9KxvT2Yh2Bj8qs6qMqIFrY8rTtqc9sqb_fKOUyi_Us1hnJWZhHN0n-_z/pub?gid=359094552&single=true&output=csv'
 
 /**
  * The fewest usable rows a fetch may carry and still be trusted.
