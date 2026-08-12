@@ -1,185 +1,172 @@
-#!/usr/bin/env python3
 """
-Normalise the venture logos into square marks the wall can put in a circle.
-
-Run once whenever `public/assets/Team Logos/` changes:
+Turn the circular source logos into discs the wall can render.
 
     python3 scripts/prepare-logos.py
 
-── Why this exists ──
+Reads `public/assets/Circle logos/Team <N>.(jpg|png)` and writes
+`public/logos/SLE-C4NN.png` at 512x512 RGBA, the artwork masked to a circle
+with everything outside it transparent. Paste the printed list into `LOGOS` in
+config.ts.
 
-The logos arrive as whatever each team exported: 18 files for 42 teams, aspect
-ratios from 0.77:1 to 5.35:1, seventeen opaque JPEGs and one transparent PNG,
-on backgrounds ranging from near-black to pure white. The wall renders every
-mark in a circle, and a 5.35:1 wordmark inscribed in a circle occupies about
-18% of its height with empty space above and below.
+── Why this is the opposite of what it used to do ──
 
-Measured across all 18 files, **seventeen have a perfectly uniform background**
-— the four corners sample to the same value, channel spread zero. That is what
-makes this approach work: pad each logo out to a square *in its own background
-colour*, and the circle fills with the brand's colour rather than showing a
-letterboxed strip floating in white. Nothing is cropped, and the disc reads as
-one deliberate object.
+The previous version squared each logo *onto its own background colour*, so a
+circular frame could be filled rather than the artwork cropped. That was right
+when the sources were arbitrary rectangles.
 
-The venture name is printed directly under the mark on every surface, so a
-logo has to be recognisable, not readable. That is the trade being made here.
+The sources are now circles, and both boards draw them as discs — `/podium`
+clips to one, and `/weekly` stands them on a Deep Forest Green panel. A baked-in
+background is now actively wrong: it would put a white or black square corner
+behind a disc on a green field. So the corners come out transparent and the
+board's own surface shows through.
 
-── What it does, per file ──
+── The sources are only mostly uniform ──
 
-1. Sample the four corners for the background colour.
-2. Flatten transparency onto that colour (one file needs it).
-3. Trim the uniform border away, so the artwork fills the square as much as it
-   can rather than inheriting whatever padding the exporter left.
-4. Pad back out to a square in the background colour, centred.
-5. Resize to 512x512 and write `public/logos/<TEAM_ID>.png`.
+They arrive as JPG and PNG, on white, on black, and on transparency; `Team 15`
+is 841x1280 rather than square, and `Team 18` is 1067x1086. So the circle is
+*found* rather than assumed:
 
-── The mapping is an assumption ──
+- An image with real transparency is trusted and its alpha bounding box used.
+- Otherwise the background is read from the four corners and the bounding box is
+  every pixel far enough from it. A box covering nearly the whole frame means
+  the reading failed — a logo whose own artwork reaches the edges — and the full
+  frame is used instead of a bad crop.
 
-Files are named "Team 17", not "SLE-C417". `TEAM_NUMBER_TO_ID` below encodes
-the obvious reading — team N is workbook SLE-C4NN — and it is **unverified**.
-Putting the wrong venture's mark on the wall is worse than showing none, so
-confirm this against `Team Links` before the wall goes live. It is one dict.
+The box is then squared about its own centre, so an off-centre circle is not
+squashed, and padded with the background colour where the square runs past the
+edge. The mask is drawn at 4x and downsampled, because a hard-edged circle at
+512 shows visible stair-stepping on a mark that is only ~100px on the wall.
+
+── The team-number mapping is CONFIRMED ──
+
+Sources are named `Team 17`, not `SLE-C417`, and this script assumes team *N* is
+workbook `SLE-C4NN`. That assumption was unverified for a long time and is
+recorded as open item 1 in scripts/README.md.
+
+**It has now been checked, and it holds.** All 24 numbered logos were read
+against the live `TV_Feed` venture names on 12 August 2026 and every one agrees:
+Team 1 is Dosa Crisps (`SLE-C401`), Team 15 is CHAKHA NA? (`SLE-C415`), Team 34
+is In Between Sips by Kaappitalism (`SLE-C434`), and so on for all of them.
+
+Two files in the folder carry no team number — `Unhinged Logo.png` and
+`PHOTO-...jpg`, which is ROLLIN. Neither venture name appears in the feed. The
+only unnamed non-spare workbooks are `SLE-C422` and `SLE-C435`, so they are
+almost certainly those two, but nothing says which is which and a guess is a
+coin flip on a public wall. **They are deliberately not emitted.** Both teams get
+the coloured initial instead, which is a first-class treatment. To place them,
+rename the file to `Team 22.png` / `Team 35.png` and re-run.
 """
 
-# Python 3.9 is what ships on macOS; `int | None` needs this.
-from __future__ import annotations
-
 import os
-import pathlib
-import sys
+import re
+from PIL import Image, ImageDraw
 
-try:
-    from PIL import Image, ImageChops
-except ImportError:
-    sys.exit("Pillow is required: python3 -m pip install Pillow")
-
-SOURCE = pathlib.Path("public/assets/Team Logos")
-DEST = pathlib.Path("public/logos")
+SRC = "public/assets/Circle logos"
+OUT = "public/logos"
 SIZE = 512
-
-# How many pixels in from each edge to sample. A hair inside, because exporters
-# occasionally leave a single stray row at the very edge.
-INSET_DIVISOR = 40
+SS = 4  # mask supersampling
+BG_TOLERANCE = 30  # RGB distance before a pixel counts as content
 
 
-def team_id(number: int) -> str:
-    """Team N is workbook SLE-C4NN. **Unverified — see the module docstring.**"""
-    return f"SLE-C4{number:02d}"
-
-
-def number_from(filename: str) -> int | None:
-    """`Team 6 .jpeg` really does carry a trailing space. Parse tolerantly."""
-    stem = pathlib.Path(filename).stem.strip()
-    if not stem.lower().startswith("team"):
-        return None
-    digits = stem[4:].strip()
-    return int(digits) if digits.isdigit() else None
-
-
-def background_of(image: Image.Image) -> tuple[int, int, int]:
-    """
-    The colour the four corners agree on, or the most common of them.
-
-    **Transparent corners mean white, not black.** Converting an RGBA image to
-    RGB paints every fully transparent pixel black, so sampling the converted
-    copy reported `#000000` for the one file with an alpha channel — and
-    flattening its dark navy wordmark onto black very nearly erased it. A logo
-    drawn on transparency was drawn to sit on a light page, which is what this
-    wall is.
-    """
-    if image.mode in ("RGBA", "LA", "P"):
-        rgba = image.convert("RGBA")
-        width, height = rgba.size
-        inset = max(1, min(width, height) // INSET_DIVISOR)
-        if rgba.getpixel((inset, inset))[3] < 8:
-            return (255, 255, 255)
-
-    image = image.convert("RGB")
-    width, height = image.size
-    inset = max(1, min(width, height) // INSET_DIVISOR)
+def corner_background(im):
+    """The flat colour behind the circle, read from the four corners."""
+    w, h = im.size
+    inset = max(2, min(w, h) // 100)
     corners = [
-        image.getpixel((inset, inset)),
-        image.getpixel((width - 1 - inset, inset)),
-        image.getpixel((inset, height - 1 - inset)),
-        image.getpixel((width - 1 - inset, height - 1 - inset)),
+        im.getpixel((inset, inset)),
+        im.getpixel((w - 1 - inset, inset)),
+        im.getpixel((inset, h - 1 - inset)),
+        im.getpixel((w - 1 - inset, h - 1 - inset)),
     ]
-    # Averaging would invent a colour that appears nowhere in the file and
-    # would band against the real background. Take the most common corner.
+    corners = [c[:3] for c in corners]
+    # The most repeated corner. A logo bleeding into one corner should not get
+    # to define the background for the other three.
     return max(set(corners), key=corners.count)
 
 
-def trimmed(image: Image.Image, background: tuple[int, int, int]) -> Image.Image:
-    """
-    Drop the uniform margin the exporter left.
+def content_box(im):
+    """Where the artwork actually is."""
+    w, h = im.size
+    alpha = im.getchannel("A")
+    if alpha.getextrema()[0] < 250:
+        box = alpha.getbbox()
+        if box is not None:
+            return box
 
-    Falls back to the original when the difference mask is empty — an image
-    that is entirely its own background has nothing to trim and `getbbox()`
-    would return `None`.
-    """
-    flat = Image.new("RGB", image.size, background)
-    box = ImageChops.difference(image, flat).convert("L").point(lambda v: 255 if v > 12 else 0).getbbox()
-    return image if box is None else image.crop(box)
+    bg = corner_background(im)
+    rgb = im.convert("RGB")
+    # Manhattan distance is enough to separate artwork from a flat backdrop and
+    # is far cheaper than Euclidean over a few million pixels.
+    mask = Image.new("L", (w, h), 0)
+    mask.putdata([
+        255 if abs(p[0] - bg[0]) + abs(p[1] - bg[1]) + abs(p[2] - bg[2]) > BG_TOLERANCE else 0
+        for p in rgb.getdata()
+    ])
+    box = mask.getbbox()
+    if box is None:
+        return (0, 0, w, h)
+    # Covering nearly everything means the reading failed rather than that the
+    # logo is enormous — fall back to the whole frame, which is never a bad crop.
+    if (box[2] - box[0]) * (box[3] - box[1]) > 0.98 * w * h:
+        return (0, 0, w, h)
+    return box
 
 
-def squared(image: Image.Image, background: tuple[int, int, int]) -> Image.Image:
-    """
-    Centre the artwork on a square of its own background.
-
-    A small breathing margin, because a circular mask cuts the corners off a
-    square and a wordmark run edge to edge would lose its first and last
-    letters to the mask.
-    """
-    width, height = image.size
-    side = int(max(width, height) * 1.06)
-    canvas = Image.new("RGB", (side, side), background)
-    canvas.paste(image, ((side - width) // 2, (side - height) // 2))
+def squared(im, box):
+    """The smallest square holding `box`, centred on it, padded where it runs out."""
+    bg = corner_background(im)
+    cx = (box[0] + box[2]) / 2
+    cy = (box[1] + box[3]) / 2
+    side = max(box[2] - box[0], box[3] - box[1])
+    left = int(round(cx - side / 2))
+    top = int(round(cy - side / 2))
+    canvas = Image.new("RGBA", (side, side), bg + (255,))
+    canvas.paste(im, (-left, -top), im)
     return canvas
 
 
-def main() -> int:
-    if not SOURCE.is_dir():
-        sys.exit(f"no source directory at {SOURCE}")
-    DEST.mkdir(parents=True, exist_ok=True)
+def disc(im):
+    """Mask to a circle, antialiased."""
+    mask = Image.new("L", (SIZE * SS, SIZE * SS), 0)
+    ImageDraw.Draw(mask).ellipse((0, 0, SIZE * SS - 1, SIZE * SS - 1), fill=255)
+    mask = mask.resize((SIZE, SIZE), Image.LANCZOS)
+    out = im.resize((SIZE, SIZE), Image.LANCZOS)
+    out.putalpha(mask)
+    return out
 
-    written: list[tuple[str, str, str]] = []
-    skipped: list[str] = []
 
-    for filename in sorted(os.listdir(SOURCE)):
-        if filename.startswith("."):
+def main():
+    os.makedirs(OUT, exist_ok=True)
+    for stale in os.listdir(OUT):
+        if stale.endswith(".png"):
+            os.remove(os.path.join(OUT, stale))
+
+    done, skipped = [], []
+    for name in sorted(os.listdir(SRC)):
+        path = os.path.join(SRC, name)
+        if not os.path.isfile(path) or name.startswith("."):
             continue
-        number = number_from(filename)
-        if number is None:
-            skipped.append(f"{filename} (cannot read a team number)")
+        match = re.match(r"team\s*(\d+)\.(jpg|jpeg|png)$", name, re.IGNORECASE)
+        if match is None:
+            skipped.append(name)
             continue
 
-        opened = Image.open(SOURCE / filename)
-        background = background_of(opened)
+        team_id = f"SLE-C4{int(match.group(1)):02d}"
+        im = Image.open(path).convert("RGBA")
+        disc(squared(im, content_box(im))).save(os.path.join(OUT, f"{team_id}.png"))
+        done.append(team_id)
 
-        if opened.mode in ("RGBA", "LA", "P"):
-            rgba = opened.convert("RGBA")
-            flattened = Image.new("RGB", rgba.size, background)
-            flattened.paste(rgba, mask=rgba.getchannel("A"))
-            image = flattened
-        else:
-            image = opened.convert("RGB")
+    print(f"wrote {len(done)} discs to {OUT}/\n")
+    if skipped:
+        print("NOT emitted — no team number in the filename:")
+        for name in skipped:
+            print(f"  {name}")
+        print("  These teams fall back to the coloured initial. See the docstring.\n")
 
-        mark = squared(trimmed(image, background), background)
-        mark = mark.resize((SIZE, SIZE), Image.LANCZOS)
-
-        identifier = team_id(number)
-        mark.save(DEST / f"{identifier}.png", "PNG", optimize=True)
-        written.append((identifier, filename, "#%02X%02X%02X" % background))
-
-    for identifier, filename, background in written:
-        print(f"  {identifier}  <-  {filename:16}  bg {background}")
-    for note in skipped:
-        print(f"  skipped: {note}")
-
-    print(f"\n{len(written)} marks written to {DEST}/")
-    print("\nPaste into config.ts LOGOS:")
-    print("  " + ",\n  ".join(f"'{identifier}'" for identifier, _, _ in sorted(written)))
-    return 0
+    print("Paste into LOGOS in config.ts:\n")
+    for team_id in sorted(done):
+        print(f"  '{team_id}',")
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

@@ -546,7 +546,7 @@
   }
 
   .tv-card-mark {
-    border-radius: calc(var(--d-card-logo) * 0.18);
+    border-radius: 50%;
     box-shadow: 0 0 0 var(--stroke-thin)
       color-mix(in srgb, var(--soft-mint) 45%, transparent);
   }

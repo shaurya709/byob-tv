@@ -100,12 +100,12 @@ function idleOf(place: number): string {
 /**
  * A mark in a circular frame.
  *
- * `VentureLogo` draws a rounded square, because that is what forty rows of
- * `/weekly` want. This slide puts every mark in a disc instead — the shape the
- * logos were prepared for by `scripts/prepare-logos.py`, which squares each
- * one onto its own background colour so a circle can be filled rather than
- * cropped. Clipping here rather than in the shared component leaves the weekly
- * board exactly as it is.
+ * `VentureLogo` now draws a disc itself — the source logos are circles and
+ * `scripts/prepare-logos.py` masks each one to a circle with transparent
+ * corners — so this wrapper's own clip is no longer what makes the mark round.
+ * It stays because it is also the idle animation's box: the timeline needs an
+ * element it can transform without touching the logo's own sizing, and the clip
+ * costs nothing now that it agrees with the shape underneath it.
  */
 function Mark({ team, size, idle }: { team: Team; size: string; idle?: string }) {
   return (

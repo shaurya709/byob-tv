@@ -63,7 +63,6 @@ function initialFor(team: Team): string {
  */
 export function VentureLogo({ team, size }: { team: Team; size: number | string }) {
   const dim = typeof size === 'number' ? `${size}px` : size
-  const radius = `calc(${dim} * 0.18)`
 
   if (LOGOS.includes(team.teamId)) {
     return (
@@ -76,15 +75,19 @@ export function VentureLogo({ team, size }: { team: Team; size: number | string 
         style={{
           width: dim,
           height: dim,
-          borderRadius: radius,
+          // A disc, because the source artwork is one. `prepare-logos.py` masks
+          // every logo to a circle with transparent corners, so a rounded-square
+          // radius here would draw a square ring around a round mark and clip
+          // nothing — the radius has to agree with the artwork, not with a
+          // layout that no longer exists.
+          borderRadius: '50%',
           objectFit: 'contain',
-          // Every real logo carries its own background, baked in by
-          // `scripts/prepare-logos.py` so it can fill a circle. Several of
-          // those backgrounds are white or near-white, and on this wall's
-          // white page such a mark has no edge at all — it reads as a floating
-          // wordmark rather than as a venture's mark. The ring is the system's
-          // own translucent border: invisible on the dark logos, and the only
-          // thing giving the pale ones a shape.
+          // Several of these logos are white or cream to their own edge, and on
+          // `/podium`'s white field such a mark has no edge at all — it reads as
+          // a floating wordmark rather than as a venture's mark. The ring is the
+          // system's own translucent border: invisible on the dark logos, and
+          // the only thing giving the pale ones a shape. On `/weekly` it lands
+          // on green and disappears, which is why the card adds a mint one.
           boxShadow: 'inset 0 0 0 var(--stroke-hair) var(--border)',
         }}
         unoptimized
@@ -100,7 +103,11 @@ export function VentureLogo({ team, size }: { team: Team; size: number | string 
       style={{
         width: dim,
         height: dim,
-        borderRadius: radius,
+        // A disc too, so the eighteen teams without artwork sit in the same
+        // shape as the twenty-four with it. A rounded square beside a circle
+        // reads as a missing logo; the same disc in a brand tint reads as a
+        // venture that has not drawn one yet, which is the honest difference.
+        borderRadius: '50%',
         background: tint,
         color: LIGHT_TINTS.has(tint) ? 'var(--midnight-charcoal)' : 'var(--white)',
         display: 'flex',

@@ -100,10 +100,25 @@ A logo faint at *every* size is an artwork problem, not a framing one.
 python3 scripts/prepare-logos.py
 ```
 
-Squares every source logo in `public/assets/Team Logos/` onto its own
-background colour and writes `public/logos/<TEAM_ID>.png` at 512×512, so a
-circular frame can be *filled* rather than the artwork cropped. Re-run it when
-the source folder changes and paste its output into `LOGOS` in `config.ts`.
+Masks every source logo in `public/assets/Circle logos/` to a disc and writes
+`public/logos/<TEAM_ID>.png` at 512×512 RGBA, **transparent outside the
+circle**. Re-run it when the source folder changes and paste its output into
+`LOGOS` in `config.ts`.
+
+This is the reverse of what it used to do. The old sources were arbitrary
+rectangles, so it squared each one onto its own background colour and a
+circular frame could then be filled rather than the artwork cropped. The
+sources are now circles and both boards draw discs — `/podium` clips to one and
+`/weekly` stands them on a green panel — so a baked-in background would put a
+white or black square corner behind a disc on a green field.
+
+The sources are only mostly uniform: JPG and PNG, on white, on black and on
+transparency, and two are not square (`Team 15` is 841×1280). So the circle is
+found rather than assumed — alpha bounding box where there is real
+transparency, otherwise the corners give the background colour and the box is
+everything far enough from it. A box covering nearly the whole frame means the
+reading failed, and the full frame is used instead of a bad crop. Full
+reasoning is in the script's docstring.
 
 ## `dev-feed.mjs`, `dev-churn.mjs`
 
@@ -127,28 +142,57 @@ build time, not read per request.
 
 # Open items
 
-Three things are unresolved and will not surface on their own.
+### ~~1. The team-number → workbook-ID mapping is unverified~~ — RESOLVED, 12 Aug 2026
 
-### 1. The team-number → workbook-ID mapping is unverified
+Source logos are named `Team 17`, not `SLE-C417`, and `prepare-logos.py` assumes
+team *N* is workbook `SLE-C4NN`. This could not previously be checked, because
+the mock feed carries invented venture names.
 
-Source logos are named `Team 17`, not `SLE-C417`. `prepare-logos.py` assumes
-the obvious reading — team *N* is workbook `SLE-C4NN` — and **nothing has
-confirmed it.** It could not be checked against the mock feed, which carries
-invented venture names.
+**It has now been checked against the live `TV_Feed`, and it holds.** All 24
+numbered logos were read against the published venture names and every one
+agrees — Team 1 is Dosa Crisps (`SLE-C401`), Team 15 is CHAKHA NA?
+(`SLE-C415`), Team 34 is In Between Sips by Kaappitalism (`SLE-C434`), and so
+on through all 24. The method was a labelled contact sheet: render each source
+beside the venture name its assumed workbook publishes, and read the wordmarks.
 
-Confirm against `Team Links` before the wall goes live. Putting the wrong
-venture's mark on a public wall is worse than showing no mark at all, and the
-initial-square fallback is a first-class treatment. It is one function to
-change.
+Re-run that check if a source folder ever arrives with different numbering.
 
-### 2. `SLE-C412` is too pale to read at any size
+### ~~2. `SLE-C412` is too pale to read at any size~~ — MOOT
 
-Pale grey type on a white background *in the source artwork*. It is faint at
-100px, so no framing, sizing or background choice downstream will fix it. It
-needs redrawing by the team, or that venture will show an effectively blank
-disc on the wall.
+`SLE-C412` (Xoco) is not in the new circular set — no `Team 12` file was
+supplied — so it falls back to the coloured initial and the pale artwork is no
+longer on the wall. If a `Team 12` logo arrives later, check it at 100px before
+adding it: the previous one was pale grey type on white *in the source*, which
+no framing or sizing downstream can fix.
 
-### 3. Podium venture names: serif or sans — unanswered
+### 3. Two source logos cannot be assigned to a team
+
+`Unhinged Logo.png` and `PHOTO-2026-08-12-15-37-13.jpg` (which is **ROLLIN**)
+carry no team number, and neither venture name appears in `TV_Feed`. The only
+unnamed non-spare workbooks are `SLE-C422` and `SLE-C435`, so they are almost
+certainly those two — but nothing says which is which, and guessing is a coin
+flip on a public wall.
+
+Both are deliberately not emitted, and both teams show the coloured initial.
+To place them, rename the files `Team 22.png` / `Team 35.png` and re-run.
+
+### 4. Four fallback discs are the same colour as `/weekly`'s green panel
+
+`VentureLogo`'s six identity tints include `--deep-forest-green`, which is
+*exactly* the card's logo panel, and `--deep-teal`, which is close to it. Teams
+without artwork that hash to those get a disc that does not read as a disc —
+only the white initial and the mint hairline show.
+
+Measured: `SLE-C411` Moh, `SLE-C417` Postcards and `SLE-C435` on
+`--deep-forest-green`; `SLE-C432` Lowkey Livin on `--deep-teal`. Four of the
+sixteen visible fallbacks.
+
+They are legible — the letter and ring carry it — so this is a design question,
+not a fault. Fixing it means either dropping those two tints from the set, or
+using a different tint set on the green panel, which costs the rule that a
+venture keeps one colour across both slides.
+
+### 5. Podium venture names: serif or sans — unanswered
 
 The design system is explicit that display and headings are `--font-serif`
 while body and UI are `--font-sans`, and the slide headings now follow it. The

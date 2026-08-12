@@ -207,36 +207,49 @@ export const KICK_MS = 3_000
  *
  * Because presence is known ahead of the render, no broken image is ever
  * requested and there is no error-handler flash. A team not in this list gets
- * the coloured initial square, which is a first-class treatment — **18 of 42
- * logos exist**, so it still carries more than half the wall.
+ * the coloured initial, which is a first-class treatment — **24 of 42 logos
+ * exist**, so it still carries nearly half the wall.
  *
  * These files are generated, not dropped in by hand: `scripts/prepare-logos.py`
- * squares every source logo onto its own background colour so it can sit in a
- * circular frame without being cropped. Re-run it when the source folder
- * changes, and paste its output here.
+ * masks every circular source logo to a disc with transparent corners, so it
+ * sits on `/weekly`'s green panel and in `/podium`'s frame without a baked-in
+ * background square behind it. Re-run it when the source folder changes, and
+ * paste its output here.
  *
- * **The team-number mapping is unverified.** The source files are named "Team
- * 17", not "SLE-C417", and the script assumes the obvious reading. Confirm it
- * against `Team Links` before the wall goes live: the wrong venture's mark on
- * the wall is worse than no mark at all.
+ * **The team-number mapping is confirmed.** The source files are named "Team
+ * 17", not "SLE-C417", and this assumption went unverified for a long time. On
+ * 12 August 2026 all 24 numbered logos were read against the live `TV_Feed`
+ * venture names and every one agrees — Team 1 is Dosa Crisps, Team 15 is
+ * CHAKHA NA?, Team 34 is In Between Sips by Kaappitalism, and so on.
+ *
+ * Two source files carry no team number — ROLLIN and UNHINGED — and neither
+ * name is in the feed. They are almost certainly `SLE-C422` and `SLE-C435`, the
+ * only unnamed non-spare workbooks, but nothing says which is which, so neither
+ * is placed. See the docstring in `scripts/prepare-logos.py`.
  */
 export const LOGOS: readonly TeamId[] = [
   'SLE-C401',
   'SLE-C402',
+  'SLE-C403',
+  'SLE-C404',
   'SLE-C405',
   'SLE-C406',
-  'SLE-C407',
   'SLE-C408',
+  'SLE-C409',
   'SLE-C410',
-  'SLE-C412',
   'SLE-C414',
   'SLE-C415',
-  'SLE-C417',
+  'SLE-C416',
   'SLE-C418',
   'SLE-C419',
   'SLE-C420',
   'SLE-C423',
-  'SLE-C424',
-  'SLE-C425',
   'SLE-C426',
+  'SLE-C427',
+  'SLE-C429',
+  'SLE-C433',
+  'SLE-C434',
+  'SLE-C436',
+  'SLE-C438',
+  'SLE-C440',
 ]
