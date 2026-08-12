@@ -47,7 +47,7 @@
      priority is that every screen renders identically: if one laptop has New
      York installed and another doesn't, two TVs side by side would set the same
      headline in two different serifs, and nobody would think to check. */
-  --font-serif: var(--font-mesa-display), 'New York', ui-serif, Georgia, serif;
+  --font-serif: var(--font-mesa-serif), 'New York', ui-serif, Georgia, serif;
   --font-sans: var(--font-mesa-body), ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
     Helvetica, Arial, sans-serif;
 
@@ -141,12 +141,18 @@
   --tv-pill-fill: rgba(17, 33, 33, 0.03);
   --tv-pill-stroke: rgba(17, 33, 33, 0.08);
 
-  /* The slide heading — "BYOB WEEK 4" on the weekly board. A real heading, not
-     a corner label: sized to read as one at six metres while staying inside
+  /* The slide heading — "BYOB WEEK 4" on the weekly board.
+
+     **Serif.** The design system is explicit that display and headings are
+     `--font-serif` and that body and UI are `--font-sans`; this token was set
+     in sans, which made the one true heading on the frame the only thing
+     dressed as body text. Source Serif 4 self-hosted, ahead of `local()`.
+
+     A real heading, not a corner label: sized to read as one at six metres while staying inside
      the header band, so the forty rows underneath never move. Its glyphs stand
      roughly two row-texts tall; sizing it to two full row *boxes* (4.6vw) was
      measured to overflow the 3.4vw band and push rank 20 off the frame. */
-  --t-tv-heading: 700 clamp(22px, 2.4vw, 50px) / 1 var(--font-sans);
+  --t-tv-heading: 700 clamp(22px, 2.4vw, 50px) / 1 var(--font-serif);
   --track-tv-heading: 0.04em;
   /* The Mesa lockup, sized to the heading's own glyph height so the two read
      as one rank of furniture across the band. Same clamp as --t-tv-heading. */

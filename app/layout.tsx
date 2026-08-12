@@ -8,12 +8,13 @@ import './globals.css'
  * weeks, and a font request that fails silently falls back to Georgia or
  * Helvetica on a screen nobody is watching closely enough to notice.
  *
- * The filenames are deliberately not `Manrope-*`. `next/font` derives its CSS
- * family name from the *filename*, and a family called `manrope` collides
- * case-insensitively with the seven static `Manrope` @font-face rules in
- * `colors_and_type.css` — the browser then fetches a static weight as well as
- * the variable one. Same reasoning for the serif, which must not collide with
- * the system's own `MesaSerif` family.
+ * Neither family may be named after the face it carries. `next/font` derives
+ * its CSS family name from the const below, and `colors_and_type.css` already
+ * declares seven static `Manrope` rules and four `MesaSerif` ones. CSS family
+ * names match case-insensitively, so a collision merges the two sets and the
+ * browser picks between them by weight — fetching a static face as well as the
+ * variable one, or preferring a `local()` system font over the self-hosted
+ * file. Hence `mesaBody` and `mesaSerifVariable`.
  */
 const mesaBody = localFont({
   src: './fonts/MesaBody-Variable.ttf',
@@ -22,11 +23,29 @@ const mesaBody = localFont({
   variable: '--font-mesa-body',
 })
 
-const mesaDisplay = localFont({
-  src: './fonts/MesaDisplay-Variable.woff2',
+/**
+ * Source Serif 4, self-hosted, standing in for New York.
+ *
+ * **The generated family cannot be called `MesaSerif`, however much the design
+ * language calls it that.** `next/font/local` derives its CSS family name from
+ * this const — confirmed in the built stylesheet, which emits `mesaBody` and
+ * this face, not the filenames — and `colors_and_type.css` already declares
+ * four `@font-face` rules for a family named `MesaSerif` whose `src` begins
+ * `local("New York")`. CSS family matching is case-insensitive, so a const
+ * named `mesaSerif` would merge with those rules, and the browser would then
+ * choose between a self-hosted Source Serif 4 and whatever New York the
+ * machine happens to have. Every Mac has New York. Two TVs would set the same
+ * heading in two different serifs and nobody would think to check.
+ *
+ * So the file is `MesaSerif-Variable.woff2` and the token is
+ * `--font-mesa-serif` — the name the design language uses — while the family
+ * this generates stays deliberately distinct from it.
+ */
+const mesaSerifVariable = localFont({
+  src: './fonts/MesaSerif-Variable.woff2',
   weight: '200 900',
   display: 'block',
-  variable: '--font-mesa-display',
+  variable: '--font-mesa-serif',
 })
 
 export const metadata: Metadata = {
@@ -46,7 +65,7 @@ export const metadata: Metadata = {
  */
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en-IN" className={`${mesaBody.variable} ${mesaDisplay.variable}`}>
+    <html lang="en-IN" className={`${mesaBody.variable} ${mesaSerifVariable.variable}`}>
       <body>{children}</body>
     </html>
   )
