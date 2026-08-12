@@ -384,9 +384,10 @@ already covers the realistic failure (a wrong timezone). A laptop's clock is NTP
 **`/podium`** — 1st centred and larger, 2nd left, 3rd right, ranks 4–10 in a strip below.
 That arrangement still holds; **the treatment described in the rest of this paragraph does
 not.** It was superseded once by the pillars and again by the cards that replaced them — see
-`docs/superpowers/specs/2026-08-12-podium-cards.md`, which is the live design. First place is
-a green card with a medal, not `panel-forest` with a lockup; there is no frosted glass; rank
-is a numeral, not a word. What survives verbatim is the reason the word was chosen — that a
+`docs/superpowers/specs/2026-08-12-podium-masthead.md`, which is the live design. First place is
+a dark card on a gold plinth, not `panel-forest` with a lockup; there is no frosted glass;
+rank is a numeral in a metal badge, not a word; and the slide's chrome is a full-height
+masthead at the left rather than a strip across the top. What survives verbatim is the reason the word was chosen — that a
 greyscale crop still has to rank — which the card now answers with size and a green ramp
 instead. Ranks 4–10 reorder **as grid rows, not a `<table>`**: the dashboard measured 30
 frames of a `<tr>` ignoring the layout transform and sitting still

@@ -1,7 +1,19 @@
 # `/podium` — three floating cards, then seven ranked bars
 
+> **SUPERSEDED, 12 August 2026** — the same day it shipped. `/podium` is now a
+> masthead spine, three cards on metal plinths and seven pill bars, built from an
+> approved design image. See
+> `docs/superpowers/specs/2026-08-12-podium-masthead.md`.
+>
+> Most of the reasoning below carries over intact and is still worth reading:
+> "rank is said three times", the em dash rather than `₹0`, place-based idle
+> assignment, the fixed-px spacing trap, and the strip refusing `/weekly`'s
+> language. What did not survive is §2's *green ramp* — rank is carried by three
+> metals now — and the floating-card treatment itself, which the approved design
+> replaced with cards standing on plinths.
+
 **Date:** 12 August 2026
-**Status:** implemented
+**Status:** superseded — shipped in `ac1269d`, replaced the same day
 **Supersedes:** `docs/superpowers/specs/2026-08-12-podium-pillars-design.md` in full
 
 ---

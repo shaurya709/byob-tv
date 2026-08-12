@@ -11,7 +11,10 @@
    and are never redefined here, with the two deliberate exceptions noted below.
 
    Rules for this file:
-   - No new hues. Every colour is an existing brand token.
+   - No new hues. Every colour is an existing brand token. **One documented
+     exemption exists — the three podium metals. It is scoped, it is the only
+     one, and it is not a precedent.** See the PODIUM METALS block for what it
+     covers and what it deliberately does not.
    - Class rules that set a colour go in the `@layer components` block at the
      bottom, never at the top level, or they beat every Tailwind `text-*`
      utility on the same element.
@@ -260,147 +263,185 @@
      them — `VentureLogo` and the dev flip trigger both ask for it. */
   --stroke-hair: 1px;
 
-  /* ========= PODIUM — three floating cards, then seven ranked bars =========
+  /* ========= PODIUM METALS — the one documented exemption =========
 
-     **The pillars are gone.** `/podium` was three columns with a capital and a
-     base, standing on a shared ground line; the slide is now three cards that
-     float, and ranks 4–10 as bars. The reasoning that built the pillars — that
-     a shared floor is what makes three objects read as one podium — was sound
-     for a podium and is simply not what this slide is any more. The superseded
-     design is docs/superpowers/specs/2026-08-12-podium-pillars-design.md.
+     **These are not Mesa brand colours, and this is the only place on the wall
+     where a hex that is not a brand token is allowed to appear.**
 
-     Sizes stay `vw` like the rest of the wall. A `px` here would compose
-     correctly on the TV and wrongly in every dev window, which is the one thing
-     this file's `vw` convention exists to prevent.
+     They exist to encode first, second and third, and nothing else. Not a
+     status. Not a positive figure. Not a surface. If a future element wants
+     "the gold one", the answer is no — it wants an accent, and the palette
+     already has one.
 
-     ── The card ──
+     ── Why they are not derived ──
 
-     A green card with the venture's mark floating on it, its name and its total
-     underneath, and the rank as a medal pinned over the top-left corner. Rank is
-     carried three ways at once — the card's size, the depth of its green, and
-     the medal — so a greyscale crop still ranks, and so does a crop that loses
-     the medal.
+     Deriving them from `--tangerine-glow` / `--tangerine-600` was tried on
+     paper and rejected on measurement. Gold sits at hue 39° and the tangerine
+     tokens at 31°, so gold is nearly derivable; bronze as originally specified
+     sat at 28°, within 3° of `--tangerine-600`, which is close enough that it
+     read as the brand tangerine rather than as a metal. Deriving both from one
+     token pulls them *together*, and the distance between gold and bronze is
+     the whole problem a three-metal system has.
 
-     The card is **wider than the mark needs**, and that is deliberate: the
-     widest thing in it is the venture name, not the disc. "The Pitlane
-     Collective" at `--t-tv-pod-name` wants about 250px, and a card sized to the
-     disc alone would have to clip it.
+     ── Bronze is not the specified value, and this is why ──
 
-     ── The vertical budget, and the trap in it ──
+     The design called for `#B07542`. Measured, that is 11° from gold and 2.8°
+     from `--tangerine-600`, and its numeral cleared only 3.89:1 — AA large with
+     no margin. Pushing it redder alone makes the contrast worse, because red is
+     darker. It is pushed redder **and lighter**: `#CD6237` is 22° from gold,
+     13.6° from the brand tangerine, and its numeral clears 4.51:1 — real AA
+     rather than large-only.
 
-     Measured from the running frame at 1920x1080: 1000px of content box, 65.3px
-     of header, so the board gets 934.7px. The four bands below sum to about
-     880px at 1920, which leaves ~27px of clearance under the header.
+     ── The inks ──
 
-     That slack is not spare — it is the budget, and **the medal spends part of
-     it before the card does**. The medal hangs about a third of its own diameter
-     above the card's top edge, so the clearance that matters is the card's less
-     the overhang: measured at the first pass, a card sitting a comfortable 26px
-     under the header put its medal 3.9px under it. `measure-fit.mjs` measures
-     the medal for that reason.
+     Each numeral is the dark tone of its own metal, never black and never
+     white. Measured on the fill it sits on: gold 6.15:1, silver 5.93:1,
+     bronze 4.51:1. */
+  --metal-gold: #D9A441;
+  --metal-silver: #A8AFB5;
+  --metal-bronze: #CD6237;
+  --metal-gold-ink: #3B2A05;
+  --metal-silver-ink: #2B3136;
+  --metal-bronze-ink: #2C1207;
 
-     The `--s-*` scale is fixed px and does not shrink with these `vw` sizes, so
-     the gaps hold their width while everything else contracts and the tightest
-     frame is **1600x900**, not the smallest one. Measured on the pillars before
-     this was budgeted: -15.8px of clearance at 1600, on a band that looked
-     perfect at 1920. Re-run `scripts/measure-fit.mjs` after touching any height
-     here.
+  /* ========= PODIUM — a spine, three cards on plinths, seven pills =========
 
-     ── The size step is what carries first place ──
+     The pillars are gone, and so are the floating cards that replaced them. The
+     slide is now a full-height masthead at the left, one tall card and two short
+     ones, and ranks 4–10 as pill bars filling the well beneath the short pair.
+     See docs/superpowers/specs/2026-08-12-podium-masthead.md.
 
-     18.6 against 14.8 is a 1.52x mark, not the 1.31x the first pass had. Three
-     cards a few percent apart read as three cards; the reference this is drawn
-     from makes the winner unmistakably bigger and lets second and third be
-     identical twins, which is also what a real podium does. */
-  --w-pod-card-1: 17.4vw;    /* 334px @1920 */
-  --w-pod-card-r: 13vw;      /* 250px */
-  --h-pod-card-1: 18.6vw;    /* 357px — mark 214px */
-  --h-pod-card-r: 14.8vw;    /* 284px — mark 141px */
+     ── Geometry is transcribed from the approved design, not invented ──
 
-  /* How much green shows around the mark. */
-  --s-pod-card-inset: var(--s-5);
+     Every number below was measured off the approved image (2760 x 1572) and
+     converted, rather than reasoned about. The horizontal ones are `vw` and sum
+     to 99.9:
 
-  /* The white ring around the mark, drawn *outside* its box.
+       spine 12.5 | gutter 3.5 | card 1 34.5 | gap 1.7 | card 2 21.1
+                  | gap 1.7 | card 3 21.1 | edge 3.8
 
-     It has to be budgeted rather than added, for the reason the weekly board's
-     green preview learned the hard way: a ring drawn outside the element still
-     lands on whatever is under it, so the mark shrinks by twice the ring rather
-     than the card growing by it. Without the ring a dark logo on a dark card
-     loses its edge entirely, and the fallback initial discs — which are tinted
-     from a set that includes deep teal — disappear outright. */
-  --s-pod-ring: 0.28vw;
+     ── The vertical is fractions, not `vw`, and that is deliberate ──
 
-  /* The name, the caption and the figure, as one block. Constant across all
-     three cards, so the row-to-row difference is absorbed **entirely by the
-     mark** — the same rule the weekly grid follows, and the reason three cards
-     of different sizes still read as one system. */
-  --h-pod-card-text: 4.8vw;
+     The first attempt sized the vertical in `vw` like the rest of the wall and
+     it overflows off-ratio: the content came to 55.4vw of height, and a
+     2000x1100 frame only has 55.0vw of height to give. `vw` heights are safe
+     when they are a small share of the frame and fatal when they are most of
+     it.
 
-  --s-pod-gap: 2.6vw;
-  --d-pod-medal: 3.2vw;
+     So the board's rows are `fr` — card 1 takes 84% of the board's content
+     height whatever that height is, the short cards 42%, the list the rest —
+     and only the things that must hold their proportion to the *type* stay
+     `vw`. The mark diameters are percentages of their card's width, which is
+     `vw`, so they scale with the type rather than with the frame's aspect. */
+  --w-pod-spine: 12.5vw;
+  --w-pod-card-1: 34.5vw;
+  --w-pod-card-r: 21.1vw;
+  --s-pod-gap: 1.7vw;
+  --s-pod-gutter: 3.5vw;
+  --s-pod-edge: 3.8vw;
+  --s-pod-top: 4.5vw;
+  --s-pod-bottom: 1.6vw;
 
-  /* The board's horizontal extent: three cards and the two gaps between them,
-     987px at 1920. The strip below is set to exactly this, so ranks 4–10 read
-     as a continuation of the top three and not as a second object. */
-  --w-pod-board: calc(
-    var(--w-pod-card-1) + 2 * var(--w-pod-card-r) + 2 * var(--s-pod-gap)
-  );
-  --w-pod-total: 9vw;
+  /* The white disc, as a share of its card's width. Rank 1's is half the card;
+     the short cards give theirs slightly less, so the step between them reads
+     as more than the cards' own size difference. */
+  --d-pod-disc-1: 18.8vw;
+  --d-pod-disc-r: 9.8vw;
 
-  /* ── The bar's own scale ──
+  /* The badge, as a share of its card's width. The short cards' is a *larger*
+     share so that all three badges land at a similar absolute size — a badge
+     scaled strictly with its card would make third place's numeral too small to
+     read across a corridor, and the numeral is one of the three things carrying
+     rank. */
+  --d-pod-badge-1: 5.7vw;
+  --d-pod-badge-r: 3.8vw;
+  --s-pod-badge-inset: 1.5vw;
 
-     **Deliberately not the weekly board's row height.** That board puts *forty*
-     rows on one frame; this strip carries seven, and inheriting the forty-row
-     height left the top ten looking like an afterthought squeezed under the
-     podium — cramped type, no air, and a third of the frame empty.
+  /* The plinth: the metal rect the card stands on, visible only below it.
+     Rank 1's is thicker in absolute terms, which is what the design asks for,
+     even though it is a smaller share of its taller card. */
+  --h-pod-plinth-1: 1.7vw;
+  --h-pod-plinth-r: 1.4vw;
 
-     3.35vw is 64.3px, which is what a 48px mark needs to sit inside a bar with
-     air above and below it. The mark cannot go under about 50px: below that the
-     wordmarks stop resolving into anything and become coloured dots.
+  --r-pod-card: 1.25vw;
+  --s-pod-card-pad: 2.6vw 1.8vw 2vw;
+  /* The short cards keep the design's generous head room and give it back at the
+     foot, where the design also crams its name and figure against the bottom
+     edge. Reducing the head room instead was tried and it moves the mark off the
+     optical centre the three cards share. */
+  --s-pod-card-pad-r: 2.6vw 1.5vw 1.2vw;
 
-     The gap between bars is `--s-1`, not `--s-2`. Four bars' worth of extra gap
-     is 24px, and at 1600x900 that is the whole clearance. */
-  --h-pod-row: 3.15vw;
-  --s-pod-row-gap: var(--s-1);
-  --h-pod-col-head: 1.2vw;
-  --w-pod-rank: 3.4vw;
-  --d-pod-row-logo: 2.5vw;
+  /* ── The list ──
 
-  /* ── The ramp ──
+     Seven pills, filling the width of the two short cards above them exactly.
+     The design insets them slightly from the cards' left edge; they are aligned
+     here instead, so the short pair and the list share one left edge and one
+     right edge and the whole right-hand block reads as a single column. A 39px
+     inset with nothing depending on it reads as a mistake, not a decision. */
+  --s-pod-row-gap: 0.85vw;
+  --w-pod-rank: 2.4vw;
+  --w-pod-total: 7.6vw;
+  --s-pod-pill-x: 1.7vw;
 
-     Deepest at first place, lightest at third, with second genuinely between
-     them — a real green family rather than one colour desaturated three times.
+  /* ── Two registers, deliberately opposed ──
 
-     **Every step still carries white type**, which is what caps the ratio. The
-     pillars could afford `--bright-green` at third place because a filled shape
-     has no contrast floor; a card with a name and a figure on it does. Measured
-     on the third step: white 5.4:1 and `--tangerine-200` 3.6:1, and it is the
-     tangerine that binds — at 55% the figure drops to 3.0:1, which is the AA
-     large floor exactly and no margin at all for a TV's own gamma.
+     **Figures** are the heaviest weight the face has, tracked *in*. **Names**
+     are the same weight, uppercase, tracked *out*. Tight numbers beside open
+     names is what produces the competitive feel; it is not decoration, and
+     removing either half collapses the effect.
 
-     Even steps, 0 / 28 / 50, because the first pass used 0 / 22 / 45 and the
-     step from first to second was too small to see across a corridor — first
-     and second read as the same green with different marks on them.
+     `--font-sans` tops out at 800 — that is the whole `wght` axis of
+     MesaBody-Variable, not an understated `@font-face`. The approved design was
+     drawn in Arial Black, which is a 900 and an unusually heavy one: measured at
+     matched cap height, Manrope 800 carries **80% of its ink** and sets 8%
+     narrower. The two levers that take some of that back without a second font
+     family are size and the negative tracking, and both are spent here.
 
-     Derived by formula rather than written as a literal, which is what keeps
-     the never-hardcode-a-hex rule intact. */
-  --pod-1: var(--deep-forest-green);
-  --pod-2: color-mix(in srgb, var(--green-600) 28%, var(--deep-forest-green));
-  --pod-3: color-mix(in srgb, var(--green-600) 50%, var(--deep-forest-green));
+     `--font-serif` does reach 900, and BYOB is the one place it is used. */
+  --t-pod-byob: 900 clamp(38px, 5.4vw, 112px) / 1.02 var(--font-serif);
+  --t-pod-count: 800 clamp(30px, 4.2vw, 88px) / 1 var(--font-sans);
+  --t-pod-fig-1: 800 clamp(44px, 6.1vw, 128px) / 1 var(--font-sans);
+  --t-pod-fig-r: 800 clamp(26px, 3.5vw, 74px) / 1 var(--font-sans);
+  --t-pod-fig-row: 800 clamp(13px, 1.45vw, 30px) / 1 var(--font-sans);
+  --t-pod-rank-row: 800 clamp(12px, 1.3vw, 27px) / 1 var(--font-sans);
+  --t-pod-badge-1: 800 clamp(18px, 2.3vw, 48px) / 1 var(--font-sans);
+  --t-pod-badge-r: 800 clamp(15px, 1.8vw, 38px) / 1 var(--font-sans);
 
-  /* Podium type. Heavy — 800, the top of MesaBody's declared axis — because a
-     rank numeral at this size is a shape before it is a number. */
-  --t-tv-pod-rank: 800 clamp(20px, 1.9vw, 40px) / 1 var(--font-sans);
-  --t-tv-pod-name: 600 clamp(13px, 1.3vw, 27px) / 1.15 var(--font-sans);
-  --t-tv-pod-figure: 800 clamp(18px, 2vw, 42px) / 1 var(--font-sans);
-  /* The "TOTAL REVENUE" caption, on the cards and over the strip's figure
-     column. Same role and same size as the weekly board's column headings. */
-  --t-tv-pod-label: 700 clamp(9px, 0.65vw, 14px) / 1 var(--font-sans);
-  --t-tv-pod-row-rank: 700 clamp(13px, 1.45vw, 30px) / 1 var(--font-sans);
-  /* 600, not 500. The bars are a leaderboard rather than a table of contents,
-     and at 500 the seven names read as caption text sitting inside a graphic. */
-  --t-tv-pod-row-name: 600 clamp(13px, 1.5vw, 31px) / 1.1 var(--font-sans);
-  --t-tv-pod-row-figure: 700 clamp(13px, 1.55vw, 32px) / 1 var(--font-sans);
+  --t-pod-name-1: 800 clamp(13px, 1.5vw, 31px) / 1.1 var(--font-sans);
+  --t-pod-name-r: 800 clamp(10px, 1.1vw, 23px) / 1.1 var(--font-sans);
+  --t-pod-name-row: 800 clamp(12px, 1.32vw, 27px) / 1.1 var(--font-sans);
+  --t-pod-label: 800 clamp(8px, 0.72vw, 15px) / 1.3 var(--font-sans);
+
+  /* Tracking. Figures negative, names positive, and the smaller the name the
+     wider it opens — a tracked line at 15px needs more air than the same
+     treatment at 31px to read as tracked at all rather than as loose. */
+  --track-pod-fig: -0.025em;
+  --track-pod-name-1: 0.14em;
+  --track-pod-name-r: 0.16em;
+  --track-pod-name-row: 0.07em;
+  --track-pod-label: 0.2em;
+
+  /* ── The list's own colours ──
+
+     Track and fill are two steps of one mint, so the filled portion reads as
+     the same bar being further along rather than as a second object on top of
+     the first. Both are literals in the approved design; both are reproduced
+     here as mixes of existing brand tokens, which lands within a couple of
+     values of the specified `#EDF4EE` / `#CFE0D5` and keeps the no-new-hue rule
+     intact everywhere except the metals above. */
+  --pod-track: color-mix(in srgb, var(--soft-mint) 55%, var(--white));
+  --pod-fill: color-mix(in srgb, var(--soft-mint) 72%, var(--mint-300));
+
+  /* The rank numeral inside a pill: apparatus, so muted — but measured rather
+     than assumed. The design's `#5F7B75` clears only 3.34:1 on the filled
+     portion, which is AA-large with nothing spare. One step deeper takes it to
+     4.6:1 and it still sits well below the venture name it must not compete
+     with. */
+  --pod-rank-ink: color-mix(in srgb, var(--deep-teal) 72%, var(--mint-300));
+
+  /* The muted mint a venture name is set in on a card. Quieter than the figure
+     on purpose: it is a label, not the headline. */
+  --pod-name-ink: color-mix(in srgb, var(--mint-300) 82%, var(--deep-forest-green));
 
   /* ── Idle intensity: "playful" ──
 
@@ -962,128 +1003,202 @@
     }
   }
 
-  /* ── One of the three floating cards ──
+  /* ── The masthead spine ──
 
-     The colour and both dimensions arrive per-card as inline custom properties,
-     so one class serves all three and the ramp itself stays up in `:root`
-     rather than being spelled out three times in the component.
+     A full-height band at the left carrying, top to bottom: the event's name set
+     vertically, the countdown, and a colophon. It is the frame's anchor, and it
+     is the reason the composition reads as designed rather than as three objects
+     floating on white.
 
-     **`--d-pod-logo` must be declared here, on the card, and never in `:root`.**
-     `--h-pod-card` is set per card by the component, so a `calc()` written at
-     `:root` substitutes an `--h-pod-card` that does not exist there, becomes
-     invalid at computed-value time, and silently hands every mark a junk size.
-     The weekly grid was written that way once: rows 1–2 rendered marks at
-     10.3 x 16px and rows 3–4 at 153.6px, on a page that otherwise looked
-     entirely correct.
-
-     `min()`, because which axis binds is not fixed. At the current sizes both
-     cards are height-bound — the card is deliberately wider than the mark needs
-     so the venture name has room — but a card retuned taller would flip to
-     width-bound, and the expression says so rather than assuming.
-
-     **No `overflow: hidden`.** The medal hangs off the top-left corner. */
-  .tv-pod-card {
-    position: relative;
-    width: var(--w-pod-card);
-    height: var(--h-pod-card);
-    background: var(--pod-fill);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
-    --d-pod-logo: min(
-      calc(
-        var(--h-pod-card) - var(--h-pod-card-text) - 2 * var(--s-pod-card-inset) - 2 *
-          var(--s-pod-ring)
-      ),
-      calc(var(--w-pod-card) - 2 * var(--s-pod-card-inset) - 2 * var(--s-pod-ring))
-    );
-  }
-
-  /* The mark's white ring, and the shadow that makes it float off the card.
-
-     `box-shadow`, not `border` and not `filter`: a border would change the box
-     the idle animation transforms, and a filter of any kind forces the used
-     value of `transform-style` to `flat` — which is what silently destroyed the
-     weekly board's disc flip when a `drop-shadow` was tried there. */
-  .tv-pod-mark {
-    border-radius: 50%;
-    box-shadow:
-      0 0 0 var(--s-pod-ring) var(--white),
-      0 10px 22px color-mix(in srgb, var(--deep-teal) 45%, transparent);
-  }
-
-  /* The rank medal, pinned over the card's top-left corner.
-
-     Top-*left*, where the weekly board's rank numerals also sit. The reference
-     this is drawn from puts it on the right; the wall already has an answer to
-     "where does rank live", and two answers on two slides that rotate minutes
-     apart is worse than either one. */
-  .tv-pod-medal {
-    position: absolute;
-    display: grid;
-    place-items: center;
-    width: var(--d-pod-medal);
-    height: var(--d-pod-medal);
-    top: calc(var(--d-pod-medal) * -0.28);
-    left: calc(var(--d-pod-medal) * -0.28);
-    border-radius: 50%;
-    background: var(--tangerine-glow);
-    color: var(--deep-teal);
-    font: var(--t-tv-pod-rank);
-    /* The white ring is what lifts the medal off the green rather than letting
-       it read as a hole punched in the card. */
-    box-shadow:
-      0 0 0 calc(var(--s-pod-ring) * 0.8) var(--white),
-      var(--shadow-md);
-  }
-
-  /* ── One bar, ranks 4–10 ──
-
-     Two blocks with daylight between them: a green tab carrying the rank, and a
-     mint bar carrying the mark, the name and the figure. The tab is the
-     reference's signature — a rank that sits *beside* the row rather than
-     inside it — and the daylight is what stops the pair reading as one pill.
-
-     Quiet on purpose. The three cards above are the story; seven bars in a
-     strong fill would flatten that back out, which is the same reason the
-     pillars' strip refused `.tv-pill`. */
-  .tv-pod-tab {
-    display: grid;
-    place-items: center;
-    width: var(--w-pod-rank);
+     Three zones, separated by space and one tangerine rule — identity, stake,
+     provenance. A second rule was drawn and removed: at 240px wide, two rules
+     turn a spine into a form. */
+  .tv-pod-spine {
+    width: var(--w-pod-spine);
     height: 100%;
     background: var(--deep-forest-green);
-    color: var(--white);
-    border-radius: var(--radius-sm);
-    /* The bars float too, one step quieter than the cards — `--shadow-sm`
-       against the cards' `--shadow-lg`. Without it seven mint rectangles sit
-       flat on a white page while the three things above them hover, and the
-       slide reads as two unrelated treatments rather than one board. */
-    box-shadow: var(--shadow-sm);
-  }
-
-  .tv-pod-bar {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    height: 100%;
-    flex: 1;
-    min-width: 0;
-    background: var(--soft-mint);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-sm);
+    padding: var(--s-pod-top) var(--s-5) var(--s-6);
+    color: var(--white);
+    /* The as-of stamp asks for `--fg-muted` through `.tv-ticker`, and that token
+       is a dark-surface value — charcoal-grey on Deep Forest is nearly invisible.
+       Redefining the token here rather than overriding the class is what
+       actually reaches it, and it is how a theme is meant to work: the component
+       keeps asking for "muted" and the surface decides what that means. */
+    --fg-muted: var(--mint-300);
   }
 
-  /* The figure gets its own block inside the bar — the reference's third
-     element. On a mint bar a white block reads as a distinct surface without
-     adding a hue, and it is what makes seven figures scan as a column. */
-  .tv-pod-total {
+  /* The stamp wraps to two lines in a 240px band, and that is fine — but it has
+     to look like two lines rather than like an accident, so it is centred and
+     given leading of its own. */
+  .tv-pod-spine .tv-ticker {
+    text-align: center;
+    font-size: clamp(9px, 0.78vw, 16px);
+    line-height: 1.4;
+  }
+
+  /* One letter per line. `BYOB` is the only place the display serif appears, and
+     the only place on this wall that reaches weight 900 — the sans axis stops at
+     800, so this is the one element that can carry the approved design's weight
+     exactly rather than approximately. */
+  /* **The colour is set here, not inherited from the spine.** The design system
+     gives `h1`-`h4` a colour of their own, unlayered, so an inherited `--white`
+     loses to it and the wordmark renders charcoal on Deep Forest — present,
+     invisible, and passing every check. AGENTS.md lists this trap by name. */
+  .tv-pod-byob {
+    font: var(--t-pod-byob);
+    color: var(--white);
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+
+  .tv-pod-rule {
+    width: 46%;
+    height: var(--stroke-thick);
+    background: var(--tangerine-glow);
+    border-radius: var(--radius-pill);
+  }
+
+  /* Every small label in the spine and on the cards. Tracked open, uppercase,
+     and quiet — the counterweight to the figures, which are tracked shut. */
+  .tv-pod-label {
+    font: var(--t-pod-label);
+    letter-spacing: var(--track-pod-label);
+    text-transform: uppercase;
+    text-align: center;
+    color: var(--mint-300);
+  }
+
+  /* ── A card and the metal it stands on ──
+
+     Two rects: the metal first, then the dark card on top of it, inset from the
+     bottom by the plinth's height. The metal is therefore visible only as an
+     edge below the card, which is what makes each card read as *standing on* its
+     place rather than as having a coloured border.
+
+     The plinth is the same width as the card, not wider. Drawing it wider was
+     tried — it reads as a shadow rather than as a base, and the approved design
+     measures the two at the same width to the pixel. */
+  .tv-pod-plinth {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: var(--pod-metal);
+    border-radius: var(--r-pod-card);
+  }
+
+  /* **No `overflow: hidden`.** Nothing hangs off this card — the badge sits
+     inside it — but the disc's shadow does, and clipping it would flatten the
+     one thing making the mark read as sitting on the card rather than in it. */
+  .tv-pod-card {
+    position: absolute;
+    inset: 0;
+    bottom: var(--h-pod-plinth);
+    background: var(--pod-fill-card);
+    border-radius: var(--r-pod-card);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* The rank badge: a filled circle in the card's own metal, inside the card's
+     top-left corner. The numeral is the dark tone of that same metal — never
+     black, never white — which is what keeps three badges reading as three
+     medals rather than as three coloured chips. */
+  .tv-pod-badge {
+    position: absolute;
+    top: var(--s-pod-badge-inset);
+    left: var(--s-pod-badge-inset);
     display: grid;
-    place-items: center end;
-    width: var(--w-pod-total);
-    align-self: stretch;
-    margin: var(--s-2);
-    padding-inline: var(--s-3);
+    place-items: center;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--pod-metal);
+    color: var(--pod-metal-ink);
+    letter-spacing: var(--track-pod-fig);
+  }
+
+  /* The white disc the mark sits in. The mark is *contained*, never cropped and
+     never stretched — the approved design shows one wordmark spilling past its
+     circle, which is an artefact of the mock rather than an intention.
+
+     White rather than the card's own green, because a mark's own colours are
+     what identify it and a coloured mount shifts every one of them. It also
+     means the fallback initial disc, which is tinted from a set that includes
+     deep teal, has a ground it cannot disappear into. */
+  .tv-pod-disc {
+    border-radius: 50%;
     background: var(--white);
-    border-radius: var(--radius-xs);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    box-shadow: 0 0.4vw 1.2vw color-mix(in srgb, var(--deep-teal) 40%, transparent);
+  }
+
+  /* ── One pill, ranks 4–10 ──
+
+     A fully rounded track with a filled portion on it, proportional to that
+     team's revenue against the *list's* leader rather than against rank 1. The
+     list is its own contest: measured against ₹54,782 every bar here would sit
+     under four fifths and the seven would read as identical.
+
+     No card, no border, no shadow. The podium is solid objects and the list is
+     bars, and that contrast is the point — giving these rows card treatment is
+     what made an earlier version of this slide look like a shorter `/weekly`. */
+  .tv-pod-pill {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--w-pod-rank) minmax(0, 1fr) var(--w-pod-total);
+    align-items: center;
+    gap: var(--s-pod-pill-x);
+    padding-inline: var(--s-pod-pill-x);
+    height: 100%;
+    background: var(--pod-track);
+    border-radius: var(--radius-pill);
+  }
+
+  /* Behind the content, never over it: the fill is a surface, and a name that
+     changed colour halfway along its own bar would read as a defect. */
+  .tv-pod-pill-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: var(--pod-fill);
+    border-radius: var(--radius-pill);
+    pointer-events: none;
+  }
+
+  /* `> span`, never `> *`. The fill is a `div` and is absolutely positioned; a
+     blanket rule here re-declares `position` on it, drops it back into flow, and
+     it silently claims the first grid cell — measured: every figure wrapped onto
+     a second line inside its own pill. */
+  .tv-pod-pill > span {
+    position: relative;
+  }
+
+  /* **The figure has its own grid track, so a long name cannot reach it.** The
+     approved design shows rank 10's name running straight through its figure;
+     that is the collision its own risk list asks to prevent, so it is prevented
+     structurally here rather than by choosing a font size and hoping.
+
+     The ellipsis is a guard, not a feature. Measured on the live cohort at 1920,
+     the longest name — "ATC (All Things Camphor)", which is the exact one that
+     collides in the approved design — sets 399px of ink in a 522px track, so it
+     clears by 123px and the guard never fires. At 1600x900 it clears by 102px.
+     It stays because a venture can be renamed from a spreadsheet on any given
+     Tuesday, and the failure mode without it is a name overlapping a number on
+     an unattended wall for a week. */
+  .tv-pod-pill-name {
+    font: var(--t-pod-name-row);
+    letter-spacing: var(--track-pod-name-row);
+    text-transform: uppercase;
+    color: var(--deep-teal);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .tv-look-1 { animation: tv-look-1 17s ease-in-out infinite; }

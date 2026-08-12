@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { computeCountdownState } from '@/lib/countdown'
+import { computeCountdownState, mastheadCountdown } from '@/lib/countdown'
 
 /** The real target: Mesa Flea, 6 September 2026, 10:00 IST. */
 const FLEA = Date.parse('2026-09-06T10:00:00+05:30')
@@ -115,5 +115,50 @@ describe('progress', () => {
     // A misconfigured sheet, not a countdown. A full ring is the honest
     // answer: there is no journey left to show.
     expect(computeCountdownState(START, START - 1000, START).progress).toBe(1)
+  })
+})
+
+describe('mastheadCountdown', () => {
+  const band = (iso: string) => mastheadCountdown(at(iso))
+
+  it('counts whole weeks beyond seven days, rounded to nearest', () => {
+    // 25 calendar days out. 25/7 is 3.57, which rounds to 4 and floors to 3 —
+    // and 4 is what the approved design renders, which is what settles it.
+    expect(band('2026-08-12T12:00:00+05:30')).toEqual({ figure: '4', label: 'Weeks to go' })
+    // Worth pinning: nearest is *not* the same as "never understates". 24 days
+    // rounds down to 3 weeks and understates by three. If that ever matters more
+    // than matching the design, this is the assertion that has to change first.
+    expect(band('2026-08-13T12:00:00+05:30')).toEqual({ figure: '3', label: 'Weeks to go' })
+  })
+
+  it('counts days between three and seven out', () => {
+    expect(band('2026-08-31T12:00:00+05:30')).toEqual({ figure: '6', label: 'Days to go' })
+    expect(band('2026-09-03T09:00:00+05:30')).toEqual({ figure: '3', label: 'Days to go' })
+  })
+
+  it('becomes a days:hours:minutes clock inside three days', () => {
+    // Not padded to two digits. `2:14:30` is a duration; `02:14:30` reads as a
+    // time of day, and the wall has no reason to show one.
+    expect(band('2026-09-03T19:30:00+05:30')).toEqual({ figure: '2:14:30', label: 'To go' })
+  })
+
+  it('becomes an hours:minutes:seconds clock on the final day', () => {
+    expect(band('2026-09-06T05:47:12+05:30')).toEqual({ figure: '4:12:48', label: 'To go' })
+  })
+
+  it('says LIVE during the event and nothing at all after it', () => {
+    expect(band('2026-09-06T12:00:00+05:30')).toEqual({ figure: 'LIVE', label: 'Now' })
+    // Gone for good rather than showing a stale memento. The spine closes up
+    // around the gap; there is no placeholder.
+    expect(band('2026-09-07T12:00:00+05:30')).toBeNull()
+  })
+
+  it('bands the same state the dial does, without differencing the clock again', () => {
+    // The one brain, two presentations. At 25 days out the dial says "25" and
+    // the masthead says "4 weeks" — the same `CountdownState`, read differently.
+    const state = at('2026-08-12T12:00:00+05:30')
+    expect(state.mode).toBe('days')
+    expect(state.display).toBe('25')
+    expect(mastheadCountdown(state)?.figure).toBe('4')
   })
 })

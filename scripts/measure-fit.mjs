@@ -55,19 +55,15 @@ for (const [width, height] of SIZES) {
     // reported 207.5px of clearance on a grid whose real top was 24px under the
     // header — a comfortable number that described the wrong edge.
     //
-    // **The medal, not just the card.** The medal hangs about a third of its own
-    // diameter above the card's top-left corner, so the card's own top edge is
-    // not the topmost thing on the slide. Measured while this said `.tv-pod-card`
-    // alone: 26.1px of clearance reported on a board whose medal was 3.9px under
-    // the header — a comfortable number describing the wrong edge, which is the
-    // same failure the `.tv-card` selector had on /weekly.
-    //
-    // The mark is deliberately *not* in this list: it bobs, so its top depends
-    // on which animation frame the measurement caught.
+    // **`.tv-pod-plinth`, not `.tv-pod-card`.** The plinth is the card's outer
+    // box; the dark card is absolutely positioned inside it and inset from the
+    // bottom, so measuring the card alone describes an edge that is not the
+    // object's. The mark is deliberately absent from this list too: it bobs, so
+    // its top depends on which animation frame the measurement caught.
     const tops = [
-      ...document.querySelectorAll('.tv-pod-medal, .tv-pod-card, .tv-card-cell'),
+      ...document.querySelectorAll('.tv-pod-plinth, .tv-card-cell'),
     ].map((el) => el.getBoundingClientRect().top)
-    const cards = [...document.querySelectorAll('.tv-pod-card')].map((el) =>
+    const cards = [...document.querySelectorAll('.tv-pod-plinth')].map((el) =>
       el.getBoundingClientRect(),
     )
     // The strip's own rows, addressed by class rather than by position. The
@@ -75,11 +71,17 @@ for (const [width, height] of SIZES) {
     // silently started counting the caption row as row one when the strip gained
     // a column heading, and a measurement that quietly describes a different
     // element is worse than no measurement.
-    const rows = [...document.querySelectorAll('.tv-pod-bar')]
+    const rows = [...document.querySelectorAll('.tv-pod-pill')]
     const last = rows.at(-1)?.getBoundingClientRect()
     const sorted = [...cards].sort((a, b) => a.x - b.x)
     return {
-      clearance: header && tops.length ? n(Math.min(...tops) - header.bottom) : null,
+      // **`/podium` has no header any more** — its masthead is a full-height
+      // spine, so there is nothing across the top to clear. The measurement it
+      // still needs is the same one: how much air is above the topmost thing on
+      // the board. Falling back to the frame's own top edge keeps one number
+      // meaning one thing on both slides, where returning `null` would quietly
+      // stop taking the measurement this script exists for.
+      clearance: tops.length ? n(Math.min(...tops) - (header ? header.bottom : 0)) : null,
       bottomAir: last ? n(innerHeight - last.bottom) : null,
       rowH: rows.length ? n(rows[0].getBoundingClientRect().height) : null,
       stripW: rows.length ? n(rows[0].getBoundingClientRect().width) : null,

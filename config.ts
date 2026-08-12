@@ -125,6 +125,25 @@ export const DAYS_ONLY_FROM_MS = 15 * 24 * 60 * 60 * 1000
 export const TIMER_UNDER_MS = 24 * 60 * 60 * 1000
 
 /**
+ * Where `/podium`'s masthead countdown changes what it counts.
+ *
+ * **A second set of thresholds on one brain, not a second brain.** The dial in
+ * the shared header escalates at 15 days and 24 hours; the masthead escalates at
+ * 7 days, 3 days and 24 hours, and shows whole weeks above the first of those —
+ * a mode the dial has never had. Both read the same
+ * `computeCountdownState`, which is where every comparison against the clock
+ * still happens; only the banding differs, and it differs because the two are
+ * different sizes on the frame. The dial is a 48px ring in a header and can
+ * afford one figure; the masthead figure is the third-largest thing on the
+ * slide and can afford to change shape.
+ *
+ * The final band deliberately reuses `TIMER_UNDER_MS` rather than declaring its
+ * own 24 hours. The two boards must not disagree about when the last day starts.
+ */
+export const PODIUM_WEEKS_FROM_MS = 7 * 24 * 60 * 60 * 1000
+export const PODIUM_CLOCK_UNDER_MS = 3 * 24 * 60 * 60 * 1000
+
+/**
  * How long the Flea itself runs — 10:00 to 18:00 IST assumed, like the opening
  * time. While it runs the calendar says LIVE NOW; after it ends the calendar
  * leaves the wall entirely.

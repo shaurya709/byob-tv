@@ -48,6 +48,13 @@ describe('FleaDial', () => {
     mode: 'days',
     numeric: 25,
     progress: 0.5,
+    // The dial reads none of these three — they exist so `/podium`'s masthead
+    // can band the same state differently without differencing the clock a
+    // second time. They are spelled out anyway so this fixture stays a complete
+    // `CountdownState` and the compiler keeps checking that it is one.
+    remainingMs: 25 * 86_400_000,
+    daysRemaining: 25,
+    weeksRemaining: 4,
     ...over,
   })
 
@@ -100,9 +107,14 @@ describe('Podium', () => {
     expect(text).toContain('Kite Coffee')
     expect(text).toContain('Solstice')
     expect(text).toContain(formatRupees(240_000))
-    // The caption that separates this slide from `/weekly`. Without it the only
-    // difference between the two boards is which numbers happen to be larger.
-    expect(text.toLowerCase()).toContain('total revenue')
+    // Names are uppercased by CSS, not in the markup — the assertions above are
+    // on the text the component actually renders, which is what a screen reader
+    // and a copy-paste both get.
+    //
+    // **The "total revenue" caption is no longer asserted here.** It moved to
+    // the masthead when the board gained one, and it is deliberately printed
+    // *once* for the whole slide rather than on each of three cards. Its
+    // coverage moved with it — see the PodiumMasthead block below.
   })
 
   it('ranks 4-10 land in the strip, in order', () => {
@@ -132,7 +144,7 @@ describe('Podium', () => {
     expect(text.match(/—/g)).toHaveLength(3)
   })
 
-  it('draws three cards and seven bars, and borrows nothing from /weekly', () => {
+  it('draws three cards on plinths and seven pills, borrowing nothing from /weekly', () => {
     // `.tv-pill` is /weekly's language — rows that close around their own mark.
     // Borrowing it here made slide 1 look like a shorter slide 2. This is the
     // executable form of "do not borrow it back".
@@ -148,8 +160,12 @@ describe('Podium', () => {
     act(() => root.render(<Podium ranked={rankTeams(competingTeams(all))} />))
     expect(host.querySelectorAll('.tv-pill')).toHaveLength(0)
     expect(host.querySelectorAll('.tv-pod-card')).toHaveLength(3)
-    expect(host.querySelectorAll('.tv-pod-medal')).toHaveLength(3)
-    expect(host.querySelectorAll('.tv-pod-bar')).toHaveLength(7)
+    expect(host.querySelectorAll('.tv-pod-badge')).toHaveLength(3)
+    expect(host.querySelectorAll('.tv-pod-pill')).toHaveLength(7)
+    // Each card stands on its own metal. Three plinths and three cards, never
+    // three cards and one plinth — the plinth is where the metal is declared,
+    // and a shared one would give second place first place's gold.
+    expect(host.querySelectorAll('.tv-pod-plinth')).toHaveLength(3)
     act(() => root.unmount())
     host.remove()
   })

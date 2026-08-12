@@ -28,6 +28,8 @@ import {
   DAYS_ONLY_FROM_MS,
   FLEA_EVENT_DURATION_MS,
   IST_TIMEZONE,
+  PODIUM_CLOCK_UNDER_MS,
+  PODIUM_WEEKS_FROM_MS,
   PROGRAMME_START_MS,
   TIMER_UNDER_MS,
 } from '@/config'
@@ -52,6 +54,37 @@ export type CountdownState = {
    * running backwards.
    */
   progress: number
+  /**
+   * Milliseconds until the Flea opens; `0` once it has.
+   *
+   * Published rather than kept private because two boards now band the same
+   * countdown at different thresholds, and the alternative — each of them
+   * differencing the clock again — is exactly the second implementation this
+   * module exists to prevent.
+   */
+  remainingMs: number
+  /**
+   * Whole calendar days remaining, counted in IST. `null` from the opening bell.
+   *
+   * The same figure the `days` mode displays, published in **every** mode. On 12
+   * August the Flea is "25 days away" at breakfast and at midnight — the number
+   * a person would say — whereas a count of 24-hour blocks would tick over at
+   * 10:00, an hour nobody can name.
+   */
+  daysRemaining: number | null
+  /**
+   * `daysRemaining` in whole weeks, rounded to **nearest**.
+   *
+   * Nearest is what the approved design asks for and what it renders: 25 days is
+   * "4 WEEKS TO GO", and 25/7 rounds to 4 where it would floor to 3.
+   *
+   * Worth knowing that the spec's stated reason for nearest — "so it never
+   * understates the time remaining" — is not what nearest does. 24 days rounds
+   * *down* to 3 weeks and understates by three. Only `ceil` never understates.
+   * The method is implemented as written because it is the one the mock shows;
+   * changing it to `ceil` is one word here if the rationale is what matters.
+   */
+  weeksRemaining: number | null
 }
 
 function pad(value: number): string {
@@ -87,14 +120,25 @@ export function computeCountdownState(
 ): CountdownState {
   const progress = programmeProgress(fleaDatetime, now, programmeStart)
 
+  // Once the bell has gone there is no time remaining to publish, and a `0` in
+  // those fields would be a figure a formatter could render. `null` cannot be.
+  const over = { remainingMs: 0, daysRemaining: null, weeksRemaining: null }
+
   if (now >= fleaDatetime + FLEA_EVENT_DURATION_MS) {
-    return { display: '', mode: 'hidden', numeric: null, progress: 1 }
+    return { display: '', mode: 'hidden', numeric: null, progress: 1, ...over }
   }
   if (now >= fleaDatetime) {
-    return { display: 'LIVE NOW', mode: 'live', numeric: null, progress: 1 }
+    return { display: 'LIVE NOW', mode: 'live', numeric: null, progress: 1, ...over }
   }
 
   const remaining = fleaDatetime - now
+  const calendarDays = istDayNumber(fleaDatetime) - istDayNumber(now)
+  const left = {
+    remainingMs: remaining,
+    daysRemaining: calendarDays,
+    weeksRemaining: Math.round(calendarDays / 7),
+  }
+
   if (remaining < TIMER_UNDER_MS) {
     const hours = Math.floor(remaining / HOUR_MS)
     const minutes = Math.floor((remaining % HOUR_MS) / 60_000)
@@ -104,15 +148,73 @@ export function computeCountdownState(
       mode: 'timer',
       numeric: Math.floor(remaining / 1000),
       progress,
+      ...left,
     }
   }
 
   const wholeDays = Math.floor(remaining / DAY_MS)
   if (remaining < DAYS_ONLY_FROM_MS) {
     const hours = Math.floor((remaining % DAY_MS) / HOUR_MS)
-    return { display: `${wholeDays}D ${hours}H`, mode: 'daysHours', numeric: wholeDays, progress }
+    return {
+      display: `${wholeDays}D ${hours}H`,
+      mode: 'daysHours',
+      numeric: wholeDays,
+      progress,
+      ...left,
+    }
   }
 
-  const days = istDayNumber(fleaDatetime) - istDayNumber(now)
-  return { display: String(days), mode: 'days', numeric: days, progress }
+  return { display: String(calendarDays), mode: 'days', numeric: calendarDays, progress, ...left }
+}
+
+/**
+ * The same countdown, banded and worded for `/podium`'s masthead.
+ *
+ * **A second presentation, not a second brain.** Every comparison against the
+ * clock still happened in `computeCountdownState` above; this reads the figures
+ * it published and decides which of them to show. The dial in the shared header
+ * bands the identical state differently, and `/weekly` is untouched by anything
+ * here.
+ *
+ * The escalation, from far out to done:
+ *
+ *   > 7 days      "4"          WEEKS TO GO
+ *   3–7 days      "5"          DAYS TO GO
+ *   < 3 days      "2:14:30"    TO GO      — days:hours:minutes
+ *   final day     "4:12:33"    TO GO      — hours:minutes:seconds
+ *   live          "LIVE"       NOW
+ *
+ * **No milliseconds, at any band.** They are unreadable across a corridor, and
+ * re-rendering a digit every frame for days on a panel that never sleeps is how
+ * burn-in happens. Seconds already read as urgent.
+ *
+ * The two clock bands are not padded to two digits. `2:14:30` is a duration, and
+ * padding it to `02:14:30` makes it look like a time of day.
+ */
+export type MastheadCountdown = { figure: string; label: string }
+
+export function mastheadCountdown(state: CountdownState): MastheadCountdown | null {
+  if (state.mode === 'hidden') return null
+  if (state.mode === 'live') return { figure: 'LIVE', label: 'Now' }
+
+  const { remainingMs, daysRemaining, weeksRemaining } = state
+  if (daysRemaining === null || weeksRemaining === null) return null
+
+  if (remainingMs > PODIUM_WEEKS_FROM_MS) {
+    return { figure: String(weeksRemaining), label: 'Weeks to go' }
+  }
+  if (remainingMs >= PODIUM_CLOCK_UNDER_MS) {
+    return { figure: String(daysRemaining), label: 'Days to go' }
+  }
+
+  const minutes = Math.floor((remainingMs % HOUR_MS) / 60_000)
+  if (remainingMs >= TIMER_UNDER_MS) {
+    const days = Math.floor(remainingMs / DAY_MS)
+    const hours = Math.floor((remainingMs % DAY_MS) / HOUR_MS)
+    return { figure: `${days}:${pad(hours)}:${pad(minutes)}`, label: 'To go' }
+  }
+
+  const hours = Math.floor(remainingMs / HOUR_MS)
+  const seconds = Math.floor((remainingMs % 60_000) / 1000)
+  return { figure: `${hours}:${pad(minutes)}:${pad(seconds)}`, label: 'To go' }
 }
