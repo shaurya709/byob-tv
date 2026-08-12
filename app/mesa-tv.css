@@ -190,7 +190,10 @@
      Week revenue is the largest thing on the card: it is the figure the board
      exists to show. */
   --t-tv-card-name: 500 clamp(11px, 0.95vw, 20px) / 1.15 var(--font-sans);
-  --t-tv-card-week: 700 clamp(15px, 1.45vw, 30px) / 1 var(--font-sans);
+  /* Reduced 20% from clamp(15px, 1.45vw, 30px). Still the largest thing on the
+     card, and still the figure the board exists to show — it simply no longer
+     has a venture name above it competing for the same line. */
+  --t-tv-card-week: 700 clamp(12px, 1.16vw, 24px) / 1 var(--font-sans);
   --t-tv-card-today: 600 clamp(11px, 1vw, 21px) / 1 var(--font-sans);
   --t-tv-card-today-hot: 700 clamp(11px, 1vw, 21px) / 1 var(--font-sans);
 
@@ -199,10 +202,19 @@
   --t-tv-card-label: 700 clamp(8px, 0.62vw, 13px) / 1 var(--font-sans);
   --t-tv-card-rank: 600 clamp(10px, 0.85vw, 18px) / 1 var(--font-sans);
 
-  /* The rank badge, top-left, overlaying the logo half. Constant across the
-     ramp: it is board apparatus, and apparatus that grew with its row would
-     make rank 1's badge an emphasis of its own. */
-  --d-card-badge: 1.55vw;
+  /* ── Rank ──
+
+     **No box.** The rank used to sit in an opaque chip with its own hairline,
+     which was the only way to keep it legible over forty unknown logos. It reads
+     as apparatus bolted on; the numeral alone reads as part of the board.
+
+     The top three get the supplied display numerals — real artwork, masked and
+     tinted (see `scripts/prepare-ranks.py`) — sized against the mark they sit
+     on, because a fixed size would make rank 1's numeral look pinned to row 4's
+     card. Everyone else gets the same numeral in type, at a constant size: the
+     top three are the story, and thirty-seven display numerals would flatten
+     that back out. */
+  --t-tv-card-rank: 700 clamp(11px, 1.05vw, 22px) / 1 var(--font-sans);
 
   /* The card. Barely-there fill and a hairline stroke, both `--midnight-charcoal`
      at low alpha — the same base the system's own `--border` is mixed from, so
@@ -587,6 +599,11 @@
       calc(var(--h-card) - var(--h-card-text) - var(--s-card-inset)),
       calc(var(--w-card) - 2 * var(--s-card-inset))
     );
+    /* **On the row, not in `:root`** — for the same reason `--d-card-logo` is.
+       It is derived from `--d-card-logo`, which does not exist at `:root`, so
+       declaring it there makes the calc invalid at computed-value time and the
+       glyph renders 0x0 on a page that otherwise looks correct. Measured. */
+    --d-card-rank-glyph: calc(var(--d-card-logo) * 0.4);
   }
 
   /* ── The floating disc ──
@@ -625,6 +642,166 @@
   .tv-disc-back {
     background: var(--deep-forest-green);
     transform: rotateY(180deg);
+  }
+
+  /* ── Rank, anchored to the mark rather than to the cell ──
+
+     Both treatments hang off the same anchor: the mark's top-left shoulder,
+     which is where the eye already is. They sit on the *cell*, deliberately
+     outside the travelling wrapper, because rank is a fact about the board — a
+     number that flew across the frame with the card would be claiming to belong
+     to the venture.
+
+     `mask-image` carries the glyph and `background-color` paints it, so one
+     asset works on white and on green and the colour stays a token. A baked
+     colour would need two files per numeral and a decision at every call site. */
+  /* **The 45° point of the circle, not the corner of its box.** A disc does not
+     reach the corner of its own bounding box — it falls short by 0.293r — so
+     anchoring there left the numeral floating in white beside the mark rather
+     than on it. 0.354 × diameter from centre, on both axes, is the upper-left
+     arc; the translate then centres the glyph on that point so it straddles the
+     edge, half on the mark and half off it. */
+  .tv-rank-anchor {
+    position: absolute;
+    left: calc(50% - var(--d-card-logo) * 0.354);
+    bottom: calc(var(--h-card-text) + var(--s-card-lift) + var(--d-card-logo) * 0.854);
+    transform: translate(-50%, 50%);
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  .tv-rank-glyph {
+    display: block;
+    width: var(--d-card-rank-glyph);
+    height: var(--d-card-rank-glyph);
+    /* The numerals are not square — `1` is narrow, `2` is wide — so the box is
+       square and the glyph is fitted inside it. `contain` keeps all three on one
+       baseline and one cap height instead of scaling each to its own width. */
+    mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    background-color: var(--midnight-charcoal);
+    /* **The halo is what replaced the box.** The numeral straddles the mark's
+       edge, so half of it lands on forty unknown images — and a charcoal numeral
+       on a black logo is simply not there. Measured against the real board:
+       ranks 12 and 13 were half-swallowed by SORTD and Blunnt, with 18, 29, 35
+       and 36 behind them. A white glow does the job the opaque chip was doing,
+       without putting a rectangle back on the card. */
+    filter: drop-shadow(0 0 2px var(--white)) drop-shadow(0 0 5px var(--white));
+  }
+
+  .tv-rank-plain {
+    display: block;
+    font: var(--t-tv-card-rank);
+    color: var(--midnight-charcoal);
+    text-shadow:
+      0 0 3px var(--white),
+      0 0 6px var(--white),
+      0 0 10px var(--white);
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     PREVIEW ONLY — everything below is scoped under `.tv-preview`.
+
+     `/weekly` and `/podium` never carry that class, so none of this can reach
+     the shipping wall. It exists so the green treatment can be *looked at*
+     before it is decided on. Delete this block and `app/preview/` together.
+     ══════════════════════════════════════════════════════════════════════ */
+
+  /* **Tokens, not rules.** The card sets its colours inline — `var(--fg1)`,
+     `var(--deep-teal)` — and an inline style beats any class selector, so
+     overriding `.tv-preview .tv-figure { color: ... }` loses every time.
+     Measured: the figures stayed charcoal on the green board. Redefining the
+     tokens on the ancestor is what actually reaches them, and it is also how a
+     theme is supposed to work — the components keep asking for "foreground" and
+     the surface decides what that means. */
+  .tv-preview {
+    background: var(--deep-forest-green);
+    --fg1: var(--white);
+    --fg2: var(--soft-mint);
+    --fg-muted: var(--mint-300);
+    --border: color-mix(in srgb, var(--soft-mint) 22%, transparent);
+  }
+
+  /* **`--deep-teal` is overridden on the header only, never on the frame.**
+     The slide heading asks for it inline, but so does `VentureLogo`'s tint set —
+     so flipping it globally repainted every tinted mark that happens to hash to
+     deep teal. Measured: Lowkey Livin's disc turned white and vanished into its
+     own ring. Scoping the override to the header subtree reaches the heading and
+     nothing else. */
+  .tv-preview header {
+    --deep-teal: var(--white);
+  }
+
+  /* The header lockup is the green-on-white variant, invisible on green. `content`
+     swaps the file without touching the component — the white lockup already
+     exists in the repo because the disc backs use it. A filter was tried first
+     and turned the whole PNG, background included, into a white rectangle. */
+  .tv-preview header img {
+    content: url('/brand/logo-pg-white.png');
+  }
+
+  /* The base inverts rather than disappearing: a hairline of mint at low alpha
+     over the green, which is the same relationship the white board has between
+     its card and its page, read the other way up. */
+  .tv-preview .tv-card {
+    background: color-mix(in srgb, var(--soft-mint) 7%, transparent);
+    border-color: color-mix(in srgb, var(--soft-mint) 22%, transparent);
+  }
+
+  /* Every figure and label flips to the light end of the ramp. `--fg1` and
+     `--fg-muted` are dark-surface tokens by origin, so this is the palette
+     being used the way it was drawn rather than being overridden. */
+  /* **Deep green, not white.** The numeral straddles the mark's edge, and on
+     this board that edge is a thick white ring — so a white numeral lands white
+     on white and disappears exactly where it is meant to read. Measured on the
+     first green render: ranks 1, 2, 3, 11, 12 and 13 all illegible. Dark green
+     reads on the ring, and on the pale artwork inside it. */
+  /* ── The numeral straddles two surfaces, so one flat colour cannot work ──
+
+     It sits half on the mark's thick white ring and half on the green field.
+     White reads on the field and vanishes on the ring; dark green reads on the
+     ring and vanishes on the field. Both were measured doing exactly that.
+
+     So it is white with a tight green halo: the fill carries it over the green,
+     and the halo is what keeps its edge on the white ring. This is the same job
+     the removed box was doing, done by the glyph's own outline instead of by a
+     rectangle behind it. */
+  .tv-preview .tv-rank-glyph {
+    background-color: var(--white);
+    filter:
+      drop-shadow(0 0 1px var(--deep-forest-green))
+      drop-shadow(0 0 3px var(--deep-forest-green));
+  }
+
+  .tv-preview .tv-rank-plain {
+    color: var(--white);
+    text-shadow:
+      0 0 2px var(--deep-forest-green),
+      0 0 5px var(--deep-forest-green);
+  }
+
+  /* **Two concentric rings.** Dark green immediately around the artwork, then a
+     thick white one outside it. The inner ring is what separates a pale logo
+     from the white ring; without it a cream mark and the white border merge into
+     one shape and the disc loses its edge entirely. Both are `box-shadow`
+     spreads rather than `border`, so they cost no layout and the disc's measured
+     diameter — which the flip's travel maths depends on — does not change. */
+  .tv-preview .tv-disc-face {
+    box-shadow:
+      0 0 0 calc(var(--d-card-logo) * 0.022) var(--deep-forest-green),
+      0 0 0 calc(var(--d-card-logo) * 0.075) var(--white);
+  }
+
+  /* The back face keeps its own colour, so on green it needs the white ring to
+     be the thing separating it from the field. */
+  .tv-preview .tv-disc-back {
+    box-shadow:
+      0 0 0 calc(var(--d-card-logo) * 0.022) var(--soft-mint),
+      0 0 0 calc(var(--d-card-logo) * 0.075) var(--white);
   }
 
   /* One per team on the weekly board. Forty of these on one frame. */

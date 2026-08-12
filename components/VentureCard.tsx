@@ -5,7 +5,6 @@ import { motion, type Easing } from 'motion/react'
 
 import { HOT_TODAY_MIN } from '@/config'
 import { VentureDisc } from '@/components/VentureDisc'
-import { VentureName } from '@/components/VentureName'
 import { formatRupees } from '@/lib/format'
 import { BEATS, TOTAL, at, type FlipCue } from '@/lib/flipTimeline'
 import type { Team } from '@/lib/types'
@@ -188,34 +187,26 @@ export function VentureCard({
         ...(cue === undefined ? {} : { zIndex: 3 }),
       }}
     >
-      {/* Board apparatus, not the team's. It sits on the *cell*, deliberately
-          outside the animated disc: rank is a fact about the board, and a rank
-          number that bobbed along with the mark would read as part of the
-          venture rather than as the leaderboard's own label.
+      {/* Board apparatus, not the team's — see the note on `.tv-rank-anchor`.
 
-          Opaque with its own hairline, because it lands on the disc for row 1 —
-          where the disc nearly fills the card — and on white for row 4, and it
-          has to stay legible on both without knowing which it got. */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          minWidth: 'var(--d-card-badge)',
-          height: 'var(--d-card-badge)',
-          paddingInline: 'calc(var(--d-card-badge) * 0.22)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: 'var(--radius-xs)',
-          background: 'var(--white)',
-          border: 'var(--stroke-hair) solid var(--border)',
-          color: 'var(--midnight-charcoal)',
-          font: 'var(--t-tv-card-rank)',
-          zIndex: 2,
-        }}
-      >
-        {rank}
+          The top three carry the supplied display numerals; everyone else gets
+          the same number in type. That split is the point: three cards on this
+          board are the story, and giving all forty the display treatment would
+          say nothing at all. */}
+      <div className="tv-rank-anchor">
+        {rank <= 3 ? (
+          <span
+            className="tv-rank-glyph"
+            role="img"
+            aria-label={`Rank ${rank}`}
+            style={{
+              maskImage: `url(/ranks/${rank}.png)`,
+              WebkitMaskImage: `url(/ranks/${rank}.png)`,
+            }}
+          />
+        ) : (
+          <span className="tv-rank-plain">{rank}</span>
+        )}
       </div>
 
       {/* The disc, centred over the base and lifted clear of it. Its bottom sits
@@ -276,22 +267,16 @@ export function VentureCard({
           paddingInline: 'var(--s-card-inset)',
         }}
       >
-        {/* An unnamed team shows its Team ID. It is identity, not a missing
-            field — and with most of the cohort unnamed, a blank here would make
-            the board look unfinished rather than quiet. `ventureNameOf` has
-            already turned the workbook template's placeholder into an empty
-            string, so this never prints "Type your venture name". */}
-        <div
-          style={{
-            font: 'var(--t-tv-card-name)',
-            color: 'var(--fg-muted)',
-            width: '100%',
-            minWidth: 0,
-          }}
-        >
-          <VentureName name={team.ventureName || team.teamId} />
-        </div>
+        {/* **No venture name.** It was removed deliberately: at this card size the
+            name was the widest thing in the base and forced a marquee on every
+            long one, and the mark above it already says whose card this is far
+            faster than a word does at six metres. `VentureName` and its paging
+            survive for whatever needs them next; nothing on this board does.
 
+            The one thing lost with it is the fallback identity for a team with
+            no artwork *and* no name — those cards now read only as a tinted
+            initial. `SLE-C422` and `SLE-C435` were exactly that case and both
+            have logos now, so the board currently has none. */}
         {/* The figure the board exists to show, and the largest thing on the
             card. Blank, never ₹0: in week 4 only sixteen of forty teams have
             sold anything this week, and forty identical zeroes would teach the

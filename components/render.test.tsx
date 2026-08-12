@@ -12,7 +12,7 @@ import { ROW_LENGTH, WeeklyGrid, rowsOf } from '@/components/WeeklyGrid'
 import { HOT_TODAY_MIN } from '@/config'
 import type { CountdownState } from '@/lib/countdown'
 import { formatRupees, ordinal } from '@/lib/format'
-import { competingTeams, rankTeams } from '@/lib/ranking'
+import { competingTeams, rankByWeek, rankTeams } from '@/lib/ranking'
 import { team, teams } from '@/test/fixtures'
 
 /**
@@ -187,12 +187,19 @@ describe('WeeklyGrid', () => {
   const board = () =>
     competingTeams(teams().map((row, index) => ({ ...row, weekRevenue: 1_000 * (42 - index) })))
 
+  /**
+   * Identified by figure, not by name: the card no longer prints the venture
+   * name at all. The fixtures give every team a distinct week revenue, so the
+   * figures are what say who is on the board.
+   */
   it('puts all forty competing teams on screen at once', () => {
     const text = render(<WeeklyGrid teams={board()} />)
-    expect(text).toContain('Venture 1')
-    expect(text).toContain('Venture 40')
+    const ranked = rankByWeek(board())
+    expect(text).toContain(formatRupees(ranked[0].weekRevenue))
+    expect(text).toContain(formatRupees(ranked[39].weekRevenue))
     // The spares are not on the board at all.
-    expect(text).not.toContain('Venture 41')
+    expect(ranked).toHaveLength(40)
+    expect(ranked.some((t) => t.teamId === 'SLE-C441')).toBe(false)
   })
 
   /**
@@ -252,12 +259,18 @@ describe('VentureCard', () => {
   })
 
   /**
-   * An unnamed team shows its Team ID: identity, not a missing field. Most of
-   * the cohort is unnamed, so a blank here would make the board look unfinished.
+   * The card carries no venture name — removed deliberately, because at this
+   * size it was the widest thing in the base and forced a marquee on every long
+   * one, and the mark above it says whose card this is faster than a word does
+   * at six metres. The figure and the rank are the only text.
    */
-  it('shows the team id for a venture with no name yet', () => {
-    const text = render(<VentureCard team={team({ teamId: 'SLE-C418', ventureName: '' })} rank={9} />)
-    expect(text).toContain('SLE-C418')
+  it('prints no venture name, and no team id in its place', () => {
+    const text = render(
+      <VentureCard team={team({ teamId: 'SLE-C418', ventureName: 'Aurora Bakes' })} rank={9} />,
+    )
+    expect(text).not.toContain('Aurora Bakes')
+    expect(text).not.toContain('SLE-C418')
+    expect(text).toContain('9')
   })
 
   it('never shows a bare zero for a team that has not traded at all', () => {
