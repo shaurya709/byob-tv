@@ -71,9 +71,13 @@ const PLACES = {
   // many **fixed** steps this pillar stands above rank 3 — not a fraction of
   // anything, because a proportional step flattens the staircase the moment the
   // podium gets shorter, and the staircase is the composition.
-  1: { fill: 'var(--deep-teal)', metal: 'var(--metal-gold)', riser: 2 },
-  2: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-silver)', riser: 1 },
-  3: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-bronze)', riser: 0 },
+  //
+  // `markFoot` is air beneath the mark, and only third place asks for it: with
+  // no riser, its band is exactly its mark and the logo lands on the pixel the
+  // venture name starts on. The other two get theirs out of the riser already.
+  1: { fill: 'var(--deep-teal)', metal: 'var(--metal-gold)', riser: 2, markFoot: 0 },
+  2: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-silver)', riser: 1, markFoot: 0 },
+  3: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-bronze)', riser: 0, markFoot: 1 },
 } as const
 
 type Place = keyof typeof PLACES
@@ -163,6 +167,7 @@ function PodiumCard({
         {
           '--pod-metal': p.metal,
           '--h-pod-riser-here': `calc(${p.riser} * var(--h-pod-riser))`,
+          '--h-pod-mark-foot-here': `calc(${p.markFoot} * var(--h-pod-mark-foot))`,
         } as React.CSSProperties
       }
     >

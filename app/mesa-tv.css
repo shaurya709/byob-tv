@@ -416,6 +416,14 @@
      untouched throughout — it is its own content, and every extra pixel is in
      the steps above it. */
   --h-pod-riser: 5.5vw;
+  /* Air under the mark, for the pillar that has none.
+     Rank 3 has no riser, so its mark band is *exactly* the mark and its logo
+     sits on the pixel its venture name starts on — measured, disc bottom and
+     name top were both 770.5. Ranks 2 and 1 already carry 52.8px and 105.6px
+     of air beneath their marks, spent out of their risers. This gives third
+     place the same courtesy without giving it a step it has not earned.
+     It is set per place, and is zero on the two pillars that do not need it. */
+  --h-pod-mark-foot: 1.25vw;
   --h-pod-foot: 1.5vw;
   --s-pod-gap: 1.6vw;
   /* **Equal to `--w-pod-half-gap`, and that is the point.** The podium sits in
@@ -1438,12 +1446,22 @@
      Rank 3's is exactly the mark; each step up adds a riser to it, so a taller
      pillar lifts its mark and leaves its name and figure on the shared base.
      Adding the riser to the card instead would grow the empty space at both
-     ends, which is the failure this replaced. */
+     ends, which is the failure this replaced.
+
+     `--h-pod-mark-foot-here` is added to the band height *and* taken back as
+     padding. The box is `border-box`, so the content box stays exactly the
+     mark's band and `place-items: center` still centres the mark in it — the
+     pillar grows, and every pixel of the growth lands under the mark rather
+     than being split above and below it. That is what makes this both a taller
+     pillar and a lifted logo in one token. */
   .tv-pod-mark-band {
     display: grid;
     place-items: center;
     width: 100%;
-    min-height: calc(var(--d-pod-disc) + var(--h-pod-riser-here));
+    min-height: calc(
+      var(--d-pod-disc) + var(--h-pod-riser-here) + var(--h-pod-mark-foot-here, 0px)
+    );
+    padding-bottom: var(--h-pod-mark-foot-here, 0px);
     perspective: 900px;
   }
 
