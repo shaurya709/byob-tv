@@ -292,18 +292,23 @@
      13.6° from the brand tangerine, and its numeral clears 4.51:1 — real AA
      rather than large-only.
 
-     ── They are type now, and that changed what they have to clear ──
+     ── The specified values, restored, with the measurement on the record ──
 
-     The metals were foot strips: filled shapes, which have no text-contrast
-     floor. They are now the rank numerals themselves, set on the white page, and
-     display type has to clear 3:1. Measured on the values as specified: gold
-     **2.25:1** and silver **2.22:1** — both fail, and would fail on a wall read
-     at six metres in a way a laptop at arm's length does not show.
+     Gold and silver were darkened for a while because the numerals set them as
+     *type* on the white page and both measured under the 3:1 display-text floor:
+     gold **2.25:1**, silver **2.22:1**. That was raised and overruled, and the
+     specified colours are back — as the feet, where a filled strip has no
+     contrast floor at all, and as the numerals, where they do.
 
-     So gold and silver are darkened until they clear it, **with hue and
-     saturation held** so each still reads as its own metal: gold 39.1° at
-     3.22:1, silver 207.7° at 3.20:1. Bronze needed no darkening; it needed
-     pushing redder, for a different reason recorded below.
+     What this costs is legibility of the numeral at distance, not compliance
+     with anything: rank is also carried by the pillar's height and by the foot
+     beneath it, so a numeral that reads faintly loses none of the meaning. If it
+     turns out too faint on the wall, the fix that keeps the colour is a darker
+     edge on the glyph rather than a different gold.
+
+     Bronze is the only one still off its specified value, and for the opposite
+     reason: `#B07542` sat 2.8° from `--tangerine-600` and read as brand orange
+     rather than as a metal. `#CD6237` is the redder one asked for.
 
      ── Three literals, and that is now the whole exemption ──
 
@@ -312,8 +317,8 @@
      Deep Teal above it, white inside — those three had nothing left to colour.
      They are deleted rather than left in place: a token nobody reads is a
      literal this file is claiming an exemption for and not using. */
-  --metal-gold: #BA8625;
-  --metal-silver: #88919A;
+  --metal-gold: #D9A441;
+  --metal-silver: #A8AFB5;
   --metal-bronze: #CD6237;
 
 
@@ -389,7 +394,12 @@
      *exactly* centred in its own grid column. The offset was never the podium's
      position — it was two spacing tokens that had no reason to disagree. */
   --s-pod-gutter: 2.6vw;
-  --s-pod-edge: 3.8vw;
+  /* **Equal to the gutter, so the board is symmetric within its own area.** It
+     was 3.8vw against the gutter's 2.6vw, which put 50px of air left of the
+     podium and 73px right of the list: the entire two-column block sat 11px left
+     of centre, and the podium — correctly centred in its own channel — inherited
+     the lean. Equal padding centres the block, and the podium with it. */
+  --s-pod-edge: 2.6vw;
   --s-pod-top: 4.5vw;
   --s-pod-bottom: 1.6vw;
 
