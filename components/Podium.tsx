@@ -2,7 +2,6 @@
 
 import { VentureLogo } from '@/components/VentureLogo'
 import { formatRupees } from '@/lib/format'
-import { hashTeamId } from '@/lib/seed'
 import type { Team } from '@/lib/types'
 
 /**
@@ -71,13 +70,21 @@ function revenueOf(team: Team | undefined): string {
 /**
  * Which of the three idle timelines this mark runs.
  *
- * Seeded off the team id, so a venture always idles the same way — exactly as
- * it always gets the same tint, and for the same reason: a mark that moved
- * differently after an overtake would read as a different venture.
+ * **By podium place, not by team.** Three places and three timelines, so the
+ * marks on screen can never fall into lockstep — which is the entire visible
+ * requirement, and one a hash cannot promise: three ids into three buckets
+ * collide about one time in nine, and `lib/seed.ts` documents a worse failure
+ * on top of that.
+ *
+ * Seeding it off the team id was the first attempt, on the reasoning that a
+ * venture which moves differently after an overtake reads as a different
+ * venture. That reasoning does not survive contact with this design: the
+ * pillar's *colour* is already assigned by rank, so a promoted venture changes
+ * its green whatever the idle does. Motion following rank is consistent with
+ * that; a chorus line is not.
  */
-function idleOf(team: Team | undefined, place: number): string {
-  const seed = team === undefined ? place : hashTeamId(team.teamId)
-  return IDLE_TIMELINES[seed % IDLE_TIMELINES.length]
+function idleOf(place: number): string {
+  return IDLE_TIMELINES[(place - 1) % IDLE_TIMELINES.length]
 }
 
 /**
@@ -113,9 +120,8 @@ function Caption({ align }: { align: 'center' | 'right' }) {
  * on one line — aligning the marks by their tops instead would stagger every
  * slab, shaft and figure across the frame.
  */
-function Pillar({ team, place }: { team: Team | undefined; place: number }) {
-  const first = place === 1
-  const logo = first ? POD_LOGO_FIRST : POD_LOGO_REST
+function Pillar({ team, place, ink }: { team: Team | undefined; place: number; ink: string }) {
+  const logo = place === 1 ? POD_LOGO_FIRST : POD_LOGO_REST
 
   return (
     <div
@@ -145,7 +151,22 @@ function Pillar({ team, place }: { team: Team | undefined; place: number }) {
         {team === undefined ? (
           <div style={{ width: logo, height: logo }} />
         ) : (
-          <div className={idleOf(team, place)} style={{ willChange: 'transform' }}>
+          <div
+            className={idleOf(place)}
+            style={{
+              // Circular here, and only here. `VentureLogo` draws a rounded
+              // square because that is what forty rows of `/weekly` want; a
+              // mark standing on a plinth wants to be a disc, and the glance is
+              // a `rotateY` that reads as a turning face only on a round shape.
+              // Clipped by this wrapper rather than by changing the shared
+              // component, which would restyle every row of the weekly board.
+              width: logo,
+              height: logo,
+              borderRadius: '50%',
+              overflow: 'hidden',
+              willChange: 'transform',
+            }}
+          >
             <VentureLogo team={team} size={logo} />
           </div>
         )}
@@ -169,9 +190,11 @@ function Pillar({ team, place }: { team: Team | undefined; place: number }) {
           className="tv-figure"
           style={{
             font: 'var(--t-tv-pod-rank)',
-            // Light on the deep pillar, dark on the two light ones — the same
-            // rule VentureLogo already applies to its own light tints.
-            color: first ? 'var(--soft-mint)' : 'var(--deep-teal)',
+            // Set by the pillar's own lightness rather than by its rank — the
+            // same rule VentureLogo applies to its tints. Measured: deep teal
+            // on pod 2 is 3.26:1, which is under the floor for a wall read at
+            // six metres, while light type on it is 4.03:1.
+            color: ink,
           }}
         >
           {place}
@@ -235,9 +258,9 @@ function Pillar({ team, place }: { team: Team | undefined; place: number }) {
 function PodiumBand({ places }: { places: (Team | undefined)[] }) {
   const [first, second, third] = places
   const pods = [
-    { team: second, place: 2, fill: 'var(--pod-2)', slab: 'var(--slab-2)' },
-    { team: first, place: 1, fill: 'var(--pod-1)', slab: 'var(--slab-1)' },
-    { team: third, place: 3, fill: 'var(--pod-3)', slab: 'var(--slab-3)' },
+    { team: second, place: 2, fill: 'var(--pod-2)', slab: 'var(--slab-2)', ink: 'var(--soft-mint)' },
+    { team: first, place: 1, fill: 'var(--pod-1)', slab: 'var(--slab-1)', ink: 'var(--soft-mint)' },
+    { team: third, place: 3, fill: 'var(--pod-3)', slab: 'var(--slab-3)', ink: 'var(--deep-teal)' },
   ]
 
   return (
@@ -255,7 +278,7 @@ function PodiumBand({ places }: { places: (Team | undefined)[] }) {
           key={pod.place}
           style={{ '--pod-fill': pod.fill, '--slab-fill': pod.slab } as React.CSSProperties}
         >
-          <Pillar team={pod.team} place={pod.place} />
+          <Pillar team={pod.team} place={pod.place} ink={pod.ink} />
         </div>
       ))}
     </div>

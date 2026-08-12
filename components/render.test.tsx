@@ -149,30 +149,20 @@ describe('Podium', () => {
     host.remove()
   })
 
-  it('gives each of the three marks an idle timeline', () => {
+  it('gives the three marks three different idle timelines', () => {
+    // Never in lockstep. Assigning these by hashing the team id put all three
+    // on the same timeline on the real feed — three ids into three buckets
+    // collide about one time in nine even with a good hash, and this one is
+    // worse than that. Place-based assignment cannot collide at all.
     const host = document.createElement('div')
     document.body.append(host)
     const root = createRoot(host)
     act(() => root.render(<Podium ranked={rankTeams(TRADING)} />))
-    expect(host.querySelectorAll('[class*="tv-idle-"]')).toHaveLength(3)
+    const marks = [...host.querySelectorAll('[class*="tv-idle-"]')]
+    expect(marks).toHaveLength(3)
+    expect(new Set(marks.map((el) => el.className)).size).toBe(3)
     act(() => root.unmount())
     host.remove()
-  })
-
-  it('idles a venture the same way every time, seeded off its id', () => {
-    // A mark that moved differently after an overtake would read as a different
-    // venture — the same reasoning that assigns its tint.
-    const first = () => {
-      const host = document.createElement('div')
-      document.body.append(host)
-      const root = createRoot(host)
-      act(() => root.render(<Podium ranked={rankTeams(TRADING)} />))
-      const cls = host.querySelector('[class*="tv-idle-"]')?.className ?? ''
-      act(() => root.unmount())
-      host.remove()
-      return cls
-    }
-    expect(first()).toBe(first())
   })
 })
 
