@@ -1,5 +1,7 @@
 'use client'
 
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+
 import { MoverPanel } from '@/components/MoverPanel'
 import { VentureLogo } from '@/components/VentureLogo'
 import { formatRupees } from '@/lib/format'
@@ -57,9 +59,9 @@ const PLACES = {
   // many **fixed** steps this pillar stands above rank 3 — not a fraction of
   // anything, because a proportional step flattens the staircase the moment the
   // podium gets shorter, and the staircase is the composition.
-  1: { fill: 'var(--deep-teal)', metal: 'var(--metal-gold)', riser: 2 },
-  2: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-silver)', riser: 1 },
-  3: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-bronze)', riser: 0 },
+  1: { fill: 'var(--deep-teal)', metal: 'var(--metal-gold)', ramp: 'var(--metal-gold-ramp)', riser: 2 },
+  2: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-silver)', ramp: 'var(--metal-silver-ramp)', riser: 1 },
+  3: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-bronze)', ramp: 'var(--metal-bronze-ramp)', riser: 0 },
 } as const
 
 type Place = keyof typeof PLACES
@@ -133,6 +135,7 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
       style={
         {
           '--pod-metal': p.metal,
+          '--pod-metal-ramp': p.ramp,
           '--h-pod-riser-here': `calc(${p.riser} * var(--h-pod-riser))`,
         } as React.CSSProperties
       }
@@ -324,7 +327,63 @@ function Strip({ ranked, fromRank }: { ranked: readonly Team[]; fromRank: number
   )
 }
 
+/**
+ * How far right the podium has to move so its *mass* is centred, not its box.
+ *
+ * ── Why a bounding box is the wrong thing to centre ──
+ *
+ * The arrangement is 2-1-3 with heights descending 1 > 2 > 3, so the left pillar
+ * is taller than the right one and carries more dark area. The bounding box is
+ * perfectly symmetric — measured at 0.0px off the channel centre — and the group
+ * still reads left, because the eye weighs ink rather than edges.
+ *
+ * Measured on the running board, the area-weighted centroid sits **17.9px left**
+ * of the box centre at 1920, 14.9px at 1600 and 18.6px at 2000. It is not a
+ * constant, so it cannot be a constant in the stylesheet.
+ *
+ * ── Why this is measured rather than derived in CSS ──
+ *
+ * With equal widths the closed form is `pitch × (hLeft − hRight) / Σh`, and
+ * `Σh` depends on the pillars' content height — which CSS knows only after
+ * layout. So the heights are read back from the rendered pillars, which is the
+ * same thing `WeeklyGrid` does for the flip's travel.
+ *
+ * Transform rather than margin: it moves the group without moving the layout, so
+ * observing the row's size cannot feed back into it.
+ */
+function useCentroidShift(): [React.RefObject<HTMLDivElement | null>, number] {
+  const row = useRef<HTMLDivElement | null>(null)
+  const [shift, setShift] = useState(0)
+
+  const measure = useCallback(() => {
+    const el = row.current
+    if (el === null) return
+    const slots = [...el.children].map((child) => child.getBoundingClientRect())
+    if (slots.length !== 3) return
+    const areas = slots.map((s) => s.width * s.height)
+    const total = areas.reduce((sum, a) => sum + a, 0)
+    if (total <= 0) return
+    const centroid = slots.reduce((sum, s, i) => sum + (s.left + s.width / 2) * areas[i], 0) / total
+    const box = (slots[0].left + slots[2].right) / 2
+    setShift(box - centroid)
+  }, [])
+
+  useLayoutEffect(() => {
+    measure()
+    const el = row.current
+    if (el === null || typeof ResizeObserver === 'undefined') return
+    // Only fires when the frame itself changes, which on a wall is close to
+    // never — this is not a loop, it is a re-measure after a resize.
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [measure])
+
+  return [row, shift]
+}
+
 export function Podium({ ranked }: { ranked: readonly Team[] }) {
+  const [row, shift] = useCentroidShift()
   const visible = podiumTeams(ranked)
   // Explicit indices, not a destructure of `visible`: the three cards have to
   // exist before the feed does, and `slice` on an empty list yields nothing to
@@ -362,14 +421,16 @@ export function Podium({ ranked }: { ranked: readonly Team[] }) {
           is centre, which is where a podium puts it and where nobody has to work
           the order out. */}
       <div
+        ref={row}
         style={{
           display: 'flex',
           alignItems: 'flex-end',
           gap: 'var(--s-pod-gap)',
-          // Definite, so `--h-pod-step` has something to resolve against.
           height: '100%',
           minWidth: 0,
           minHeight: 0,
+          // Centres the group's mass rather than its box — see `useCentroidShift`.
+          transform: `translateX(${shift.toFixed(2)}px)`,
         }}
       >
         <PodiumCard team={second} place={2} />

@@ -292,6 +292,30 @@
      13.6° from the brand tangerine, and its numeral clears 4.51:1 — real AA
      rather than large-only.
 
+     ── The exemption now covers three ramps, not three values ──
+
+     Each metal is a gradient: a lighter top, the value below in the middle, a
+     darker bottom. Only the three middles are literals; both ends are mixes
+     against `--white` and `--midnight-charcoal`, so the count of hardcoded hexes
+     this file claims an exemption for is still three.
+
+     **What the ramp does to the numeral's contrast**, sampled from the rendered
+     glyph rather than computed from the stops — top, middle and bottom thirds of
+     the ink, against white:
+
+       gold    1.84 -> 2.16 -> 3.77 : 1
+       silver  1.85 -> 2.17 -> 3.72 : 1
+       bronze  3.70 -> 5.20 -> 7.53 : 1
+
+     So the ramp does **not** close the 3:1 thread, and it was worth measuring
+     rather than assuming: the dark end clears the floor comfortably, but the
+     highlight is lighter than the flat value was, so the top of a gold or silver
+     numeral is thinner than it used to be rather than thicker. What it buys is a
+     glyph whose lower two thirds are legible where the whole thing sat at 2.2:1.
+     Dropping the highlight and ramping from the base downward clears the floor
+     outright, at the cost of the lit-from-above look the ramp exists for. Bronze
+     needs none of that — it clears everywhere.
+
      ── The specified values, restored, with the measurement on the record ──
 
      Gold and silver were darkened for a while because the numerals set them as
@@ -306,9 +330,13 @@
      turns out too faint on the wall, the fix that keeps the colour is a darker
      edge on the glyph rather than a different gold.
 
-     Bronze is the only one still off its specified value, and for the opposite
-     reason: `#B07542` sat 2.8° from `--tangerine-600` and read as brand orange
-     rather than as a metal. `#CD6237` is the redder one asked for.
+     Bronze is the only one off its specified value, and it has now been wrong in
+     both directions. `#B07542` sat too close to `--tangerine-600` and read as
+     brand orange; `#CD6237` fixed that by rotating the hue 13° redder, which is
+     the direction that reads as orange harder still. **Separation should come
+     from depth, not hue**, and measured in Lab it does: at essentially
+     tangerine's own hue, a darker duller `#865D37` is ΔE 28.9 from it, against
+     14.0 for the specified value and 21.3 for the red-shifted one.
 
      ── Three literals, and that is now the whole exemption ──
 
@@ -319,7 +347,7 @@
      literal this file is claiming an exemption for and not using. */
   --metal-gold: #D9A441;
   --metal-silver: #A8AFB5;
-  --metal-bronze: #CD6237;
+  --metal-bronze: #865D37;
 
 
   /* ========= PODIUM — a spine, three cards on plinths, seven pills =========
@@ -434,6 +462,40 @@
      the cap rather than a line box: `text-box: trim-both cap alphabetic` trims
      the element to the glyph, which on this face is 0.688 of the em. */
   --s-pod-num-gap: 1vw;
+
+  /* ── Each metal as a vertical ramp ──
+
+     **A flat fill cannot read as metal.** Metal is perceived through light
+     falling across a surface, not through hue: flat `#D9A441` is mustard and
+     flat `#A8AFB5` is a desaturated grey, whatever they are called. Each metal
+     is therefore a ramp — a lighter top, the specified value in the middle, a
+     distinctly darker bottom — and the *same* ramp paints the numeral and the
+     foot, so a pillar's two metal parts read as one material.
+
+     The shadow end mixes toward `--midnight-charcoal`, which is a dark teal
+     rather than a neutral. That is deliberate: it dulls the two warm metals the
+     way a real shadow does, and it keeps silver's ramp **cool** — measured, the
+     silver stops run hue 210 -> 208 -> 197 rather than drifting warm. */
+  --metal-lift: 24%;
+  --metal-shade: 36%;
+  --metal-gold-ramp: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--white) var(--metal-lift), var(--metal-gold)) 0%,
+    var(--metal-gold) 50%,
+    color-mix(in srgb, var(--midnight-charcoal) var(--metal-shade), var(--metal-gold)) 100%
+  );
+  --metal-silver-ramp: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--white) var(--metal-lift), var(--metal-silver)) 0%,
+    var(--metal-silver) 50%,
+    color-mix(in srgb, var(--midnight-charcoal) var(--metal-shade), var(--metal-silver)) 100%
+  );
+  --metal-bronze-ramp: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--white) var(--metal-lift), var(--metal-bronze)) 0%,
+    var(--metal-bronze) 50%,
+    color-mix(in srgb, var(--midnight-charcoal) var(--metal-shade), var(--metal-bronze)) 100%
+  );
   /* How far the numeral hangs off the card, as a share of its own cap height and
      its own width. It **sits on the corner** rather than inset from it, so it
      breaks two edges at once. */
@@ -1287,6 +1349,27 @@
     align-items: center;
   }
 
+  /* ── The white mount the mark sits in ──
+
+     **This rule was deleted by accident and the loss was invisible.** With no
+     rule the element still existed, so the markup looked right; what went was
+     `place-items: center`, and the mark sat flush to the left edge of its own
+     wrapper on all three pillars — off by exactly half the difference between
+     the mount and the mark, 14.86px, identically on each. A mark that is
+     off-centre by the same amount everywhere reads as a design choice.
+
+     The mount is also what gives a pale logo an edge: several of these marks are
+     cream to their own boundary, and on a dark card the white disc is the only
+     thing separating them from it. */
+  .tv-pod-disc {
+    border-radius: 50%;
+    background: var(--white);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    box-shadow: 0 0.4vw 1.2vw color-mix(in srgb, var(--deep-teal) 40%, transparent);
+  }
+
   /* The band the mark sits in, and **the only place the riser is spent.**
      Rank 3's is exactly the mark; each step up adds a riser to it, so a taller
      pillar lifts its mark and leaves its name and figure on the shared base.
@@ -1304,7 +1387,7 @@
      metal twice in one colour rather than twice in two. */
   .tv-pod-foot {
     height: var(--h-pod-foot);
-    background: var(--pod-metal);
+    background: var(--pod-metal-ramp);
     border-radius: 0 0 var(--r-pod-card) var(--r-pod-card);
   }
 
@@ -1315,8 +1398,25 @@
     text-box: trim-both cap alphabetic;
     font-variant-numeric: tabular-nums;
     letter-spacing: var(--track-pod-fig);
+    /* The flat value is the fallback, and it has to come first: if
+       `background-clip: text` is not honoured, `color: transparent` would leave
+       the numeral invisible on a wall nobody is watching closely enough to
+       notice a missing rank. */
     color: var(--pod-metal);
     will-change: transform;
+  }
+
+  /* The same ramp the foot carries, poured into the glyph. `text-box` has
+     already trimmed this box to the cap, so the gradient spans the numeral's own
+     height rather than a line box a fifth of an em taller — the highlight lands
+     on the glyph's shoulder rather than above it. */
+  @supports (background-clip: text) or (-webkit-background-clip: text) {
+    .tv-pod-numeral {
+      background-image: var(--pod-metal-ramp);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
   }
 
   /* ── The biggest-mover panel ──
