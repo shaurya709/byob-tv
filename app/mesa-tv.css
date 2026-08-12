@@ -407,7 +407,7 @@
      a neighbour 33px to its left, and the daylight between a numeral and the
      card it is *not* part of is the thing that stops it being read as that
      card's. Measured below, not estimated. */
-  --k-pod-num-left: 0.42;
+  --k-pod-num-left: 0.47;
   --k-pod-num-left-r: 0.31;
 
   /* One cycle: the sweep, then the rest. **Both got longer, and the rest got
