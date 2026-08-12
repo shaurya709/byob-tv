@@ -394,12 +394,21 @@
      breaks two edges at once. */
   --k-pod-num-up: 0.44;
   /* How far the numeral hangs off the card's left edge, as a share of its own
-     cap. **Down from 0.17**: the numerals sat too far out. Second and third are
-     pulled in further than first, because their card has a neighbour 33px to its
-     left and a numeral hanging into that gap starts to read as belonging to the
-     card it is nearer. First place's left is open frame, so it can hang more. */
-  --k-pod-num-left: 0.02;
-  --k-pod-num-left-r: -0.04;
+     cap.
+
+     It went the wrong way once — pulled in until the numerals sat flush with
+     their own left edges, which reads as a numeral *inside* the card rather than
+     one standing on its corner. These are out past where they started: first
+     place hangs about a third of its cap, and the short cards very nearly as
+     much, so the horizontal overhang is in the same range as the 0.44 vertical
+     one and the glyph straddles the corner rather than perching on the top edge.
+
+     The short cards stay a shade tighter than first place because their card has
+     a neighbour 33px to its left, and the daylight between a numeral and the
+     card it is *not* part of is the thing that stops it being read as that
+     card's. Measured below, not estimated. */
+  --k-pod-num-left: 0.32;
+  --k-pod-num-left-r: 0.26;
 
   /* One cycle: the sweep, then the rest. **Both got longer, and the rest got
      longer by more.** At 7s the highlight crossed in 2.7s and came back every

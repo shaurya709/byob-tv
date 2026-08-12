@@ -150,11 +150,19 @@ first version and it only worked while the numeral broke one edge — on a corne
 it breaks two, and the region beside the arc belonged to neither clip and took a
 notch out of the glyph.
 
-**Measured clearances.** First place hangs 2.5px left of its own card; second and
-third sit 3.3px *inside* theirs and clear the card to their left by 35.9px at
-1920 and 29.9px at 1600. The short cards are pulled in further than first place
-because their card has a neighbour 33px away, and a numeral hanging into that gap
-starts to read as belonging to the card it is nearer.
+**The numerals stand on the corner, hanging off two edges.** The horizontal
+overhang is about a third of the cap against the vertical 0.44, which is what
+makes the glyph straddle a corner rather than perch on a top edge. This was
+briefly pulled the other way — in until each numeral sat flush with its own left
+edge — and that reads as a numeral *inside* the card, which is the thing the
+treatment exists to avoid.
+
+Measured at 1920: first place hangs 40.2px left of its card and clears the
+masthead spine by 27px; second and third hang 21.3px and clear the card to their
+left by 11.3px. At 1600×900 those become 33.5/22.5px and 17.7/9.5px. The short
+cards stay a shade tighter than first place because their card has a neighbour
+33px to its left, and the daylight between a numeral and the card it is *not*
+part of is what stops it being read as that card's.
 
 **The discs had to move.** Second place's numeral cut 6px into its own mark
 before the head room grew; head room and disc diameter are one budget, so taking
