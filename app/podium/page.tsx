@@ -1,9 +1,13 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+
+import { DevPodiumTrigger } from '@/components/DevPodiumTrigger'
 import { Podium } from '@/components/Podium'
 import { PodiumMasthead } from '@/components/PodiumMasthead'
 import { WATCH_RANKS_PODIUM } from '@/config'
 import { competingTeams, rankTeams } from '@/lib/ranking'
+import { useKick } from '@/lib/useKick'
 import { useWallData, type BoardSpec } from '@/lib/useWallData'
 
 /**
@@ -27,16 +31,42 @@ const BOARD: BoardSpec = {
   name: 'podium',
   rank: (teams) => rankTeams(competingTeams(teams)),
   earned: (team) => team.totalRevenue,
+  // **The whole top ten, not just rank 1.** `WATCH_RANKS_PODIUM` was 1 when the
+  // board animated nothing: the only change worth an interrupt was a new leader.
+  // The board now has two things to say — a venture crossing into the podium,
+  // and two list rows trading places — and neither is visible if the detector
+  // stops looking after first place.
   watchTo: WATCH_RANKS_PODIUM,
 }
 
 export default function PodiumPage() {
-  const { snapshot } = useWallData(BOARD)
+  const { snapshot, queueVersion, freeze, thaw } = useWallData(BOARD)
+  // The dev trigger writes to the same queue the detector writes to; this
+  // counter is only the nudge that tells `useKick` to look, exactly as
+  // `queueVersion` does. Adding to it keeps one drain and one reader.
+  const [devTicks, setDevTicks] = useState(0)
+  const { playing: kick, settled } = useKick(BOARD.name, queueVersion + devTicks)
+
+  // **The freeze rides the sequence exactly.** A snapshot applied mid-flight
+  // would re-slot the pillars under an animation that has already measured where
+  // they are, and the travelling disc would land on a row that had moved.
+  useEffect(() => {
+    if (kick !== null) freeze()
+    else thaw()
+  }, [kick, freeze, thaw])
+
+  const teams = competingTeams(snapshot?.teams ?? [])
 
   return (
     <main className="tv-frame" style={{ display: 'grid', gridTemplateColumns: 'auto 1fr' }}>
       <PodiumMasthead snapshot={snapshot} />
-      <Podium ranked={rankTeams(competingTeams(snapshot?.teams ?? []))} />
+      <Podium ranked={rankTeams(teams)} kick={kick} onSettled={settled} />
+
+      <DevPodiumTrigger
+        teams={teams}
+        onQueued={() => setDevTicks((n) => n + 1)}
+        onReset={() => setDevTicks((n) => n + 1)}
+      />
     </main>
   )
 }

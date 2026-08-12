@@ -2,7 +2,7 @@
 
 ## Context
 
-Mesa Flea is **6 September 2026**, 26 days out. Two web pages go onto TVs across Mesa
+Mesa Flea is **13 September 2026** (moved from 6 September). Two web pages go onto TVs across Mesa
 campus for the rest of the BYOB Cohort 2026 programme: a live leaderboard (`/podium`)
 and a Mesa Flea countdown with achievement notifications (`/countdown`). They slot into
 an existing campus slideshow rotation run by someone else, driven from **a laptop over
@@ -52,7 +52,7 @@ Two risks the brief didn't cover:
 - **Programme start** — 20 July 2026 IST.
 - **Theme** — **white page background.** Mesa design system via the `frontend-design`
   skill, then iterate. **Mesa logo only** — no brand marks, no other assets.
-- **Flea time** — 6 Sep 2026 10:00 IST, marked unconfirmed **in a code comment only**;
+- **Flea time** — 13 Sep 2026 10:00 IST, marked unconfirmed **in a code comment only**;
   this must never appear in the UI.
 - **First load** — seed silently: evaluate every trigger, record all as seen, animate
   nothing. Only post-seed changes fire.

@@ -234,7 +234,7 @@ the client and discards the tick, so all three rows must exist.
 |---|---|
 | `as_of` | `=TEXT(MAX('Sync Status'!$B$2:$B$43),"dd mmm HH:mm")` |
 | `current_open_week` | `=MAX(1,INT((TODAY()-DATE(2026,7,20))/7)+1)` |
-| `flea_datetime_iso` | `2026-09-06T10:00:00+05:30` — **typed, not a formula** |
+| `flea_datetime_iso` | `2026-09-13T10:00:00+05:30` — **typed, not a formula** |
 
 **`as_of` reads `Sync Status`, not `NOW()`.** `NOW()` would restamp on every
 recalculation and the wall would look freshly updated even while the data underneath
@@ -247,7 +247,7 @@ but the programme runs to 30 Sep, and a clamp would freeze the weekly board on w
 **`flea_datetime_iso` needs the cell formatted as plain text first** — Format ▸ Number
 ▸ Plain text — before you type it. Otherwise Sheets parses it as a date and publishes
 something the client cannot read. After typing, the cell should still read
-`2026-09-06T10:00:00+05:30` character for character, left-aligned.
+`2026-09-13T10:00:00+05:30` character for character, left-aligned.
 
 Keep the `+05:30` offset. It is what makes the countdown correct on a laptop set to
 any timezone: the client subtracts two absolute instants and never asks what timezone
@@ -310,7 +310,7 @@ read off two places and compare.
    else means one of them is on the wrong week boundary. Delete the scratch cell after.
 7. `TV_Cohort` has exactly **three** keys in column A, spelled as listed, and
    `TV_Helper` no longer exists in the tab bar.
-8. `flea_datetime_iso` is left-aligned and reads `2026-09-06T10:00:00+05:30`. If it
+8. `flea_datetime_iso` is left-aligned and reads `2026-09-13T10:00:00+05:30`. If it
    is right-aligned or shows `06/09/2026`, the cell was not plain text.
 9. Open both published URLs in a private window. Each returns CSV, not an HTML
    sign-in page. A revoked publish answers with HTTP 200 and a login page, so the only

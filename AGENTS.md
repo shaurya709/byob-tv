@@ -53,8 +53,9 @@ npm run build        # next build
 - Ranking: **logged revenue desc → units desc → team ID asc**, matching the admin
   dashboard's `compareTieBreak`. Rank is computed client-side, so the sort is the single
   authority on order.
-- Challenge weeks 1–8, anchored **20 July 2026** (not the 21st). Mesa Flea: 6 September
-  2026, 10:00 IST assumed. Capital repayment: 30 September 2026.
+- Challenge weeks 1–8, anchored **20 July 2026** (not the 21st). Mesa Flea: **13 September
+  2026**, 10:00 IST assumed — moved from 6 September, and it lives in `TV_Cohort`
+  rather than in code, so the wall picked the change up on its next poll. Capital repayment: 30 September 2026.
 - A team with an empty `venture_name` **does** fire a trigger, like any other. This line
   previously claimed the opposite; `lib/overtake.ts` never enforced it, and the behaviour
   it describes is not the one we want — an unnamed team that overtakes has still overtaken.

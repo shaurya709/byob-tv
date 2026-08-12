@@ -452,6 +452,8 @@
 
 
   --r-pod-card: 1.25vw;
+  /* How wide the shaded right face reads. The pillar's depth, in effect. */
+  --s-pod-face: 0.55vw;
 
   /* ── The rank numeral, floating above its pillar ──
 
@@ -1342,6 +1344,7 @@
     display: flex;
     flex-direction: column;
     align-items: stretch;
+    filter: drop-shadow(0 1.1vw 1.6vw color-mix(in srgb, var(--deep-teal) 26%, transparent));
   }
 
   /* ── The rank numeral, above its pillar ──
@@ -1362,14 +1365,52 @@
     padding-bottom: var(--s-pod-num-gap);
   }
 
-  /* The card. In flow, so its own content is what gives the column a height. */
+  /* ── The card, given some depth ──
+
+     Not a rotation: the pillar carries a venture's name and figure, and skewing
+     a block of type to fake perspective costs more legibility than the depth is
+     worth on a wall read at six metres.
+
+     The depth is lighting instead. A lit top edge and a shaded right edge, both
+     inset shadows so they cost no layout, describe a block catching light from
+     the upper left — the same direction the metal's lustre runs, so the two
+     agree about where the light is. The outer shadow then lifts the whole pillar
+     off the page rather than leaving it printed on it. */
   .tv-pod-card {
+    position: relative;
     background: var(--pod-fill-card);
     border-radius: var(--r-pod-card) var(--r-pod-card) 0 0;
     padding: var(--s-pod-card-pad);
     display: flex;
     flex-direction: column;
     align-items: center;
+    box-shadow:
+      inset 0 var(--stroke-med) 0 color-mix(in srgb, var(--white) 13%, transparent),
+      inset calc(-1 * var(--s-pod-face)) 0 var(--s-pod-face)
+        color-mix(in srgb, var(--midnight-charcoal) 34%, transparent),
+      inset var(--stroke-hair) 0 0 color-mix(in srgb, var(--white) 7%, transparent);
+  }
+
+  /* The travelling disc's two faces. Circles in their own right, so a box
+     shadow traces the disc rather than a square box — and costs no filter, which
+     would flatten the 3D context the turn depends on. */
+  .tv-pod-travel-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    backface-visibility: hidden;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: var(--white);
+    box-shadow: 0 0.4vw 1.2vw color-mix(in srgb, var(--deep-teal) 40%, transparent);
+  }
+
+  /* Mesa's own mark on the logomark green, so a disc mid-turn is one object in
+     one colour rather than a hole in the board. */
+  .tv-pod-travel-back {
+    background: var(--deep-forest-green);
+    transform: rotateY(180deg);
   }
 
   /* ── The white mount the mark sits in ──
@@ -1408,8 +1449,15 @@
 
   /* The metal foot. Same token as the numeral above it, so a pillar says its
      metal twice in one colour rather than twice in two. */
+  /* The foot takes the same lighting, so the pillar and the metal it stands on
+     are lit from one place. Its top edge is the brightest line on the object —
+     that is the plane facing the light. */
   .tv-pod-foot {
     height: var(--h-pod-foot);
+    box-shadow:
+      inset 0 var(--stroke-med) 0 color-mix(in srgb, var(--white) 34%, transparent),
+      inset calc(-1 * var(--s-pod-face)) 0 var(--s-pod-face)
+        color-mix(in srgb, var(--midnight-charcoal) 30%, transparent);
     background-image:
     linear-gradient(
       104deg,

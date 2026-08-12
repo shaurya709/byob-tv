@@ -1,11 +1,14 @@
 'use client'
 
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { motion } from 'motion/react'
 
 import { MoverPanel } from '@/components/MoverPanel'
+import { PodiumTravel, type TravelPath } from '@/components/PodiumTravel'
 import { VentureLogo } from '@/components/VentureLogo'
 import { formatRupees } from '@/lib/format'
-import type { Team } from '@/lib/types'
+import { BEATS, TOTAL, at, entersPodium } from '@/lib/podiumFlip'
+import type { OvertakeEvent, Team } from '@/lib/types'
 
 /**
  * Slide 1 — the absolute leaderboard: three cards on metal plinths, and ranks
@@ -46,6 +49,15 @@ const TOP = 10
 const PODIUM_PLACES = 3
 
 const IDLE_TIMELINES = ['tv-idle-1', 'tv-idle-2', 'tv-idle-3'] as const
+
+/**
+ * The ranks in the order the pillars are drawn: 2 · 1 · 3.
+ *
+ * The array is the *drawing* order, so `PLACE_ORDER.indexOf(rank)` is the index
+ * of that rank's pillar in the DOM. Reaching for a pillar by its rank without
+ * going through this would find second place's when asked for first place's.
+ */
+const PLACE_ORDER: readonly number[] = [2, 1, 3]
 
 /**
  * Everything that differs between the three cards, in one table.
@@ -129,7 +141,19 @@ function nameOf(team: Team): string {
  * One podium card: a numeral breaking its top edge, a mark in a white disc, a
  * name, a figure — standing on its metal.
  */
-function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
+function PodiumCard({
+  team,
+  place,
+  departing = false,
+  arriving,
+}: {
+  team: Team | undefined
+  place: Place
+  /** This pillar's mark has left — it is the disc crossing the board. */
+  departing?: boolean
+  /** The venture taking this pillar, shown once the seat is visibly empty. */
+  arriving?: Team
+}) {
   const p = PLACES[place]
 
   return (
@@ -174,15 +198,96 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
               ...(team === undefined ? {} : { willChange: 'transform' }),
             }}
           >
-            <div className="tv-pod-disc" style={{ width: '100%', height: '100%' }}>
+            {/* **Hidden rather than unmounted while it travels.** The travelling
+                disc is measured against this element's box, and an unmounted
+                element has no box — the path would be measured from nothing on
+                the very frame it is needed. */}
+            <div
+              className="tv-pod-disc"
+              style={{ width: '100%', height: '100%', opacity: departing ? 0 : 1 }}
+            >
               {team === undefined ? null : (
                 <VentureLogo team={team} size={`calc(var(--d-pod-disc) * ${MARK_IN_DISC})`} />
               )}
             </div>
+
+            {/* The promoted venture, arriving last. It is drawn over the empty
+                mount rather than replacing the card's own mark, because the data
+                behind the board is frozen for the length of the sequence — what
+                puts this venture here permanently is the next snapshot. */}
+            {arriving === undefined ? null : (
+              <motion.div
+                className="tv-pod-disc"
+                style={{ position: 'absolute', inset: 0 }}
+                initial={false}
+                animate={{ opacity: [0, 0, 1, 1], scale: [0.72, 0.72, 1, 1] }}
+                transition={{
+                  duration: TOTAL,
+                  times: [0, ...at(BEATS.arrive), 1],
+                  ease: ['linear', 'easeOut', 'linear'],
+                }}
+              >
+                <VentureLogo team={arriving} size={`calc(var(--d-pod-disc) * ${MARK_IN_DISC})`} />
+              </motion.div>
+            )}
           </div>
         </div>
 
-        <div style={{ width: '100%', textAlign: 'center' }}>
+        {/* **The details cross with the mark, not after it.** The data behind
+            the board is frozen for the sequence, so the card would otherwise
+            announce the arriving venture's logo above the departing venture's
+            name and figure — which is a worse lie than showing nothing. Both
+            blocks are stacked and their opacity is swapped on the same beat. */}
+        <div style={{ width: '100%', textAlign: 'center', position: 'relative' }}>
+          {arriving === undefined ? null : (
+            <motion.div
+              style={{ position: 'absolute', inset: 0, zIndex: 1 }}
+              initial={false}
+              animate={{ opacity: [0, 0, 1, 1] }}
+              transition={{
+                duration: TOTAL,
+                times: [0, ...at(BEATS.arrive), 1],
+                ease: ['linear', 'easeOut', 'linear'],
+              }}
+            >
+              <span
+                style={{
+                  display: 'block',
+                  font: 'var(--t-pod-name)',
+                  letterSpacing: 'var(--track-pod-name)',
+                  textTransform: 'uppercase',
+                  color: 'var(--pod-name-ink)',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {nameOf(arriving)}
+              </span>
+              <span
+                className="tv-figure"
+                style={{
+                  display: 'block',
+                  marginTop: '0.3em',
+                  font: 'var(--t-pod-fig)',
+                  letterSpacing: 'var(--track-pod-fig)',
+                  color: 'var(--white)',
+                }}
+              >
+                {revenueOf(arriving)}
+              </span>
+            </motion.div>
+          )}
+
+          <motion.div
+            initial={false}
+            animate={arriving === undefined ? {} : { opacity: [1, 1, 0, 0] }}
+            transition={{
+              duration: TOTAL,
+              times: [0, ...at(BEATS.arrive), 1],
+              ease: ['linear', 'easeOut', 'linear'],
+            }}
+          >
           <span
             style={{
               display: 'block',
@@ -209,6 +314,7 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
           >
             {revenueOf(team)}
           </span>
+          </motion.div>
         </div>
       </div>
 
@@ -233,7 +339,21 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
  * slice it draws. A full bar becomes impossible by construction: you cannot be
  * 100% of the venture ahead of you without being ahead of them.
  */
-function Strip({ ranked, fromRank }: { ranked: readonly Team[]; fromRank: number }) {
+function Strip({
+  ranked,
+  fromRank,
+  kick = null,
+  vacating = null,
+  incoming,
+}: {
+  ranked: readonly Team[]
+  fromRank: number
+  kick?: OvertakeEvent | null
+  /** A rank in this list whose venture is on its way to the podium. */
+  vacating?: number | null
+  /** The venture dropping out of the podium into that vacated row. */
+  incoming?: Team
+}) {
   const teams = ranked.slice(fromRank - 1)
   // An empty strip carries no heading. Apparatus describing absence is the same
   // filler as a "no data" message, in a smaller typeface.
@@ -270,27 +390,77 @@ function Strip({ ranked, fromRank }: { ranked: readonly Team[]; fromRank: number
     </span>
   )
 
-  const mark = (team: Team) => (
-    <span className="tv-pod-row-mark">
+  /* The mark of a venture on its way up is hidden, not removed: the travelling
+     disc lands on this element's box, and an unmounted element has none. */
+  const mark = (team: Team, rowRank: number) => (
+    <span className="tv-pod-row-mark" style={{ opacity: rowRank === vacating ? 0 : 1 }}>
       <VentureLogo team={team} size="var(--d-pod-row-logo)" />
     </span>
   )
 
-  const name = (team: Team) => <span className="tv-pod-row-name">{nameOf(team)}</span>
+  /* The row a venture is dropping into carries *its* name and figure, opening
+     on the same beat its mark does. Without this the mark lands as one venture
+     over another venture's name — the same lie the pillar above would tell. */
+  const name = (team: Team, rowRank: number) =>
+    rowRank === vacating && incoming !== undefined ? (
+      <span style={{ display: 'grid', minWidth: 0 }}>
+        <motion.span
+          className="tv-pod-row-name"
+          style={{ gridArea: '1/1' }}
+          initial={false}
+          animate={{ opacity: [1, 1, 0, 0] }}
+          transition={{ duration: TOTAL, times: [0, ...at(BEATS.open), 1], ease: 'linear' }}
+        >
+          {nameOf(team)}
+        </motion.span>
+        <motion.span
+          className="tv-pod-row-name"
+          style={{ gridArea: '1/1' }}
+          initial={false}
+          animate={{ opacity: [0, 0, 1, 1] }}
+          transition={{ duration: TOTAL, times: [0, ...at(BEATS.open), 1], ease: 'linear' }}
+        >
+          {nameOf(incoming)}
+        </motion.span>
+      </span>
+    ) : (
+      <span className="tv-pod-row-name">{nameOf(team)}</span>
+    )
 
-  const figure = (team: Team) => (
-    <span
-      className="tv-figure"
-      style={{
-        font: 'var(--t-pod-fig-row)',
-        letterSpacing: 'var(--track-pod-fig)',
-        color: 'var(--deep-teal)',
-        textAlign: 'right',
-      }}
-    >
-      {revenueOf(team)}
-    </span>
-  )
+  const figureStyle: React.CSSProperties = {
+    font: 'var(--t-pod-fig-row)',
+    letterSpacing: 'var(--track-pod-fig)',
+    color: 'var(--deep-teal)',
+    textAlign: 'right',
+  }
+
+  const figure = (team: Team, rowRank: number) =>
+    rowRank === vacating && incoming !== undefined ? (
+      <span style={{ display: 'grid' }}>
+        <motion.span
+          className="tv-figure"
+          style={{ ...figureStyle, gridArea: '1/1' }}
+          initial={false}
+          animate={{ opacity: [1, 1, 0, 0] }}
+          transition={{ duration: TOTAL, times: [0, ...at(BEATS.open), 1], ease: 'linear' }}
+        >
+          {revenueOf(team)}
+        </motion.span>
+        <motion.span
+          className="tv-figure"
+          style={{ ...figureStyle, gridArea: '1/1' }}
+          initial={false}
+          animate={{ opacity: [0, 0, 1, 1] }}
+          transition={{ duration: TOTAL, times: [0, ...at(BEATS.open), 1], ease: 'linear' }}
+        >
+          {revenueOf(incoming)}
+        </motion.span>
+      </span>
+    ) : (
+      <span className="tv-figure" style={figureStyle}>
+        {revenueOf(team)}
+      </span>
+    )
 
   // Staggered, so seven sheens do not cross the board in unison — which reads as
   // the whole strip blinking rather than as light moving over each bar.
@@ -314,24 +484,74 @@ function Strip({ ranked, fromRank }: { ranked: readonly Team[]; fromRank: number
         height: '100%',
       }}
     >
-      {teams.map((team, index) => (
-        <div
+      {teams.map((team, index) => {
+        const rowRank = fromRank + index
+        // **A slide, and nothing more.** Two bars trading places inside the list
+        // is information rather than an event; the podium keeps the wall's one
+        // interrupt. `swapWith` is the rank this row is exchanging with, and the
+        // distance is measured in whole rows because every row is the same height.
+        const swap =
+          kick !== null && !entersPodium(kick.toRank)
+            ? rowRank === kick.fromRank
+              ? kick.toRank - rowRank
+              : rowRank === kick.toRank
+                ? kick.fromRank - rowRank
+                : 0
+            : 0
+        return (
+        <motion.div
           key={team.teamId}
-          style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            // A moving row is drawn over the still ones for the length of the
+            // move, so it is never half-hidden behind a bar it is passing.
+            zIndex: swap === 0 ? undefined : 2,
+          }}
+          initial={false}
+          animate={
+            swap === 0
+              ? {}
+              : {
+                  y: [0, `${swap * 100}%`, `${swap * 100}%`, 0],
+                  // **They pass side by side, not through each other.** Two rows
+                  // swapping along one axis occupy the same space at the
+                  // midpoint, and the first version had one venture's name
+                  // printed over another's — which reads as a rendering fault
+                  // rather than as a move. A small lateral offset, out and back,
+                  // gives them separate lanes for the crossing and none at the
+                  // ends. The one going up takes the left lane, which is the
+                  // same direction the eye already reads the rank from.
+                  x: [0, swap < 0 ? '-13%' : '13%', swap < 0 ? '-13%' : '13%', 0],
+                  // The lane alone was not enough — two full-width rows still
+                  // overlapped enough for one venture's name to print over
+                  // another's. Dipping through the crossing is what makes the
+                  // pass legible: at the midpoint both are ghosts, and at either
+                  // end both are solid rows in their own place.
+                  opacity: [1, 0.45, 0.45, 1],
+                }
+          }
+          transition={{
+            duration: TOTAL,
+            times: [0, ...at(BEATS.slide), 1],
+            ease: ['easeInOut', 'linear', 'linear'],
+          }}
         >
           <div className="tv-pod-stack">
             {rank(index)}
-            {mark(team)}
-            {name(team)}
-            {figure(team)}
+            {mark(team, rowRank)}
+            {name(team, rowRank)}
+            {figure(team, rowRank)}
           </div>
           <div className="tv-pod-underbar">
             <span className="tv-pod-underbar-fill" style={{ width: `${share(team)}%` }}>
               <span className="tv-pod-underbar-shine" style={delay(index)} />
             </span>
           </div>
-        </div>
-      ))}
+        </motion.div>
+        )
+      })}
     </div>
   )
 }
@@ -391,17 +611,122 @@ function useCentroidShift(): [React.RefObject<HTMLDivElement | null>, number] {
   return [row, shift]
 }
 
-export function Podium({ ranked }: { ranked: readonly Team[] }) {
+/**
+ * Where the travelling disc starts and ends, measured off the rendered board.
+ *
+ * **Measured, never derived.** The pillar's mark and the row's mark are sized by
+ * different tokens in different containers, and the distance between them
+ * depends on which pillar and which row — computing it would mean re-deriving
+ * the whole layout in JS and being wrong the first time either changes.
+ *
+ * `getBoundingClientRect` and not `offsetTop`: the podium carries a `translateX`
+ * for its centroid and the marks bob on an idle, so the untransformed layout
+ * position is not where the disc actually is.
+ */
+function measurePath(
+  board: HTMLDivElement,
+  fromSlot: Element | null,
+  toRow: Element | null,
+  team: Team,
+): TravelPath | null {
+  const a = fromSlot?.querySelector('.tv-pod-disc')?.getBoundingClientRect()
+  const b = toRow?.querySelector('.tv-pod-row-mark')?.getBoundingClientRect()
+  if (a === undefined || b === undefined || a === null || b === null) return null
+  const root = board.getBoundingClientRect()
+  return {
+    team,
+    from: { x: a.left + a.width / 2 - root.left, y: a.top + a.height / 2 - root.top, d: a.width },
+    to: { x: b.left + b.width / 2 - root.left, y: b.top + b.height / 2 - root.top, d: b.width },
+  }
+}
+
+export function Podium({
+  ranked,
+  kick = null,
+  onSettled,
+}: {
+  ranked: readonly Team[]
+  /** The overtake to play, or `null`. The board never looks at the queue itself. */
+  kick?: OvertakeEvent | null
+  onSettled?: () => void
+}) {
   const [row, shift] = useCentroidShift()
+  const board = useRef<HTMLDivElement | null>(null)
+  const [path, setPath] = useState<TravelPath | null>(null)
+
+  const podiumEntry = kick !== null && entersPodium(kick.toRank)
+
+  // Measure once, when the event arrives, before the browser paints — the disc
+  // must be over its pillar on the first frame or it visibly jumps into place.
+  useLayoutEffect(() => {
+    if (!podiumEntry || kick === null || board.current === null) {
+      setPath(null)
+      return
+    }
+    const leaving = podiumTeams(ranked).find((t) => t.teamId === kick.defender)
+    if (leaving === undefined) return
+    const slots = board.current.querySelectorAll('.tv-pod-slot')
+    const rows = board.current.querySelectorAll('.tv-pod-stack')
+    // The pillar the departing venture is standing on, and the row the arriving
+    // one is vacating — which is the row it drops into.
+    setPath(
+      measurePath(
+        board.current,
+        slots[PLACE_ORDER.indexOf(kick.toRank)] ?? null,
+        rows[kick.fromRank - PODIUM_PLACES - 1] ?? null,
+        leaving,
+      ),
+    )
+  }, [kick, podiumEntry, ranked])
+
+  // One timer for the whole sequence, and it is the only one. Every beat is a
+  // window on the shared timeline; this just says when the timeline is over.
+  useEffect(() => {
+    if (kick === null || onSettled === undefined) return
+    const done = setTimeout(onSettled, TOTAL * 1000)
+    return () => clearTimeout(done)
+  }, [kick, onSettled])
+
+  return <PodiumBoard {...{ ranked, kick, row, shift, board, path, podiumEntry }} />
+}
+
+/** Split out so the hooks above read as one block rather than being threaded
+    through three hundred lines of markup. */
+function PodiumBoard({
+  ranked,
+  kick,
+  row,
+  shift,
+  board,
+  path,
+  podiumEntry,
+}: {
+  ranked: readonly Team[]
+  kick: OvertakeEvent | null
+  row: React.RefObject<HTMLDivElement | null>
+  shift: number
+  board: React.RefObject<HTMLDivElement | null>
+  path: TravelPath | null
+  podiumEntry: boolean
+}) {
   const visible = podiumTeams(ranked)
   // Explicit indices, not a destructure of `visible`: the three cards have to
   // exist before the feed does, and `slice` on an empty list yields nothing to
   // destructure. `undefined` is the card's empty state, and it is a real one.
   const [first, second, third] = [visible[0], visible[1], visible[2]]
+  const arriving = podiumEntry && kick !== null
+    ? visible.find((t) => t.teamId === kick.attacker)
+    : undefined
 
   return (
     <div
+      ref={board}
       style={{
+        // **The travelling disc's positioning context.** Without this the
+        // overlay resolves against whatever ancestor happens to be positioned,
+        // and the disc starts over the wrong pillar — measured against this
+        // element's own box but painted against another's.
+        position: 'relative',
         display: 'grid',
         gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
         // The row is stated rather than left implicit. An `auto` row gives the
@@ -447,9 +772,24 @@ export function Podium({ ranked }: { ranked: readonly Team[] }) {
           transform: `translateX(${shift.toFixed(2)}px)`,
         }}
       >
-        <PodiumCard team={second} place={2} />
-        <PodiumCard team={first} place={1} />
-        <PodiumCard team={third} place={3} />
+        <PodiumCard
+          team={second}
+          place={2}
+          departing={podiumEntry && kick?.toRank === 2}
+          arriving={kick?.toRank === 2 ? arriving : undefined}
+        />
+        <PodiumCard
+          team={first}
+          place={1}
+          departing={podiumEntry && kick?.toRank === 1}
+          arriving={kick?.toRank === 1 ? arriving : undefined}
+        />
+        <PodiumCard
+          team={third}
+          place={3}
+          departing={podiumEntry && kick?.toRank === 3}
+          arriving={kick?.toRank === 3 ? arriving : undefined}
+        />
       </div>
 
       <div
@@ -462,8 +802,20 @@ export function Podium({ ranked }: { ranked: readonly Team[] }) {
         }}
       >
         <MoverPanel ranked={ranked} />
-        <Strip ranked={visible} fromRank={PODIUM_PLACES + 1} />
+        <Strip
+          ranked={visible}
+          fromRank={PODIUM_PLACES + 1}
+          kick={kick}
+          vacating={podiumEntry && kick !== null ? kick.fromRank : null}
+          incoming={
+            podiumEntry && kick !== null
+              ? podiumTeams(ranked).find((t) => t.teamId === kick.defender)
+              : undefined
+          }
+        />
       </div>
+
+      {path === null ? null : <PodiumTravel path={path} />}
     </div>
   )
 }

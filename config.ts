@@ -190,10 +190,17 @@ export const EOD_FROM_HOUR_IST = 18
  *
  * The weekly board watches its whole first column; a change at rank 34 is real
  * but nobody is watching that far down, and animating it would spend the wall's
- * one interrupt on it. The podium animates rank 1 and nothing else.
+ * one interrupt on it.
+ *
+ * **The podium watches its whole top ten**, up from rank 1 alone. That was right
+ * while the board animated nothing — the only change worth an interrupt was a
+ * new leader. It now has two things to say: a venture crossing into the top
+ * three, which gets the close-travel-open, and two list rows trading places,
+ * which get a slide. Rank 11 is off the board, so ten is the whole of what it
+ * can show.
  */
 export const WATCH_RANKS_WEEKLY = 20
-export const WATCH_RANKS_PODIUM = 1
+export const WATCH_RANKS_PODIUM = 10
 
 /**
  * How many overtakes may be waiting at once. FIFO, oldest dropped.
