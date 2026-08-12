@@ -190,7 +190,7 @@ describe('Podium', () => {
     // Each card stands on its own metal. Three plinths and three cards, never
     // three cards and one plinth — the plinth is where the metal is declared,
     // and a shared one would give second place first place's gold.
-    expect(host.querySelectorAll('.tv-pod-plinth')).toHaveLength(3)
+    expect(host.querySelectorAll('.tv-pod-slot')).toHaveLength(3)
     act(() => root.unmount())
     host.remove()
   })

@@ -39,6 +39,35 @@ content height at every aspect rather than 815px at one of them.
 Measured: clearance 86.4 / 90.0 / 72.0 / 115.2px and **overflow 0** at
 1920×1080, 2000×1100, 1600×900 and 2560×1440.
 
+## 2b. The board is two halves
+
+**Left: a stepped podium.** Three equal-width cards, bases on one line, heights
+descending — rank 1 centre and tallest, 2 to its left, 3 to its right. Equal
+widths because a podium's steps *are* equal: the step is height. Drawn 2-1-3 so
+first place is centre, where a podium puts it and where nobody has to work the
+order out.
+
+**Right: the mover panel, then ranks 4–10.** Both keep their own treatment.
+
+**The metal foot strips are gone.** The metal moved to the numerals, so the
+strips had nothing left to say, and `.tv-pod-plinth` was renamed `.tv-pod-slot`
+rather than left as a class named for a thing it no longer draws.
+
+### What this costs, stated rather than hidden
+
+Three cards now share a half-frame that first place used to have most of:
+**12.1vw each, against its old 34.5vw**. The figure came down with them — one
+size for all three at 2.4vw, against first place's old 5.5vw. `₹54,782` sets
+about 3.9px of width per px of font size and a 233px card has ~191px of content,
+which puts the ceiling near 49px however the card is arranged. Widening the
+podium half is the only thing that buys the figure back.
+
+**Four cohort names do not fit** a 233px card and will truncate if their venture
+reaches the podium. Measured at 1920 against a 233px track: *In Between Sips By
+Kaappitalism* 341px, *ATC (All Things Camphor)* 268px, *The Pitlane Collective*
+241px, *The Chips n Dips Story* 236px. Two of those are currently in the top ten.
+The figure was **not** shrunk to make room, which was the instruction.
+
 ## 3. The metals — one documented exemption
 
 `app/mesa-tv.css` says no new hues and AGENTS.md says only the design-system file

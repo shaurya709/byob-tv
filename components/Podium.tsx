@@ -53,48 +53,13 @@ const IDLE_TIMELINES = ['tv-idle-1', 'tv-idle-2', 'tv-idle-3'] as const
  * place's padding because two of the branches disagreed.
  */
 const PLACES = {
-  1: {
-    metal: 'var(--metal-gold)',
-    fill: 'var(--deep-teal)',
-    plinth: 'var(--h-pod-plinth-1)',
-    disc: 'var(--d-pod-disc-1)',
-    numeral: 'var(--fs-pod-num-1)',
-    numHang: 'var(--k-pod-num-left)',
-    nameFont: 'var(--t-pod-name-1)',
-    nameTrack: 'var(--track-pod-name-1)',
-    figFont: 'var(--t-pod-fig-1)',
-    pad: 'var(--s-pod-card-pad)',
-    figGap: '0.45em',
-  },
-  2: {
-    metal: 'var(--metal-silver)',
-    fill: 'var(--deep-forest-green)',
-    plinth: 'var(--h-pod-plinth-r)',
-    disc: 'var(--d-pod-disc-r)',
-    numeral: 'var(--fs-pod-num-r)',
-    numHang: 'var(--k-pod-num-left-r)',
-    nameFont: 'var(--t-pod-name-r)',
-    nameTrack: 'var(--track-pod-name-r)',
-    figFont: 'var(--t-pod-fig-r)',
-    pad: 'var(--s-pod-card-pad-r)',
-    // Tighter than first place's, and the approved design is tighter still. A
-    // short card has to spend its height on the mark; the interval between a
-    // name and its figure is the one thing there that can give.
-    figGap: '0.2em',
-  },
-  3: {
-    metal: 'var(--metal-bronze)',
-    fill: 'var(--deep-forest-green)',
-    plinth: 'var(--h-pod-plinth-r)',
-    disc: 'var(--d-pod-disc-r)',
-    numeral: 'var(--fs-pod-num-r)',
-    numHang: 'var(--k-pod-num-left-r)',
-    nameFont: 'var(--t-pod-name-r)',
-    nameTrack: 'var(--track-pod-name-r)',
-    figFont: 'var(--t-pod-fig-r)',
-    pad: 'var(--s-pod-card-pad-r)',
-    figGap: '0.2em',
-  },
+  // Rank 1 centre and tallest, 2 to its left, 3 to its right. The array order
+  // below is the *drawing* order and therefore the left-to-right order; the keys
+  // are the ranks. Keeping them apart is what lets the podium read 2-1-3 across
+  // while the numerals still read 1-2-3 by height.
+  1: { fill: 'var(--deep-teal)', metal: 'var(--metal-gold)', step: 'var(--h-pod-step-1)' },
+  2: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-silver)', step: 'var(--h-pod-step-2)' },
+  3: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-bronze)', step: 'var(--h-pod-step-3)' },
 } as const
 
 type Place = keyof typeof PLACES
@@ -164,20 +129,14 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
 
   return (
     <div
-      className="tv-pod-plinth"
+      className="tv-pod-slot"
       style={
         {
           '--pod-metal': p.metal,
-          '--h-pod-plinth': p.plinth,
-          '--fs-pod-num': p.numeral,
-          '--k-pod-num-hang': p.numHang,
+          '--h-pod-step': p.step,
         } as React.CSSProperties
       }
     >
-      {/* Before the card in document order, so the card paints over it and the
-          sheen shows only on the strip of metal the card does not cover. */}
-      <span className="tv-pod-shine" aria-hidden />
-
       {/* The numeral, whole, in Deep Teal — and then the card is painted over
           it, so what survives is exactly the part hanging off the corner. Its
           twin inside the card supplies the white half. The rank is announced
@@ -191,7 +150,6 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
         style={
           {
             '--pod-fill-card': p.fill,
-            padding: p.pad,
           } as React.CSSProperties
         }
       >
@@ -225,7 +183,7 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
           <div
             className={team === undefined ? undefined : idleOf(place)}
             style={{
-              width: p.disc,
+              width: 'var(--d-pod-disc)',
               aspectRatio: 1,
               ...(team === undefined ? {} : { willChange: 'transform' }),
             }}
@@ -236,7 +194,7 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
                 is filler, and this wall carries none. */}
             <div className="tv-pod-disc" style={{ width: '100%', height: '100%' }}>
               {team === undefined ? null : (
-                <VentureLogo team={team} size={`calc(${p.disc} * ${MARK_IN_DISC})`} />
+                <VentureLogo team={team} size={`calc(var(--d-pod-disc) * ${MARK_IN_DISC})`} />
               )}
             </div>
           </div>
@@ -246,8 +204,8 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
           <span
             style={{
               display: 'block',
-              font: p.nameFont,
-              letterSpacing: p.nameTrack,
+              font: 'var(--t-pod-name)',
+              letterSpacing: 'var(--track-pod-name)',
               textTransform: 'uppercase',
               color: 'var(--pod-name-ink)',
               // Clipped, never wrapped: the card is a fixed stack and a second
@@ -268,8 +226,8 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
               // and its figure is a real interval rather than a line gap — it is
               // what stops a tracked label reading as a caption glued to the
               // number underneath it.
-              marginTop: p.figGap,
-              font: p.figFont,
+              marginTop: '0.3em',
+              font: 'var(--t-pod-fig)',
               letterSpacing: 'var(--track-pod-fig)',
               color: 'var(--white)',
             }}
@@ -404,69 +362,58 @@ export function Podium({ ranked }: { ranked: readonly Team[] }) {
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'var(--w-pod-card-1) minmax(0, 1fr)',
-        columnGap: 'var(--s-pod-gap)',
+        gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+        // The row is stated rather than left implicit. An `auto` row gives the
+        // halves an indefinite height, and the podium's percentage step heights
+        // then have nothing to be a percentage *of* — measured, all three slots
+        // collapsed to zero and their cards spilled out of the bottom of the
+        // frame on a page that otherwise looked fine.
+        gridTemplateRows: 'minmax(0, 1fr)',
+        columnGap: 'var(--w-pod-half-gap)',
         padding:
           'var(--s-pod-top) var(--s-pod-edge) var(--s-pod-bottom) var(--s-pod-gutter)',
-        // `height` and `minHeight` together, and both are load-bearing. Without
-        // the height the board is auto-sized and the `fr` rows below size to
-        // their content instead of to the frame; without `minHeight: 0` a grid
-        // item refuses to shrink under its content's intrinsic size and the
-        // whole board runs off the bottom. Measured with neither: first place's
-        // figure was cut in half by the frame's edge.
+        // Both load-bearing. Without the height the halves are auto-sized and
+        // the podium's percentage step heights have nothing to be a percentage
+        // *of*; without `minHeight: 0` a grid item refuses to shrink under its
+        // content and the board runs off the bottom.
         height: '100%',
         minHeight: 0,
         minWidth: 0,
       }}
     >
-      {/* ── The vertical is fractions, never `vw` ──
+      {/* ── The podium ──
 
-          Sizing these heights in `vw` like the rest of the wall overflows
-          off-ratio: the content comes to 55.4vw of height, and a 2000x1100 frame
-          has only 55.0vw of height to give it. `fr` asks for a share of whatever
-          height the frame actually has, so first place is 84% of the board at
-          every aspect rather than 815px at one of them. */}
-      {/* **`auto` for the panel, not a fraction.** The panel sizes to its own
-          content and first place takes whatever is left, so a change to the
-          panel's type or padding cannot silently squeeze the card by a
-          proportion nobody chose. The card shortening is the point — the panel
-          lives in the space that shortening creates. */}
+          `flex-end`, so three cards of three heights share one baseline. That
+          shared floor is the whole idea: without it they are three cards of
+          arbitrary size, and with it they are steps. Drawn 2-1-3 so first place
+          is centre, which is where a podium puts it and where nobody has to work
+          the order out. */}
       <div
         style={{
-          display: 'grid',
-          gridTemplateRows: 'minmax(0, 1fr) auto',
-          rowGap: 'var(--s-pod-stack-gap, 2.8vw)',
+          display: 'flex',
+          alignItems: 'flex-end',
+          gap: 'var(--s-pod-gap)',
+          // Definite, so `--h-pod-step` has something to resolve against.
+          height: '100%',
+          minWidth: 0,
           minHeight: 0,
         }}
       >
+        <PodiumCard team={second} place={2} />
         <PodiumCard team={first} place={1} />
-        <MoverPanel ranked={ranked} />
+        <PodiumCard team={third} place={3} />
       </div>
 
       <div
         style={{
           display: 'grid',
-          // 36/58, from 42.3/52.1. The list took height from the cards when its
-          // rows gained a mark: a row that must hold a 48px disc cannot be 57px
-          // tall, and seven of them is 100px the cards had to find.
-          gridTemplateRows: '36fr 58fr',
+          gridTemplateRows: 'auto minmax(0, 1fr)',
           rowGap: 'var(--s-pod-stack-gap, 2.8vw)',
           minWidth: 0,
           minHeight: 0,
         }}
       >
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            columnGap: 'var(--s-pod-gap)',
-            minWidth: 0,
-          }}
-        >
-          <PodiumCard team={second} place={2} />
-          <PodiumCard team={third} place={3} />
-        </div>
-
+        <MoverPanel ranked={ranked} />
         <Strip ranked={visible} fromRank={PODIUM_PLACES + 1} />
       </div>
     </div>

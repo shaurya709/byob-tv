@@ -65,14 +65,14 @@ for (const [width, height] of SIZES) {
     // 3.9px. The rule that keeps falling over is that the outermost *ink* is not
     // always the outermost *box*.
     //
-    // `.tv-pod-plinth`, not `.tv-pod-card`: the card is positioned inside the
+    // `.tv-pod-slot`, not `.tv-pod-card`: the card is positioned inside the
     // plinth and inset from the bottom, so its box is not the object's. The mark
     // stays out of this list — it bobs, so its top depends on which animation
     // frame the measurement caught.
     const tops = [
-      ...document.querySelectorAll('.tv-pod-numeral, .tv-pod-plinth, .tv-card-cell'),
+      ...document.querySelectorAll('.tv-pod-numeral, .tv-pod-slot, .tv-card-cell'),
     ].map((el) => el.getBoundingClientRect().top)
-    const cards = [...document.querySelectorAll('.tv-pod-plinth')].map((el) =>
+    const cards = [...document.querySelectorAll('.tv-pod-slot')].map((el) =>
       el.getBoundingClientRect(),
     )
     // The strip's own rows, addressed by class rather than by position. The

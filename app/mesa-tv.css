@@ -292,6 +292,19 @@
      13.6° from the brand tangerine, and its numeral clears 4.51:1 — real AA
      rather than large-only.
 
+     ── They are type now, and that changed what they have to clear ──
+
+     The metals were foot strips: filled shapes, which have no text-contrast
+     floor. They are now the rank numerals themselves, set on the white page, and
+     display type has to clear 3:1. Measured on the values as specified: gold
+     **2.25:1** and silver **2.22:1** — both fail, and would fail on a wall read
+     at six metres in a way a laptop at arm's length does not show.
+
+     So gold and silver are darkened until they clear it, **with hue and
+     saturation held** so each still reads as its own metal: gold 39.1° at
+     3.22:1, silver 207.7° at 3.20:1. Bronze needed no darkening; it needed
+     pushing redder, for a different reason recorded below.
+
      ── Three literals, and that is now the whole exemption ──
 
      There were six. Each metal also carried a dark "ink" for the numeral inside
@@ -299,22 +312,10 @@
      Deep Teal above it, white inside — those three had nothing left to colour.
      They are deleted rather than left in place: a token nobody reads is a
      literal this file is claiming an exemption for and not using. */
-  --metal-gold: #D9A441;
-  --metal-silver: #A8AFB5;
+  --metal-gold: #BA8625;
+  --metal-silver: #88919A;
   --metal-bronze: #CD6237;
 
-  /* ── Each metal as a ramp, so it reads as metal rather than as a colour ──
-
-     A flat fill of any of the three reads as yellow, grey and orange — which is
-     what a single hex *is*. What makes a surface look metallic is a gradient
-     from a shaded edge through the body to a specular highlight, so each base
-     gets one step darker and one step lighter.
-
-     Both steps are mixes against `--midnight-charcoal` and `--white`, which are
-     brand tokens, so the exemption above still covers exactly three literals and
-     gains no more. */
-  --metal-lo: 26%;
-  --metal-hi: 48%;
 
   /* ========= PODIUM — a spine, three cards on plinths, seven pills =========
 
@@ -346,9 +347,23 @@
      `vw`. The mark diameters are percentages of their card's width, which is
      `vw`, so they scale with the type rather than with the frame's aspect. */
   --w-pod-spine: 12.5vw;
-  --w-pod-card-1: 34.5vw;
-  --w-pod-card-r: 21.1vw;
-  --s-pod-gap: 1.7vw;
+
+  /* ── The board is two halves: a stepped podium, and the panel over the list ──
+
+     Three equal-width cards, bases on one line, heights descending — rank 1
+     centre and tallest, 2 to its left, 3 to its right. Equal widths because a
+     podium's steps *are* equal: the step is height, and rank is said again by
+     the metal on the numeral.
+
+     **The cards are far narrower than they were.** Three of them now share a
+     half-frame that first place used to have most of: 12.1vw each against its
+     old 34.5vw. The type had to come down with them — see `--t-pod-fig`, which
+     is the one real cost of this arrangement. */
+  --w-pod-half-gap: 2.6vw;
+  --h-pod-step-1: 100%;
+  --h-pod-step-2: 82%;
+  --h-pod-step-3: 68%;
+  --s-pod-gap: 1.6vw;
   --s-pod-gutter: 3.5vw;
   --s-pod-edge: 3.8vw;
   --s-pod-top: 4.5vw;
@@ -357,8 +372,10 @@
   /* The white disc, as a share of its card's width. Rank 1's is half the card;
      the short cards give theirs slightly less, so the step between them reads
      as more than the cards' own size difference. */
-  --d-pod-disc-1: 16.6vw;
-  --d-pod-disc-r: 7vw;
+  /* One diameter for all three. The cards are the same width now, so the mark is
+     width-bound on every one of them and a per-place size would only mean two of
+     the three were not filling their card. */
+  --d-pod-disc: 8.6vw;
 
   /* The badge, as a share of its card's width. The short cards' is a *larger*
      share so that all three badges land at a similar absolute size — a badge
@@ -366,11 +383,6 @@
      read across a corridor, and the numeral is one of the three things carrying
      rank. */
 
-  /* The plinth: the metal rect the card stands on, visible only below it.
-     Rank 1's is thicker in absolute terms, which is what the design asks for,
-     even though it is a smaller share of its taller card. */
-  --h-pod-plinth-1: 1.7vw;
-  --h-pod-plinth-r: 1.4vw;
 
   --r-pod-card: 1.25vw;
 
@@ -386,8 +398,10 @@
      the element's box to the cap itself, measured on this face at 0.688 of the
      em, agreeing with the canvas metric to three places. A line box is not a
      glyph, and every offset here would be a fifth of an em out if it were. */
-  --fs-pod-num-1: clamp(44px, 9.5vw, 199px);
-  --fs-pod-num-r: clamp(28px, 6.2vw, 130px);
+  /* One size for all three. The cards are the same width now, so a per-place
+     numeral would only mean two of the three were sized for a card that does not
+     exist. Rank is carried by the step and by the metal instead. */
+  --fs-pod-num: clamp(34px, 7.4vw, 155px);
   --k-pod-num-cap: 0.688;
   /* How far the numeral hangs off the card, as a share of its own cap height and
      its own width. It **sits on the corner** rather than inset from it, so it
@@ -396,19 +410,15 @@
   /* How far the numeral hangs off the card's left edge, as a share of its own
      cap.
 
-     It went the wrong way once — pulled in until the numerals sat flush with
-     their own left edges, which reads as a numeral *inside* the card rather than
-     one standing on its corner. These are out past where they started: first
-     place hangs about a third of its cap, and the short cards very nearly as
-     much, so the horizontal overhang is in the same range as the 0.44 vertical
-     one and the glyph straddles the corner rather than perching on the top edge.
-
-     The short cards stay a shade tighter than first place because their card has
-     a neighbour 33px to its left, and the daylight between a numeral and the
-     card it is *not* part of is the thing that stops it being read as that
-     card's. Measured below, not estimated. */
-  --k-pod-num-left: 0.47;
-  --k-pod-num-left-r: 0.31;
+     **Re-cut for the stepped podium.** It was 0.47, tuned when first place stood
+     alone with open frame to its left. The three cards are neighbours now, and a
+     numeral hanging further than the gap between them reaches over the card next
+     door — where a bronze glyph on deep forest green is nearly invisible and
+     reads as a mistake. Measured: at 0.3 the third numeral's box crossed first
+     place's edge by 6px and cleared only on that glyph's own side bearing, which
+     is not something to depend on when the glyph can change. At 0.22 against a
+     1.6vw gap the *box* clears too. */
+  --k-pod-num-left: 0.22;
 
   /* One cycle: the sweep, then the rest. **Both got longer, and the rest got
      longer by more.** At 7s the highlight crossed in 2.7s and came back every
@@ -418,14 +428,7 @@
      something happened and a sheen that hurried would compete with an
      overtake. */
   --t-pod-shine: 18s;
-  --s-pod-card-pad: 3.2vw 1.8vw 2vw;
-  /* Head room grew on all three when the badges became numerals that break the
-     card's top edge: the numeral now reaches into the card's upper-left corner,
-     and the mark has to start below it. Measured before the change, second
-     place's numeral cut 6px into its own disc. The short cards' disc came down
-     to 8.6vw in the same move — head room and disc size are one budget, and
-     taking the room without giving any back just moves the collision. */
-  --s-pod-card-pad-r: 3.1vw 1.4vw 1.1vw;
+  --s-pod-card-pad: 2.4vw 1.1vw 1.4vw;
 
   /* ── The list ──
 
@@ -506,8 +509,15 @@
   --s-pod-spine-lead: 1.1vw;
   --s-pod-spine-gap: 1.95vw;
   --t-pod-count: 800 clamp(30px, 4.2vw, 88px) / 1 var(--font-sans);
-  --t-pod-fig-1: 800 clamp(40px, 5.5vw, 115px) / 1 var(--font-sans);
-  --t-pod-fig-r: 800 clamp(24px, 3.1vw, 65px) / 1 var(--font-sans);
+  /* ── The cost of the stepped arrangement, stated plainly ──
+
+     One figure size for three cards, and it is **2.4vw against first place's old
+     5.5vw**. Nothing was shrunk to make a name fit; the figure no longer fits the
+     card. `₹54,782` sets about 3.9px of width per px of font size, and a 233px
+     card has ~191px of content width, which puts the ceiling near 49px however
+     the rest of the card is arranged. Widening the podium half is the only thing
+     that buys the figure back. */
+  --t-pod-fig: 800 clamp(20px, 2.4vw, 50px) / 1 var(--font-sans);
   --t-pod-fig-row: 800 clamp(13px, 1.45vw, 30px) / 1 var(--font-sans);
   --t-pod-rank-row: 800 clamp(12px, 1.3vw, 27px) / 1 var(--font-sans);
 
@@ -522,8 +532,7 @@
      These are raised about a fifth to put the cap back where it was; the width
      they give back is what lets a long venture name fit its row without
      truncating. */
-  --t-pod-name-1: 400 clamp(16px, 1.86vw, 39px) / 1.05 var(--font-condensed);
-  --t-pod-name-r: 400 clamp(12px, 1.38vw, 29px) / 1.05 var(--font-condensed);
+  --t-pod-name: 400 clamp(11px, 1.3vw, 27px) / 1.05 var(--font-condensed);
   --t-pod-name-row: 400 clamp(15px, 1.68vw, 35px) / 1.05 var(--font-condensed);
   --t-pod-label: 800 clamp(8px, 0.72vw, 15px) / 1.3 var(--font-sans);
 
@@ -531,8 +540,7 @@
      wider it opens — a tracked line at 15px needs more air than the same
      treatment at 31px to read as tracked at all rather than as loose. */
   --track-pod-fig: -0.025em;
-  --track-pod-name-1: 0.14em;
-  --track-pod-name-r: 0.16em;
+  --track-pod-name: 0.1em;
   --track-pod-name-row: 0.07em;
   --track-pod-label: 0.2em;
 
@@ -1213,66 +1221,24 @@
      The plinth is the same width as the card, not wider. Drawing it wider was
      tried — it reads as a shadow rather than as a base, and the approved design
      measures the two at the same width to the pixel. */
-  .tv-pod-plinth {
+  /* One step of the podium: the box a card and its numeral share.
+     **Not a plinth any more.** It used to carry a metal strip under the card and
+     was named for it; the metal moved to the numerals and the strip was removed,
+     so the name went with it rather than becoming a small lie in the markup. */
+  .tv-pod-slot {
     position: relative;
-    width: 100%;
-    height: 100%;
-    /* A ramp across the strip rather than a flat fill — shaded at the ends,
-       brightest just off centre. This is what separates gold from yellow. */
-    background: linear-gradient(
-      98deg,
-      color-mix(in srgb, var(--midnight-charcoal) var(--metal-lo), var(--pod-metal)) 0%,
-      var(--pod-metal) 34%,
-      color-mix(in srgb, var(--white) var(--metal-hi), var(--pod-metal)) 52%,
-      var(--pod-metal) 70%,
-      color-mix(in srgb, var(--midnight-charcoal) var(--metal-lo), var(--pod-metal)) 100%
-    );
-    border-radius: var(--r-pod-card);
-    /* Declared here because `--fs-pod-num` arrives here, inline, per card. A
+    /* Equal shares of the podium half, whatever that half turns out to be. */
+    flex: 1;
+    min-width: 0;
+    height: var(--h-pod-step);
+    /* Derived on the slot rather than at `:root`. It could live at either now
+       that `--fs-pod-num` is a single root token, and it stays here because the
+       moment a per-place size returns it has to be here — a
        `calc()` on it written at `:root` substitutes a variable that does not
        exist there, goes invalid at computed-value time, and hands every numeral
        a junk size on a page that otherwise looks correct — the weekly grid did
        exactly that once, rendering marks at 10.3 x 16px. */
     --d-pod-num-cap: calc(var(--fs-pod-num) * var(--k-pod-num-cap));
-  }
-
-  /* ── The travelling sheen ──
-
-     **A transform, not an animated `background-position`.** Both look identical;
-     only one is compositor work. Ten of these repainting continuously for the
-     weeks this page stays open is main-thread cost on a laptop driving a TV, and
-     a moving gradient position repaints every frame where a translated layer
-     does not.
-
-     It needs its own element rather than a pseudo on the plinth, because a
-     `clip-path` on a transformed element travels *with* the element and stops
-     clipping anything. A wrapper that holds still and a child that moves inside
-     it is the version that works.
-
-     **This spends the wall's rule that movement means something happened**, and
-     it is the third thing on the board to do so. It is kept slow and low in
-     contrast, and it rests for most of its cycle, so it reads as a surface
-     property rather than as an event. If an overtake ever stops landing on this
-     board, this is the first thing to remove. */
-  .tv-pod-shine {
-    position: absolute;
-    inset: 0;
-    border-radius: var(--r-pod-card);
-    overflow: hidden;
-    pointer-events: none;
-  }
-
-  .tv-pod-shine::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      100deg,
-      transparent 38%,
-      color-mix(in srgb, var(--white) 62%, transparent) 50%,
-      transparent 62%
-    );
-    animation: tv-shine var(--t-pod-shine) cubic-bezier(0.5, 0, 0.5, 1) infinite;
   }
 
   /* ── One numeral, two colours, split by the card's edge ──
@@ -1284,7 +1250,7 @@
      nearer the corner than first place's does. */
   .tv-pod-numeral {
     position: absolute;
-    left: calc(-1 * var(--d-pod-num-cap) * var(--k-pod-num-hang));
+    left: calc(-1 * var(--d-pod-num-cap) * var(--k-pod-num-left));
     top: calc(-1 * var(--d-pod-num-cap) * var(--k-pod-num-up));
     font: 400 var(--fs-pod-num) / 1 var(--font-display-black), var(--font-serif);
     /* Trims the box to the cap, so `top` positions the cap and not a line box. */
@@ -1310,7 +1276,7 @@
   }
 
   .tv-pod-num-outside .tv-pod-numeral {
-    color: var(--deep-teal);
+    color: var(--pod-metal);
   }
 
   .tv-pod-num-inside {
@@ -1347,7 +1313,6 @@
   .tv-pod-card {
     position: absolute;
     inset: 0;
-    bottom: var(--h-pod-plinth);
     background: var(--pod-fill-card);
     border-radius: var(--r-pod-card);
     display: flex;
@@ -1570,7 +1535,6 @@
       animation: none;
     }
 
-    .tv-pod-shine,
     .tv-pod-underbar-shine {
       display: none;
     }
