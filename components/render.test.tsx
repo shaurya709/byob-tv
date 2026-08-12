@@ -4,10 +4,12 @@ import { act } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, expect, it } from 'vitest'
 
+import { FleaDial } from '@/components/FleaDial'
 import { Podium, podiumTeams } from '@/components/Podium'
 import { VenturePill } from '@/components/VenturePill'
 import { WeeklyLeaderboard, columnsOf } from '@/components/WeeklyLeaderboard'
 import { HOT_TODAY_MIN } from '@/config'
+import type { CountdownState } from '@/lib/countdown'
 import { formatRupees, ordinal } from '@/lib/format'
 import { timelineFor } from '@/lib/kickTimeline'
 import { competingTeams, rankTeams } from '@/lib/ranking'
@@ -39,6 +41,57 @@ const TRADING = teams([
   { teamId: 'SLE-C402', ventureName: 'Kite Coffee', totalRevenue: 228_200, totalUnits: 543 },
   { teamId: 'SLE-C403', ventureName: 'Solstice', totalRevenue: 216_400, totalUnits: 515 },
 ])
+
+describe('FleaDial', () => {
+  const state = (over: Partial<CountdownState>): CountdownState => ({
+    display: '25',
+    mode: 'days',
+    numeric: 25,
+    progress: 0.5,
+    ...over,
+  })
+
+  it('puts the figure beside the ring in every mode, never inside it', () => {
+    // The ring is a dial and nothing else. Every mode has identical structure,
+    // so nothing relocates at a threshold the wall crosses at 3am unobserved.
+    expect(render(<FleaDial state={state({})} />)).toContain('25 days')
+    expect(
+      render(<FleaDial state={state({ display: '9D 4H', mode: 'daysHours', numeric: 9 })} />),
+    ).toContain('9D 4H')
+    expect(
+      render(<FleaDial state={state({ display: '04:12:33', mode: 'timer', numeric: 300 })} />),
+    ).toContain('04:12:33')
+    expect(
+      render(<FleaDial state={state({ display: 'LIVE NOW', mode: 'live', numeric: null })} />),
+    ).toContain('LIVE NOW')
+  })
+
+  it('names the countdown for a screen reader', () => {
+    const host = document.createElement('div')
+    document.body.append(host)
+    const root = createRoot(host)
+    act(() => root.render(<FleaDial state={state({})} />))
+    expect(host.querySelector('[role="img"]')?.getAttribute('aria-label')).toBe(
+      'Time until Mesa Flea: 25 days',
+    )
+    act(() => root.unmount())
+    host.remove()
+  })
+
+  it('draws the arc from the progress, and closes it entirely when live', () => {
+    const host = document.createElement('div')
+    document.body.append(host)
+    const root = createRoot(host)
+    act(() => root.render(<FleaDial state={state({ progress: 0 })} />))
+    const empty = host.querySelectorAll('circle')[1].getAttribute('stroke-dashoffset')
+    act(() => root.render(<FleaDial state={state({ mode: 'live', display: 'LIVE NOW', progress: 1 })} />))
+    const full = host.querySelectorAll('circle')[1].getAttribute('stroke-dashoffset')
+    expect(Number(empty)).toBeCloseTo(2 * Math.PI * 19.5, 3)
+    expect(Number(full)).toBeCloseTo(0, 6)
+    act(() => root.unmount())
+    host.remove()
+  })
+})
 
 describe('Podium', () => {
   it('renders the top three with names, ranks and revenue', () => {

@@ -152,16 +152,20 @@
      as one rank of furniture across the band. Same clamp as --t-tv-heading. */
   --h-tv-logo: clamp(22px, 2.4vw, 50px);
 
-  /* The Mesa Flea calendar. The label sits above the page, so the stack has to
-     clear the 3.4vw header band: label + gap + page ≤ the band, which is what
-     caps the page at 2.3vw. The figures inside step down as they get longer —
-     a day count, then days-and-hours, then a full ticking clock. */
+  /* The Mesa Flea dial. The label sits above it, so the stack has to clear the
+     3.4vw header band: label + gap + ring ≤ the band, which is what caps the
+     ring at 2.3vw.
+
+     **One ring at a constant diameter, and one figure beside it, in every
+     mode.** The header band's height therefore never changes as the date
+     approaches, and nothing relocates at a threshold — which matters because
+     the wall crosses those thresholds at three in the morning with nobody
+     watching. This replaces a 52x40 calendar drawing whose binding rings, at
+     44px on a 1920 frame, read as speckle rather than as a calendar. */
   --t-tv-strip-label: 700 clamp(10px, 0.85vw, 18px) / 1 var(--font-sans);
   --h-tv-cal: clamp(26px, 2.3vw, 48px);
-  --t-tv-cal-day: 700 clamp(13px, 1.2vw, 25px) / 1 var(--font-sans);
-  --t-tv-cal-unit: 700 clamp(8px, 0.7vw, 14px) / 1 var(--font-sans);
-  --t-tv-cal-mid: 700 clamp(9px, 0.85vw, 18px) / 1 var(--font-sans);
-  --t-tv-cal-timer: 700 clamp(9px, 0.8vw, 17px) / 1 var(--font-sans);
+  --w-tv-cal-stroke: 5;
+  --t-tv-cal-figure: 800 clamp(11px, 1vw, 21px) / 1 var(--font-sans);
 
   /* ========= PODIUM BAND =========
 
