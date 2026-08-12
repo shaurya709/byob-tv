@@ -175,14 +175,11 @@ describe('Podium', () => {
     act(() => root.render(<Podium ranked={rankTeams(competingTeams(all))} />))
     expect(host.querySelectorAll('.tv-pill')).toHaveLength(0)
     expect(host.querySelectorAll('.tv-pod-card')).toHaveLength(3)
-    // Six numerals for three cards. Each rank is drawn twice — once above the
-    // card's edge in Deep Teal and once inside it in white — and the pair is one
-    // glyph split by the edge. A count of three would mean one half is missing
-    // and the numerals are rendering whole in a single colour, which is the
-    // failure this treatment can have while still looking deliberate.
-    expect(host.querySelectorAll('.tv-pod-numeral')).toHaveLength(6)
-    expect(host.querySelectorAll('.tv-pod-num-outside')).toHaveLength(3)
-    expect(host.querySelectorAll('.tv-pod-num-inside')).toHaveLength(3)
+    // One numeral per pillar, and one metal foot under each. The numeral used to
+    // be drawn twice and split by the card's edge; it floats clear of the card
+    // now, so three is the right count and six would mean the split came back.
+    expect(host.querySelectorAll('.tv-pod-numeral')).toHaveLength(3)
+    expect(host.querySelectorAll('.tv-pod-foot')).toHaveLength(3)
     // One row and one bar per rank 4-10. The pill that used to be both is gone:
     // a shape doing two jobs is what this list was rejected for.
     expect(host.querySelectorAll('.tv-pod-stack')).toHaveLength(7)
@@ -204,9 +201,24 @@ describe('Podium', () => {
     document.body.append(host)
     const root = createRoot(host)
     act(() => root.render(<Podium ranked={rankTeams(TRADING)} />))
-    const marks = [...host.querySelectorAll('[class*="tv-idle-"]')]
+    // **Scoped to the mark band.** The rank numerals dance on the same
+    // repertoire now, so an unscoped query returns six elements and this
+    // assertion would fail on a board that is behaving correctly.
+    const marks = [...host.querySelectorAll('.tv-pod-mark-band [class*="tv-idle-"]')]
     expect(marks).toHaveLength(3)
     expect(new Set(marks.map((el) => el.className)).size).toBe(3)
+
+    // And each numeral runs a *different* timeline from the mark beneath it, or
+    // the pair would bob as one rigid object rather than as two things that
+    // happen to be near each other.
+    const slots = [...host.querySelectorAll('.tv-pod-slot')]
+    expect(slots).toHaveLength(3)
+    for (const slot of slots) {
+      const numeral = slot.querySelector('.tv-pod-numeral')?.className ?? ''
+      const mark = slot.querySelector('.tv-pod-mark-band [class*="tv-idle-"]')?.className ?? ''
+      expect(numeral).toMatch(/tv-idle-/)
+      expect(numeral.replace('tv-pod-numeral ', '')).not.toBe(mark)
+    }
     act(() => root.unmount())
     host.remove()
   })

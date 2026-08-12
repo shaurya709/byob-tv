@@ -65,12 +65,16 @@ for (const [width, height] of SIZES) {
     // 3.9px. The rule that keeps falling over is that the outermost *ink* is not
     // always the outermost *box*.
     //
-    // `.tv-pod-slot`, not `.tv-pod-card`: the card is positioned inside the
-    // plinth and inset from the bottom, so its box is not the object's. The mark
-    // stays out of this list — it bobs, so its top depends on which animation
-    // frame the measurement caught.
+    // **`.tv-pod-mover` is in the list too, and that is the fourth correction to
+    // it.** The podium is bottom-anchored now, so its own top is hundreds of
+    // pixels down and reporting that as "clearance" would describe a board with
+    // acres of room while the mover panel sat at the real top edge. The number
+    // has to mean the same thing on both slides: air above the topmost thing.
+    //
+    // The mark stays out — it bobs, so its top depends on which animation frame
+    // the measurement caught.
     const tops = [
-      ...document.querySelectorAll('.tv-pod-numeral, .tv-pod-slot, .tv-card-cell'),
+      ...document.querySelectorAll('.tv-pod-numeral, .tv-pod-slot, .tv-pod-mover, .tv-card-cell'),
     ].map((el) => el.getBoundingClientRect().top)
     const cards = [...document.querySelectorAll('.tv-pod-slot')].map((el) =>
       el.getBoundingClientRect(),

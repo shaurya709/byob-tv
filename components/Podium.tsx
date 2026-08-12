@@ -53,13 +53,13 @@ const IDLE_TIMELINES = ['tv-idle-1', 'tv-idle-2', 'tv-idle-3'] as const
  * place's padding because two of the branches disagreed.
  */
 const PLACES = {
-  // Rank 1 centre and tallest, 2 to its left, 3 to its right. The array order
-  // below is the *drawing* order and therefore the left-to-right order; the keys
-  // are the ranks. Keeping them apart is what lets the podium read 2-1-3 across
-  // while the numerals still read 1-2-3 by height.
-  1: { fill: 'var(--deep-teal)', metal: 'var(--metal-gold)', step: 'var(--h-pod-step-1)' },
-  2: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-silver)', step: 'var(--h-pod-step-2)' },
-  3: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-bronze)', step: 'var(--h-pod-step-3)' },
+  // Rank 1 centre and tallest, 2 to its left, 3 to its right. `riser` is how
+  // many **fixed** steps this pillar stands above rank 3 — not a fraction of
+  // anything, because a proportional step flattens the staircase the moment the
+  // podium gets shorter, and the staircase is the composition.
+  1: { fill: 'var(--deep-teal)', metal: 'var(--metal-gold)', riser: 2 },
+  2: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-silver)', riser: 1 },
+  3: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-bronze)', riser: 0 },
 } as const
 
 type Place = keyof typeof PLACES
@@ -133,53 +133,27 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
       style={
         {
           '--pod-metal': p.metal,
-          '--h-pod-step': p.step,
+          '--h-pod-riser-here': `calc(${p.riser} * var(--h-pod-riser))`,
         } as React.CSSProperties
       }
     >
-      {/* The numeral, whole, in Deep Teal — and then the card is painted over
-          it, so what survives is exactly the part hanging off the corner. Its
-          twin inside the card supplies the white half. The rank is announced
-          once, by the copy inside, so a screen reader does not hear it twice. */}
-      <span className="tv-pod-num-outside" aria-hidden>
-        <span className="tv-pod-numeral">{place}</span>
+      {/* Above the card, not on it. It dances on the same repertoire the marks
+          use, so the numeral reads as belonging to the venture underneath rather
+          than as a label printed on the frame — and on a *different* timeline
+          from its own mark, or the pair would move as one rigid object. */}
+      <span className="tv-pod-numeral-slot">
+        <span className={`tv-pod-numeral ${idleOf(place + 1)}`}>{place}</span>
       </span>
 
       <div
         className="tv-pod-card"
-        style={
-          {
-            '--pod-fill-card': p.fill,
-          } as React.CSSProperties
-        }
+        style={{ '--pod-fill-card': p.fill } as React.CSSProperties}
       >
-        <span className="tv-pod-num-inside">
-          <span className="tv-pod-numeral">{place}</span>
-        </span>
-
-        {/* `perspective` sits on the mark's **direct parent**. It applies to an
-            element's own children and nothing deeper, so putting it on the row
-            of cards leaves the idle's glance rendering as a flat horizontal
-            squash — the mark being crushed rather than turning to look. */}
-        {/* `width: 100%` matters. Without it this shrink-wraps to its child, and
-            the child's own width then resolves against a box that is already the
-            child's width — the disc collapsed to a dot on the first render. */}
-        {/* `flex: 1`, not a fixed box with the text pushed down by `auto`. The
-            slack has to fall *around* the mark rather than all above the name:
-            measured against the approved design, pinning the text to the foot
-            left first place with 32% of its card empty between the mark and its
-            own name, where the design leaves about 10%. Centring the mark in
-            whatever the text does not use puts it back. */}
-        <div
-          style={{
-            flex: 1,
-            minHeight: 0,
-            perspective: '900px',
-            width: '100%',
-            display: 'grid',
-            placeItems: 'center',
-          }}
-        >
+        <div className="tv-pod-mark-band">
+          {/* The band renders whether or not there is a team, so the pillar holds
+              its height through the first paint rather than assembling itself on
+              the wall. Empty rather than a placeholder mark — a grey circle is
+              filler, and this wall carries none. */}
           <div
             className={team === undefined ? undefined : idleOf(place)}
             style={{
@@ -188,10 +162,6 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
               ...(team === undefined ? {} : { willChange: 'transform' }),
             }}
           >
-            {/* The disc renders whether or not there is a team, so the card holds
-                its geometry through the first paint rather than assembling itself
-                on the wall. Empty rather than a placeholder mark — a grey circle
-                is filler, and this wall carries none. */}
             <div className="tv-pod-disc" style={{ width: '100%', height: '100%' }}>
               {team === undefined ? null : (
                 <VentureLogo team={team} size={`calc(var(--d-pod-disc) * ${MARK_IN_DISC})`} />
@@ -208,9 +178,6 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
               letterSpacing: 'var(--track-pod-name)',
               textTransform: 'uppercase',
               color: 'var(--pod-name-ink)',
-              // Clipped, never wrapped: the card is a fixed stack and a second
-              // line pushes the figure out of it — and the figure is the reason
-              // the card exists.
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -222,10 +189,6 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
             className="tv-figure"
             style={{
               display: 'block',
-              // Measured off the approved design, where the air between a name
-              // and its figure is a real interval rather than a line gap — it is
-              // what stops a tracked label reading as a caption glued to the
-              // number underneath it.
               marginTop: '0.3em',
               font: 'var(--t-pod-fig)',
               letterSpacing: 'var(--track-pod-fig)',
@@ -236,6 +199,8 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
           </span>
         </div>
       </div>
+
+      <div className="tv-pod-foot" />
     </div>
   )
 }
@@ -324,7 +289,15 @@ function Strip({ ranked, fromRank }: { ranked: readonly Team[]; fromRank: number
     <div
       style={{
         display: 'grid',
-        gridTemplateRows: `repeat(${teams.length}, 1fr)`,
+        // **`auto` rows with the slack in the gaps, not `1fr`.** With equal
+        // fractional rows each row centres its content and leaves a margin
+        // inside itself, so the last bar stopped 16.6px above the column's
+        // bottom and the podium's bases sat lower than it — two bottom edges on
+        // one frame, neither of them wrong on its own. `space-between` puts the
+        // first row flush to the top and the last flush to the bottom, so the
+        // final bar's underside *is* the column's floor and the podium meets it.
+        gridTemplateRows: `repeat(${teams.length}, auto)`,
+        alignContent: 'space-between',
         rowGap: 'var(--s-pod-row-gap)',
         height: '100%',
       }}
