@@ -162,24 +162,21 @@
   --s-card-gap: var(--s-3);
   --s-card-pad: var(--s-2);
 
-  /* How far the mark is held off the green panel's edges. The panel itself
-     bleeds to the card's edges — a green section inset on all four sides reads
-     as a swatch sitting on a card rather than as the card's own top half. */
+  /* How much room the mark leaves around itself in the space above the base. */
   --s-card-inset: var(--s-2);
 
-  /* The logo panel. Deep Forest Green is the logomark token — the same green the
-     card back will use when the flip lands, so a card mid-flip is one object in
-     one colour rather than two. */
-  --tv-card-panel: var(--deep-forest-green);
+  /* The gap between the floating disc and the base it hovers over. Small: the
+     shadow is what sells the float, not the distance. */
+  --s-card-lift: var(--s-1);
 
-  /* ── The text block is a fixed height on all forty cards ──
+  /* ── The base is a fixed height on all forty cards ──
 
-     Row-to-row variance is absorbed **entirely by the logo half**. That is the
-     rule "if the bottom half is tight, take the space from the logo, never from
-     a figure", turned into geometry: the name and both figures are the same
-     size on rank 1 and rank 40, so forty cards read as one system and only the
-     marks change scale. It also means the row-4 floor is a single subtraction
-     rather than a per-row negotiation. */
+     Row-to-row variance is absorbed **entirely by the disc**. That is the rule
+     "if the bottom half is tight, take the space from the logo, never from a
+     figure", turned into geometry: the name and both figures are the same size
+     on rank 1 and rank 40, so forty cards read as one system and only the marks
+     change scale. It also means the row-4 floor is a single subtraction rather
+     than a per-row negotiation. */
   --h-card-text: 4.1vw;
 
   /* The card's own width, spelled out because the mark needs it as a *length*
@@ -358,6 +355,9 @@
   --idle-amp: 16;
   --idle-turn: 34;
   --idle-tilt: 9;
+  /* The look-down, in degrees. A `rotateX` under the same perspective the
+     glance uses, so the mark drops its *face* rather than sliding down. */
+  --idle-down: 30;
 
   --track-tv-tight: -0.02em;
 
@@ -458,6 +458,64 @@
   86%, 100% { transform: rotateY(0deg) rotate(0deg); }
 }
 
+/* ── The weekly board's row-1 look ──
+
+   Row 1 only. `/podium`'s three marks idle; the other thirty cards on this
+   board hold still, so the top row reading as alive is what marks it out.
+
+   Built from the podium's repertoire — bob, glance, tilt — plus one move the
+   podium does not have: **the look down**, a `rotateX` that drops the mark's
+   face toward the board beneath it, as though it were reading its own figure.
+
+   **The budget is 70% down, 30% side**, and it is counted rather than
+   estimated: each timeline spends 28% of its cycle in a down pose and 12% in a
+   side pose, and the rest at rest or bobbing. Change one hold and the ratio
+   moves, so the percentages below are the specification, not decoration.
+
+   Three timelines at three durations (17s / 19s / 23s), assigned by column and
+   given a per-column phase offset, because ten marks on one row sharing a
+   duration *and* a phase would bob as one object. Different durations mean they
+   never fall back into step either.
+
+   Transform only, so this is compositor work rather than layout. */
+
+@keyframes tv-look-1 {
+  0%, 6%    { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
+  10%       { transform: translateY(calc(var(--idle-amp) * -1px)); }
+  16%       { transform: translateY(0); }
+  22%, 38%  { transform: rotateX(calc(var(--idle-down) * 1deg)); }
+  44%, 50%  { transform: rotateX(0deg); }
+  56%, 68%  { transform: translateY(calc(var(--idle-amp) * -0.2px)) rotateX(calc(var(--idle-down) * 0.8deg)); }
+  74%, 86%  { transform: rotateY(calc(var(--idle-turn) * 1deg)) rotate(calc(var(--idle-tilt) * 0.25deg)); }
+  92%, 100% { transform: translateY(0) rotateX(0deg) rotateY(0deg) rotate(0deg); }
+}
+
+@keyframes tv-look-2 {
+  0%, 5%    { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
+  8%, 28%   { transform: rotateX(calc(var(--idle-down) * 1deg)); }
+  34%       { transform: translateY(calc(var(--idle-amp) * -1px)) rotateX(0deg); }
+  40%       { transform: translateY(0); }
+  /* The double-take, downward: drop, back up, then commit to the look. */
+  44%, 52%  { transform: rotateX(calc(var(--idle-down) * 0.65deg)); }
+  58%       { transform: rotateX(0deg); }
+  64%, 70%  { transform: rotateY(calc(var(--idle-turn) * -1deg)); }
+  76%, 82%  { transform: rotateY(calc(var(--idle-turn) * 0.7deg)); }
+  88%, 100% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
+}
+
+@keyframes tv-look-3 {
+  0%        { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
+  6%        { transform: translateY(calc(var(--idle-amp) * -0.8px)); }
+  11%       { transform: translateY(0); }
+  16%       { transform: translateY(calc(var(--idle-amp) * -0.5px)); }
+  21%       { transform: translateY(0); }
+  28%, 46%  { transform: rotateX(calc(var(--idle-down) * 1deg)) rotate(calc(var(--idle-tilt) * -0.3deg)); }
+  52%, 58%  { transform: rotateX(0deg) rotate(0deg); }
+  62%, 72%  { transform: translateY(calc(var(--idle-amp) * -0.25px)) rotateX(calc(var(--idle-down) * 0.9deg)); }
+  78%, 90%  { transform: rotateY(calc(var(--idle-turn) * -1deg)); }
+  95%, 100% { transform: translateY(0) rotateX(0deg) rotateY(0deg); }
+}
+
 @layer components {
   /* Class rules live here, not at the top level, so Tailwind utilities can
      still override them. See the `.overline` note in globals.css for what
@@ -520,35 +578,53 @@
      rather than assuming — and the ~50px legibility floor is checked against the
      mark's rendered height, which is what actually shrinks. */
   .tv-card-row {
+    /* The disc gets the whole space above the base, less one inset, capped by
+       the card's width. Which of the two binds changes down the ramp — row 1 is
+       width-bound and rows 2-4 are height-bound — so `min()` says so rather
+       than assuming, and the ~50px legibility floor is checked against the
+       rendered height, which is what actually shrinks. */
     --d-card-logo: min(
-      calc(var(--h-card) - var(--h-card-text) - 2 * var(--s-card-inset)),
+      calc(var(--h-card) - var(--h-card-text) - var(--s-card-inset)),
       calc(var(--w-card) - 2 * var(--s-card-inset))
     );
   }
 
-  /* The green section, bleeding to the card's top edges.
+  /* ── The floating disc ──
 
-     **Every mark gets a mint hairline.** The marks are forty unknown images and
-     six brand tints, and two of those tints — Deep Forest Green and Deep Teal —
-     are this panel's own colour or near it, so those cards would show a letter
-     floating on green with the tile that carries the venture's identity
-     invisible. The ring gives every mark an edge without touching the tint
-     itself, which has to stay constant across both slides: a venture that
-     changed colour between the podium and the board would read as two ventures. */
-  /* Rounded at the base as well as the top. The top two corners are clipped by
-     the card's own radius and `overflow: hidden`, so only the bottom two have to
-     be asked for — left flat they gave the panel two sharp corners against the
-     text block while the card around it was rounded on all four, which read as
-     an unfinished block rather than as the card's own top half. */
-  .tv-card-panel {
-    background: var(--tv-card-panel);
-    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+     `preserve-3d`, because the disc has two faces and the back must stay behind
+     the front. **No `overflow: hidden` on this element or any ancestor of it** —
+     that flattens a 3D context and would push the Mesa back face through the
+     front of the logo. The marks are already circular PNGs, so there is nothing
+     left to clip anyway.
+
+     **The shadow is a `box-shadow` on the faces, never a `filter` on the disc.**
+     A `filter` of any kind forces the used value of `transform-style` to `flat`,
+     which silently destroys the 3D context — measured: with a `drop-shadow`
+     here, rotating a disc 180° showed its own front mirrored instead of the
+     Mesa back, because `backface-visibility` had nothing to work against. The
+     faces are circles in their own right, so a box shadow traces the disc
+     rather than a square box, and costs no filter. */
+  .tv-disc {
+    position: relative;
+    transform-style: preserve-3d;
+    border-radius: 50%;
   }
 
-  .tv-card-mark {
+  .tv-disc-face {
+    position: absolute;
+    inset: 0;
     border-radius: 50%;
-    box-shadow: 0 0 0 var(--stroke-thin)
-      color-mix(in srgb, var(--soft-mint) 45%, transparent);
+    backface-visibility: hidden;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 3px 6px color-mix(in srgb, var(--midnight-charcoal) 20%, transparent);
+  }
+
+  /* Mesa's own mark on the logomark green — the same green the removed logo
+     panel used, so a card mid-flip is one object in one colour. */
+  .tv-disc-back {
+    background: var(--deep-forest-green);
+    transform: rotateY(180deg);
   }
 
   /* One per team on the weekly board. Forty of these on one frame. */
@@ -642,6 +718,10 @@
     border-radius: var(--radius-xs);
   }
 
+  .tv-look-1 { animation: tv-look-1 17s ease-in-out infinite; }
+  .tv-look-2 { animation: tv-look-2 19s ease-in-out infinite; }
+  .tv-look-3 { animation: tv-look-3 23s ease-in-out infinite; }
+
   .tv-idle-1 { animation: tv-idle-1 17s ease-in-out infinite; }
   .tv-idle-2 { animation: tv-idle-2 19s ease-in-out infinite -6s; }
   .tv-idle-3 { animation: tv-idle-3 23s ease-in-out infinite -13s; }
@@ -650,6 +730,9 @@
      reduce-motion setting on, and a permanently moving mark is precisely what
      that setting exists to stop. */
   @media (prefers-reduced-motion: reduce) {
+    .tv-look-1,
+    .tv-look-2,
+    .tv-look-3,
     .tv-idle-1,
     .tv-idle-2,
     .tv-idle-3 {

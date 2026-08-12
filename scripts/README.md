@@ -176,7 +176,12 @@ flip on a public wall.
 Both are deliberately not emitted, and both teams show the coloured initial.
 To place them, rename the files `Team 22.png` / `Team 35.png` and re-run.
 
-### 4. Four fallback discs are the same colour as `/weekly`'s green panel
+### ~~4. Four fallback discs are the same colour as `/weekly`'s green panel~~ — RESOLVED
+
+The panel was removed. The marks now float as discs on the page's white, where every tint
+reads, and the mint hairline that was propping them up went with it. Kept below for the
+record, because the collision itself is still real and would return if any surface on this
+wall is ever painted `--deep-forest-green` behind a mark.
 
 `VentureLogo`'s six identity tints include `--deep-forest-green`, which is
 *exactly* the card's logo panel, and `--deep-teal`, which is close to it. Teams

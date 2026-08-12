@@ -81,22 +81,35 @@ at 1920 has been measured at −15.8px of clearance at 1600 × 900.
 
 ## 2. Card anatomy
 
-**Top half: the team's logo, on a Deep Forest Green panel.** Centred, contained, never
-cropped or stretched. Logos vary in aspect ratio, so fit within the half rather than
-filling it.
+**A base carrying the team's details, with the venture's mark floating above it as a
+disc.** There is no logo panel: the card *is* the base, and the mark hovers over it on the
+page's own white, lifted by a shadow rather than by distance.
 
-The panel is `var(--deep-forest-green)` — the logomark token, and the same green the card
-back uses when it flips, so a card caught mid-flip is one object in one colour rather than
-two. It bleeds to the card's top edges; an inset panel reads as a swatch laid on a card
-rather than as the card's own top half.
+> **Superseded, 12 Aug 2026.** The mark previously sat inside a Deep Forest Green panel
+> filling the card's top half. Removing it also settled a defect the panel had created:
+> two of `VentureLogo`'s six identity tints are Deep Forest Green and Deep Teal — the
+> panel's own colour and its neighbour — so four teams without artwork (`SLE-C411` Moh,
+> `SLE-C417` Postcards, `SLE-C435`, and `SLE-C432` Lowkey Livin on the teal) had discs
+> that could not be seen against it, and needed a mint hairline to have any edge at all.
+> On white every tint reads, and the hairline went with the panel that required it.
 
-**Every mark carries a soft-mint hairline on the panel.** Two of `VentureLogo`'s six
-identity tints — Deep Forest Green and Deep Teal — are the panel's own colour or near it,
-so without a ring those ventures would show a letter floating on green with the tile that
-carries their identity invisible. The ring gives every mark an edge without touching the
-tint, which has to stay constant across both slides: a venture that changed colour between
-the podium and the board would read as two ventures. Those cards are still the lowest
-contrast on the board and are the price of the green panel.
+**The source logos are circles**, masked to discs with transparent corners by
+`scripts/prepare-logos.py`, so `VentureLogo` draws a disc for artwork and initial alike.
+
+**Each disc has two faces.** The front is the venture's mark; the back is the Mesa lockup
+on `var(--deep-forest-green)`. Nothing turns them over yet — the flip is the next slice —
+but the back is built now because it is what makes the disc an *object*, and because
+`backface-visibility: hidden` needs two faces to work against. Without it the flip would
+have shown every mark mirrored.
+
+The full lockup rather than the abstract brand mark: compared side by side at true disc
+size, `brand-mark-solid` reads as an unidentifiable white blob and both concentric
+variants are a soft glow or rings too fine to survive six metres.
+
+**The shadow is a `box-shadow` on the faces, never a `filter` on the disc.** A `filter` of
+any kind forces the used value of `transform-style` to `flat`, which silently destroys the
+3D context — measured: with a `drop-shadow`, rotating a disc 180° showed its own front
+mirrored instead of the Mesa back.
 
 **Bottom half: the venture name and both revenue figures.**
 
@@ -143,6 +156,35 @@ loop.
 `prefers-reduced-motion: reduce` shows the first word-aligned page, static.
 
 ---
+
+## 2a. The row-1 look
+
+**Row 1 only.** The other thirty cards hold still, and that is what marks the top row out
+as the live one. An idle everywhere would be wallpaper, and it would spend the wall's
+"movement means something happened" rule forty times over instead of ten.
+
+Built from `/podium`'s repertoire — bob, glance, tilt — plus one move the podium does not
+have: **the look down**, a `rotateX` that drops the mark's face toward the figure beneath
+it.
+
+**The budget is 70% down, 30% side, and it is counted rather than estimated.** Each of the
+three timelines spends 28% of its cycle in a down pose and 12% in a side pose; the rest is
+at rest or bobbing. Change one hold and the ratio moves, so the percentages in
+`app/mesa-tv.css` are the specification, not decoration.
+
+Three timelines at three durations (17s / 19s / 23s), assigned **by column** with a 2.3s
+phase step. Not by team-ID hash: a hash is right for a tint, which must follow a venture
+wherever it goes, and wrong here, because ten marks side by side must differ from *each
+other* and a hash cheerfully gives three neighbours the same answer. `/podium` assigns by
+place for the same reason.
+
+**`perspective` belongs on the disc's direct parent.** It applies only to an element's own
+children, so one level further up it does nothing and the look-down renders
+orthographically — a flat squash rather than a face tipping forward. Measured while it sat
+on the cell: the disc's height was exactly `cos(30°)` of its width, which is the signature
+of no perspective at all.
+
+`prefers-reduced-motion: reduce` stops it entirely.
 
 ## 3. Overtake animation
 

@@ -43,14 +43,19 @@ for (const [width, height] of SIZES) {
     const n = (v) => +Number(v).toFixed(1)
     const header = document.querySelector('header')?.getBoundingClientRect()
     // The topmost thing under the header on either slide: the podium's marks and
-    // capitals, or the weekly grid's first row of cards. **`.tv-card` is not
-    // optional here** — without it this returned `null` on /weekly, and a null
-    // clearance prints as "no number" rather than as a failure, which is the
-    // quietest possible way for the one measurement this script exists for to
-    // stop being taken. Measured while it was missing: -9.6px at 1600x900,
+    // capitals, or the weekly grid's first row of cards. **The weekly selector
+    // is not optional here** — without it this returned `null` on /weekly, and a
+    // null clearance prints as "no number" rather than as a failure, which is
+    // the quietest possible way for the one measurement this script exists for
+    // to stop being taken. Measured while it was missing: -9.6px at 1600x900,
     // reported as `null`.
+    //
+    // It is `.tv-card-cell`, the whole grid cell, and **not `.tv-card`**, which
+    // is now only the detail base sitting at the cell's *bottom*. Measuring that
+    // reported 207.5px of clearance on a grid whose real top was 24px under the
+    // header — a comfortable number that described the wrong edge.
     const tops = [
-      ...document.querySelectorAll('[class*="tv-idle-"], .tv-pod-slab, .tv-card'),
+      ...document.querySelectorAll('[class*="tv-idle-"], .tv-pod-slab, .tv-card-cell'),
     ].map((el) => el.getBoundingClientRect().top)
     const shafts = [...document.querySelectorAll('.tv-pod-shaft')].map((el) =>
       el.getBoundingClientRect(),
@@ -64,10 +69,23 @@ for (const [width, height] of SIZES) {
       rowH: rows.length > 1 ? n(rows[1].getBoundingClientRect().height) : null,
       stripW: rows.length ? n(rows[0].getBoundingClientRect().width) : null,
       pillarGap: sorted.length === 3 ? n(sorted[1].left - sorted[0].right) : null,
+      // Anything genuinely leaving the frame. **Elements an ancestor already
+      // clips do not count**: the name marquee lays its second page out one
+      // card-width to the right and relies on `overflow: hidden` to hide it, so
+      // a naive box test reports a permanent overflow of 1 on a board that is
+      // fine — and a count that is never zero is a count nobody reads.
       overflow: [...document.querySelectorAll('main *')].filter((el) => {
         const q = el.getBoundingClientRect()
         if (!q.width && !q.height) return false
-        return q.bottom > innerHeight + 0.5 || q.top < -0.5 || q.right > innerWidth + 0.5
+        if (!(q.bottom > innerHeight + 0.5 || q.top < -0.5 || q.right > innerWidth + 0.5)) return false
+        for (let a = el.parentElement; a !== null; a = a.parentElement) {
+          const o = getComputedStyle(a)
+          if (o.overflow === 'visible') continue
+          const ab = a.getBoundingClientRect()
+          if (q.right > ab.right + 0.5 || q.left < ab.left - 0.5) return false
+          if (q.bottom > ab.bottom + 0.5 || q.top < ab.top - 0.5) return false
+        }
+        return true
       }).length,
     }
   })

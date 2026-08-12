@@ -39,6 +39,28 @@ const ROW_HEIGHTS = [
   'var(--h-card-4)',
 ] as const
 
+/**
+ * The three look timelines, and the phase step between neighbours.
+ *
+ * **Row 1 only.** The other thirty cards hold still, and that is what makes the
+ * top row read as the live one — an idle everywhere would be wallpaper, and it
+ * would also spend the wall's "movement means something happened" rule forty
+ * times over rather than ten.
+ *
+ * Assigned by *column*, not by team id. The hash is right for a tint, which must
+ * follow a venture wherever it goes, and wrong here: ten marks side by side have
+ * to differ from **each other**, and a hash cheerfully gives three neighbours
+ * the same answer. `/podium` assigns by place for exactly this reason, and
+ * `lib/seed.ts` carries the warning.
+ *
+ * The phase step is what stops the three-timeline cycle from showing: with ten
+ * marks and three timelines, columns 0, 3, 6 and 9 share a timeline, and without
+ * an offset they would bob in unison across the row. 2.3s is deliberately not a
+ * factor of any of the three durations.
+ */
+const LOOK_TIMELINES = ['tv-look-1', 'tv-look-2', 'tv-look-3'] as const
+const PHASE_STEP_S = 2.3
+
 /** Ranks 1–40 in four rows of ten. Short boards simply produce shorter rows. */
 export function rowsOf(teams: readonly Team[]): Team[][] {
   const ranked = rankByWeek(teams)
@@ -81,7 +103,12 @@ export function WeeklyGrid({ teams }: { teams: readonly Team[] }) {
           }}
         >
           {row.map((team, j) => (
-            <VentureCard key={team.teamId} team={team} rank={i * ROW_LENGTH + j + 1} />
+            <VentureCard
+              key={team.teamId}
+              team={team}
+              rank={i * ROW_LENGTH + j + 1}
+              {...(i === 0 ? { idle: LOOK_TIMELINES[j % LOOK_TIMELINES.length], delaySeconds: j * PHASE_STEP_S } : {})}
+            />
           ))}
         </div>
       ))}

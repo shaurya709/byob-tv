@@ -1,25 +1,31 @@
 import { HOT_TODAY_MIN } from '@/config'
-import { VentureLogo } from '@/components/VentureLogo'
+import { VentureDisc } from '@/components/VentureDisc'
 import { VentureName } from '@/components/VentureName'
 import { formatRupees } from '@/lib/format'
 import type { Team } from '@/lib/types'
 
 /**
- * One team's card. Forty of these are on screen at once.
+ * One team's card: a base carrying the team's details, with the venture's mark
+ * floating as a disc above it.
  *
- * Top half the mark, bottom half the name and both revenue figures, with the
- * rank badge in the top-left corner overlaying the logo.
+ * ── There is no logo panel any more ──
  *
- * ── The text block is a fixed height; the logo half absorbs the ramp ──
+ * The mark used to sit inside a Deep Forest Green section filling the card's top
+ * half. The disc replaced it: the card is now the base, and the mark hovers over
+ * it on the page's own white.
  *
- * Row heights descend from row 1 to row 4, and *all* of that variance lands on
- * the mark. The name and both figures are the same size on rank 1 and rank 40.
+ * That removal also settled a defect the panel had created. Two of
+ * `VentureLogo`'s six identity tints are Deep Forest Green and Deep Teal — the
+ * panel's own colour and its neighbour — so four teams without artwork had discs
+ * that could not be seen against it, and they needed a mint hairline to have any
+ * edge at all. On white every tint reads, and the hairline is gone with the
+ * panel that made it necessary.
  *
- * That is the design rule "if the bottom half is tight, take the space from the
- * logo half, never from a figure" expressed as geometry rather than as care: no
- * per-row type ramp exists to get wrong, and the row-4 floor is one subtraction
- * instead of a negotiation. It also keeps forty cards reading as one system —
- * only the marks change scale, which is the thing that can afford to.
+ * ── The base is a fixed height; the disc absorbs the ramp ──
+ *
+ * Row heights descend from row 1 to row 4 and *all* of that variance lands on
+ * the mark. The name and both figures are the same size on rank 1 and rank 40,
+ * so forty cards read as one system and only the marks change scale.
  *
  * ── Only one thing is ever emphasised ──
  *
@@ -37,42 +43,46 @@ import type { Team } from '@/lib/types'
  */
 const HOT = 'var(--green-600)'
 
-export function VentureCard({ team, rank }: { team: Team; rank: number }) {
+export function VentureCard({
+  team,
+  rank,
+  idle,
+  delaySeconds,
+}: {
+  team: Team
+  rank: number
+  /** An idle timeline class. Only row 1 gets one; the other thirty hold still. */
+  idle?: string
+  /** Phase offset, so ten marks on one row never fall into step. */
+  delaySeconds?: number
+}) {
   const hot = team.todayRevenue >= HOT_TODAY_MIN
 
   return (
     <div
-      className="tv-card"
+      // Named so `scripts/measure-fit.mjs` can find the grid's true top edge.
+      // The cell is what starts at the row's top; `.tv-card` is now only the
+      // base at its bottom, and measuring that reported 207px of header
+      // clearance on a grid whose real top was 24px below it.
+      className="tv-card-cell"
       style={{
-        // The card fills its grid cell; the cell's height is the row's, set once
-        // per row by the grid. Nothing here knows which row it is in.
         height: '100%',
-        display: 'grid',
-        gridTemplateRows: `minmax(0, 1fr) var(--h-card-text)`,
-        // **No padding on the card.** The green panel has to reach the card's
-        // own edges, and a padded card would leave a white gutter around it that
-        // reads as a swatch laid on the card rather than as the card's top half.
-        // The text block carries its own padding instead.
         position: 'relative',
-        overflow: 'hidden',
       }}
     >
-      {/* Board apparatus, not the team's. Constant size across the ramp, and one
-          colour for all forty — a badge that changed at rank 3 would be a second
-          emphasis system competing with the hot-day rule.
+      {/* Board apparatus, not the team's. It sits on the *cell*, deliberately
+          outside the animated disc: rank is a fact about the board, and a rank
+          number that bobbed along with the mark would read as part of the
+          venture rather than as the leaderboard's own label.
 
-          **Opaque, with its own border.** It was first drawn as charcoal type on
-          the card's own translucent stroke colour, which is invisible the moment
-          it lands on a dark mark — measured on the live board at ranks 10, 11,
-          24, 28, 33, 34 and 37, every one of them a black or near-black logo. It
-          sits *over* forty unknown images, so it cannot borrow contrast from what
-          is behind it: the fill is solid and the hairline is what keeps it
-          legible on the pale marks the solid fill would otherwise disappear into. */}
+          Opaque with its own hairline, because it lands on the disc for row 1 —
+          where the disc nearly fills the card — and on white for row 4, and it
+          has to stay legible on both without knowing which it got. */}
       <div
         style={{
           position: 'absolute',
-          top: 'var(--s-card-inset)',
-          left: 'var(--s-card-inset)',
+          top: 0,
+          left: 0,
           minWidth: 'var(--d-card-badge)',
           height: 'var(--d-card-badge)',
           paddingInline: 'calc(var(--d-card-badge) * 0.22)',
@@ -84,26 +94,46 @@ export function VentureCard({ team, rank }: { team: Team; rank: number }) {
           border: 'var(--stroke-hair) solid var(--border)',
           color: 'var(--midnight-charcoal)',
           font: 'var(--t-tv-card-rank)',
-          zIndex: 1,
+          zIndex: 2,
         }}
       >
         {rank}
       </div>
 
-      {/* The mark, centred in whatever height this row leaves it. Square and
-          height-bound: a contained logo is min(cardWidth, thisHeight) and at a
-          171.6px card this is always the smaller, so `--d-card-logo` is the
-          real diameter. Checking the *width* against the ~50px threshold would
-          pass trivially while the mark sat under it — see the correction in
-          docs/superpowers/specs/2026-08-12-weekly-card-grid.md §1. */}
-      <div className="tv-card-panel" style={{ display: 'grid', placeItems: 'center', minHeight: 0 }}>
-        <div className="tv-card-mark">
-          <VentureLogo team={team} size="var(--d-card-logo)" />
-        </div>
-      </div>
-
+      {/* The disc, centred over the base and lifted clear of it. Its bottom sits
+          `--s-card-lift` above the base's top edge — small, because the shadow
+          is what says "floating" and distance on its own just reads as a gap. */}
       <div
         style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: `calc(var(--h-card-text) + var(--s-card-lift))`,
+          display: 'grid',
+          placeItems: 'center',
+          // **On the disc's direct parent, not on the cell.** `perspective`
+          // applies only to an element's own children, so one level further up
+          // it does nothing and the look-down renders orthographically — a flat
+          // squash rather than a mark tipping its face forward. Measured while
+          // it sat on the cell: the disc's height was exactly cos(30°) of its
+          // width, which is the signature of no perspective at all. `/podium`
+          // carries the same note for the same reason.
+          perspective: '900px',
+        }}
+      >
+        <VentureDisc team={team} idle={idle} delaySeconds={delaySeconds} />
+      </div>
+
+      {/* The base. This is the card now — the fill, the border and the radius
+          are all here rather than around the whole cell. */}
+      <div
+        className="tv-card"
+        style={{
+          position: 'absolute',
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: 'var(--h-card-text)',
           display: 'grid',
           gridTemplateRows: 'auto auto auto',
           alignContent: 'center',
@@ -130,13 +160,10 @@ export function VentureCard({ team, rank }: { team: Team; rank: number }) {
         </div>
 
         {/* The figure the board exists to show, and the largest thing on the
-            card. Blank, never ₹0: in week 4 only five of forty teams have sold
-            anything this week, and forty identical zeroes would teach the eye to
-            skip the column that matters. */}
-        <div
-          className="tv-figure"
-          style={{ font: 'var(--t-tv-card-week)', color: 'var(--fg1)' }}
-        >
+            card. Blank, never ₹0: in week 4 only sixteen of forty teams have
+            sold anything this week, and forty identical zeroes would teach the
+            eye to skip the column that matters. */}
+        <div className="tv-figure" style={{ font: 'var(--t-tv-card-week)', color: 'var(--fg1)' }}>
           {team.weekRevenue > 0 ? formatRupees(team.weekRevenue) : '—'}
         </div>
 
@@ -145,16 +172,11 @@ export function VentureCard({ team, rank }: { team: Team; rank: number }) {
             **Labelled, because the card has no column headings.** The list this
             replaced put "This week" and "Today" above the two figure columns; a
             card has nowhere to put them, so two bare rupee amounts on one card
-            would give a passer-by no way to know which is which. The label rides
-            the figure instead of sitting above the board.
+            would give a passer-by no way to know which is which.
 
             It appears only when there is a figure. A permanent "TODAY" caption
-            over an empty line is apparatus describing absence, and today it
-            would be describing it on all forty cards — the live feed currently
-            has zero teams with a today figure at all.
-
-            Blank rather than ₹0, for the same reason as the week: silence is the
-            honest answer for a team that has not sold today. */}
+            over an empty line is apparatus describing absence, and on a quiet
+            morning it would be describing it on all forty cards. */}
         <div
           className="tv-figure"
           style={{
@@ -162,7 +184,7 @@ export function VentureCard({ team, rank }: { team: Team; rank: number }) {
             color: hot ? HOT : 'var(--fg-muted)',
             // Reserved whether or not there is a figure, so the week revenue
             // sits on one line across all forty cards instead of dropping half a
-            // line on the thirty-five teams that have not traded today.
+            // line on the teams that have not traded today.
             minHeight: '1em',
             display: 'flex',
             alignItems: 'baseline',
