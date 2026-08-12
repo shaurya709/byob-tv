@@ -214,10 +214,13 @@ describe('Podium', () => {
     const slots = [...host.querySelectorAll('.tv-pod-slot')]
     expect(slots).toHaveLength(3)
     for (const slot of slots) {
-      const numeral = slot.querySelector('.tv-pod-numeral')?.className ?? ''
+      // The idle lives on the numeral's *wrapper*, not on the glyph: the glyph
+      // carries the travelling shine, and one element cannot hold both
+      // animations — the class that came second simply won.
+      const numeral = slot.querySelector('.tv-pod-numeral-dance')?.className ?? ''
       const mark = slot.querySelector('.tv-pod-mark-band [class*="tv-idle-"]')?.className ?? ''
       expect(numeral).toMatch(/tv-idle-/)
-      expect(numeral.replace('tv-pod-numeral ', '')).not.toBe(mark)
+      expect(numeral.replace('tv-pod-numeral-dance ', '')).not.toBe(mark)
     }
     act(() => root.unmount())
     host.remove()

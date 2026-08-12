@@ -145,7 +145,14 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
           than as a label printed on the frame — and on a *different* timeline
           from its own mark, or the pair would move as one rigid object. */}
       <span className="tv-pod-numeral-slot">
-        <span className={`tv-pod-numeral ${idleOf(place + 1)}`}>{place}</span>
+        {/* **The dance and the shine are on two elements, deliberately.** Both
+            want the `animation` property, and a single element can only be given
+            it once — measured, the idle class won and the numeral never swept.
+            The wrapper bobs; the glyph inside it carries the travelling
+            highlight. */}
+        <span className={`tv-pod-numeral-dance ${idleOf(place + 1)}`}>
+          <span className="tv-pod-numeral">{place}</span>
+        </span>
       </span>
 
       <div
