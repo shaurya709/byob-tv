@@ -148,12 +148,15 @@ export function WeeklyGrid({
   teams,
   kick = null,
   onSettled,
+  todayToneOf,
 }: {
   teams: readonly Team[]
   /** The flip in progress, so the cards involved know what to do. */
   kick?: OvertakeEvent | null
   /** Called once, by the attacker's card, when the last beat finishes. */
   onSettled?: () => void
+  /** Optional per-team tone for today's figure. See `VentureCard`. */
+  todayToneOf?: (team: Team) => 'up' | 'down' | undefined
 }) {
   const rows = rowsOf(teams)
   const gridRef = useRef<HTMLDivElement>(null)
@@ -217,6 +220,7 @@ export function WeeklyGrid({
                 rank={rank}
                 cue={cue}
                 onSettled={cue?.role === 'attacker' ? onSettled : undefined}
+                todayTone={todayToneOf?.(team)}
                 {...(i === 0
                   ? {
                       idle: LOOK_TIMELINES[j % LOOK_TIMELINES.length],

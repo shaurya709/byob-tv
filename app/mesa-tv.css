@@ -744,12 +744,38 @@
     content: url('/brand/logo-pg-white.png');
   }
 
-  /* The base inverts rather than disappearing: a hairline of mint at low alpha
-     over the green, which is the same relationship the white board has between
-     its card and its page, read the other way up. */
+  /* **The base is white, and its text goes dark with it.** The frame's tokens
+     are set light for the header, so the card re-declares its own — a white base
+     carrying white figures is the one combination that cannot work, and the
+     tokens are where that gets decided rather than at each call site. */
   .tv-preview .tv-card {
-    background: color-mix(in srgb, var(--soft-mint) 7%, transparent);
-    border-color: color-mix(in srgb, var(--soft-mint) 22%, transparent);
+    background: var(--white);
+    border-color: transparent;
+    --fg1: var(--midnight-charcoal);
+    --fg-muted: color-mix(in srgb, var(--midnight-charcoal) 58%, transparent);
+  }
+
+  /* ── Room between the mark and the base ──
+
+     The ring is drawn *outside* the disc's box, so it reaches below the disc's
+     measured bottom edge and lands on the base — the two merged. Both the ring
+     width and the clearance are budgeted here: the mark shrinks by twice the
+     ring, and the lift grows by the ring plus a gap, so the ring's outer edge
+     ends `--s-2` clear of the base.
+
+     `--s-ring` is derived from the *card width*, never from `--d-card-logo`,
+     because `--d-card-logo` is about to be defined in terms of it and a custom
+     property that references itself resolves to nothing at all. */
+  .tv-preview .tv-card-row {
+    --s-ring: calc(var(--w-card) * 0.05);
+    --d-card-logo: min(
+      calc(
+        var(--h-card) - var(--h-card-text) - var(--s-card-inset) - 2 * var(--s-ring) -
+          var(--s-2)
+      ),
+      calc(var(--w-card) - 2 * var(--s-card-inset) - 2 * var(--s-ring))
+    );
+    --s-card-lift: calc(var(--s-ring) + var(--s-2));
   }
 
   /* Every figure and label flips to the light end of the ramp. `--fg1` and
@@ -792,16 +818,32 @@
      diameter — which the flip's travel maths depends on — does not change. */
   .tv-preview .tv-disc-face {
     box-shadow:
-      0 0 0 calc(var(--d-card-logo) * 0.022) var(--deep-forest-green),
-      0 0 0 calc(var(--d-card-logo) * 0.075) var(--white);
+      0 0 0 calc(var(--s-ring) * 0.3) var(--deep-forest-green),
+      0 0 0 var(--s-ring) var(--white);
   }
 
   /* The back face keeps its own colour, so on green it needs the white ring to
      be the thing separating it from the field. */
   .tv-preview .tv-disc-back {
     box-shadow:
-      0 0 0 calc(var(--d-card-logo) * 0.022) var(--soft-mint),
-      0 0 0 calc(var(--d-card-logo) * 0.075) var(--white);
+      0 0 0 calc(var(--s-ring) * 0.3) var(--soft-mint),
+      0 0 0 var(--s-ring) var(--white);
+  }
+
+  /* ── The Flea dial ──
+
+     Its progress arc asks for `--deep-forest-green`, which on this board *is*
+     the background — the arc was drawn in the field's own colour and the dial
+     read as empty at every value. Overriding the token inside the dial's `svg`
+     turns the arc white and leaves the urgent state's tangerine alone, which a
+     blanket `stroke` rule would have flattened too. The track then has to come
+     down off soft-mint so the two are not the same again. */
+  .tv-preview header svg {
+    --deep-forest-green: var(--white);
+  }
+
+  .tv-preview header svg circle:first-of-type {
+    stroke: color-mix(in srgb, var(--soft-mint) 26%, transparent);
   }
 
   /* One per team on the weekly board. Forty of these on one frame. */

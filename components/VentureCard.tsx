@@ -49,6 +49,18 @@ import type { Team } from '@/lib/types'
 const HOT = 'var(--green-600)'
 
 /**
+ * Above and below the cohort's average today.
+ *
+ * **There is no red in the Mesa palette.** The warm end stops at tangerine, and
+ * both `AGENTS.md` and this file's own header forbid inventing a hue. So "below
+ * average" is `--tangerine-600`, which is the brand's existing alert colour and
+ * the same one the podium's figures use. If a true red is wanted it is a new
+ * brand token, not a local literal.
+ */
+const UP = 'var(--green-600)'
+const DOWN = 'var(--tangerine-600)'
+
+/**
  * The disc's whole journey: it crosses to the other card's slot and, if that slot
  * belongs to a row of a different height, arrives already the size that row draws
  * it at. The resize rides the travel rather than snapping at either end.
@@ -132,6 +144,7 @@ export function VentureCard({
   delaySeconds,
   cue,
   onSettled,
+  todayTone,
 }: {
   team: Team
   rank: number
@@ -143,8 +156,26 @@ export function VentureCard({
   cue?: FlipCue
   /** Called once, by the attacker's card, when the last beat finishes. */
   onSettled?: () => void
+  /**
+   * Optional: colour today's figure against the cohort rather than against a
+   * fixed threshold. `undefined` keeps `HOT_TODAY_MIN`, which is what the wall
+   * ships with — this is opt-in, and only `/preview` opts in today.
+   */
+  todayTone?: 'up' | 'down'
 }) {
   const hot = team.todayRevenue >= HOT_TODAY_MIN
+  /**
+   * Two ways to read the same figure, and only one is ever on.
+   *
+   * The wall's rule is a fixed threshold: a strong day is ₹5,000, full stop, and
+   * a team knows what it has to beat. `todayTone` replaces it with a relative
+   * one — above or below the cohort's own average today — which says something
+   * different: not "was this a good day" but "was this a better day than the
+   * room". Both are defensible; running both at once would be two emphases,
+   * which is one more than this board allows.
+   */
+  const toneColour =
+    todayTone === undefined ? undefined : todayTone === 'up' ? UP : DOWN
   const flips = cue !== undefined && cue.role !== 'slide'
   // `false`, not `undefined`, for a card with no cue: the reset to x/y 0 has to
   // land in the same commit as the settle's re-slot, or the board would be seen
@@ -298,8 +329,11 @@ export function VentureCard({
         <div
           className="tv-figure"
           style={{
-            font: hot ? 'var(--t-tv-card-today-hot)' : 'var(--t-tv-card-today)',
-            color: hot ? HOT : 'var(--fg-muted)',
+            font:
+              toneColour !== undefined || hot
+                ? 'var(--t-tv-card-today-hot)'
+                : 'var(--t-tv-card-today)',
+            color: toneColour ?? (hot ? HOT : 'var(--fg-muted)'),
             // Reserved whether or not there is a figure, so the week revenue
             // sits on one line across all forty cards instead of dropping half a
             // line on the teams that have not traded today.
