@@ -452,6 +452,20 @@
   --d-pod-row-logo: 2.5vw;
   --s-pod-row-mark-gap: 1.1vw;
 
+  /* ── The biggest-mover panel ──
+
+     The pale surface is `color-mix(soft-mint 42%, white)`, which lands on
+     #F4FAF5 — the approved #F4F9F5 to within a value per channel, and derived
+     from a brand token rather than written as a fourth literal. The metals are
+     the only hexes this file is allowed, and a panel background is not one of
+     them. */
+  --pod-mover-fill: color-mix(in srgb, var(--soft-mint) 42%, var(--white));
+  --d-pod-mover-logo: 2.6vw;
+  --t-pod-mover-label: 800 clamp(9px, 0.78vw, 16px) / 1 var(--font-sans);
+  --t-pod-mover-name: 400 clamp(15px, 1.72vw, 36px) / 1.05 var(--font-condensed);
+  --t-pod-mover-line: 600 clamp(11px, 1.08vw, 23px) / 1.2 var(--font-sans);
+  --t-pod-mover-gain: 800 clamp(22px, 2.9vw, 61px) / 1 var(--font-sans);
+
   /* Option B only: the bar that runs *under* a team's row rather than behind it. */
   --h-pod-underbar: 0.55vw;
   --s-pod-underbar-gap: 0.5vw;
@@ -1376,6 +1390,78 @@
     height: var(--d-pod-row-logo);
     border-radius: 50%;
     overflow: hidden;
+  }
+
+  /* ── The biggest-mover panel ──
+
+     Pale where the podium cards are dark, and flat where they stand on metal.
+     Both differences are load-bearing: this sits directly under first place, and
+     anything that read as a fourth card would read as fourth place. */
+  .tv-pod-mover {
+    background: var(--pod-mover-fill);
+    border-radius: var(--r-pod-card);
+    padding: var(--s-pod-mover-pad, 1.2vw 1.4vw);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+
+  .tv-pod-mover-label {
+    font: var(--t-pod-mover-label);
+    letter-spacing: var(--track-pod-label);
+    text-transform: uppercase;
+    color: var(--pod-rank-ink);
+  }
+
+  .tv-pod-mover-row {
+    display: grid;
+    grid-template-columns: var(--d-pod-mover-logo) minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--s-4);
+  }
+
+  /* A white circle, because this panel's own surface is already pale — the mark
+     needs a ground of its own or a cream logo dissolves into the card. */
+  .tv-pod-mover-mark {
+    width: var(--d-pod-mover-logo);
+    height: var(--d-pod-mover-logo);
+    border-radius: 50%;
+    background: var(--white);
+    overflow: hidden;
+  }
+
+  .tv-pod-mover-name {
+    display: block;
+    font: var(--t-pod-mover-name);
+    letter-spacing: var(--track-pod-name-row);
+    text-transform: uppercase;
+    color: var(--deep-teal);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tv-pod-mover-line {
+    display: block;
+    font: var(--t-pod-mover-line);
+    color: var(--pod-rank-ink);
+    white-space: nowrap;
+  }
+
+  /* **Tangerine, never a metal.** Gold, silver and bronze encode first, second
+     and third on this slide and nothing else. A climb is not a podium position,
+     and lending one of the three to it would loosen the only exemption this
+     file's no-new-hue rule has. */
+  .tv-pod-mover-gain {
+    font: var(--t-pod-mover-gain);
+    letter-spacing: var(--track-pod-fig);
+    color: var(--tangerine-600);
+    text-align: right;
+  }
+
+  .tv-pod-mover-empty {
+    font: var(--t-pod-mover-gain);
+    color: var(--pod-rank-ink);
   }
 
   /* ── One team's row, and the bar beneath it ──

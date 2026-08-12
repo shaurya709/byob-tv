@@ -113,8 +113,16 @@ Row 1, verbatim — the client parses these by name, so spelling matters and ord
 does not:
 
 ```
-team_id    venture_name    total_revenue    week_revenue    today_revenue    total_units
+team_id    venture_name    total_revenue    week_revenue    today_revenue    total_units    prev_week_rank
 ```
+
+**`prev_week_rank` is optional and not yet built.** Every other column is required
+and a missing one throws the whole fetch away; this one the client reads only if
+present, so the board's biggest-mover panel runs today on a fallback and switches
+to showing real climbs the moment the column appears. Nothing needs redeploying.
+
+See "The `prev_week_rank` column" below before writing it — it has two rules, and
+getting either wrong produces a number that looks right and is not.
 
 Row 2 only. Each formula spills down 42 rows, so there is nothing to fill down.
 
@@ -141,6 +149,41 @@ per team, which is what is wanted. Checklist item 4 catches it if this goes wron
 in `Team Links` order, so row alignment currently holds — but if it ever slips, a
 positional read would attribute one team's revenue to another and the wall would
 show it confidently for a week. A `VLOOKUP` cannot do that.
+
+### The `prev_week_rank` column
+
+Each team's rank **at the close of the last completed week**. It feeds one thing:
+the "biggest climber this week" panel on `/podium`, which shows a team's previous
+rank, its current rank, and the places between them.
+
+Two rules, and both change the answer:
+
+**1. Rank cumulative revenue, not the week's.** The wall ranks teams by
+*cumulative* logged revenue. If `prev_week_rank` ranked last week's *weekly*
+figure instead, the panel would subtract a position in one ranking from a position
+in a different one and print the difference as a climb. It would be a number, it
+would change every week, and it would mean nothing. This is finding #4 in
+`docs/DESIGN.md`, rediscovered.
+
+So: cumulative logged revenue **as it stood when the week closed**, ordered by the
+wall's own comparator — revenue desc, then units desc, then `team_id` asc.
+
+**2. Rank only teams that had banked something, and leave the rest blank.**
+
+A team on ₹0 is separated from every other team on ₹0 by the tie-break alone. If
+those teams are given ranks, a team logging its first ₹500 sale appears to climb
+fifteen places, wins the panel, and holds it for a week — over ventures that
+actually moved. It is noise wearing a climb's clothes.
+
+So the ranking is taken **among teams with cumulative revenue above zero**, and a
+team that had banked nothing at last week's close gets an **empty cell**, not a
+rank and not a `0`. The client treats blank and `0` alike and reads either as "no
+previous standing", which it renders as no climb rather than a large one. The
+matching half of the rule lives in `biggestMover` in `lib/climber.ts`, with a test
+pinning it.
+
+Teams that had revenue then and have since been overtaken keep a rank and simply
+show no climb, which is correct — they did not go up.
 
 ### The week window
 

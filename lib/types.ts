@@ -28,6 +28,27 @@ export type Team = {
   todayRevenue: number
   /** First tie-break for absolute ranking only. */
   totalUnits: number
+  /**
+   * This team's rank at the close of last week, **among teams that had banked
+   * something by then**, or `undefined`.
+   *
+   * Published by the sheet as `prev_week_rank`; read optionally, so the wall
+   * works before the column exists and picks it up when it lands.
+   *
+   * ── The two rules that make this figure mean anything ──
+   *
+   * **It ranks cumulative revenue, not last week's.** Ranking a weekly figure
+   * against the cumulative one the board uses compares two different things and
+   * the difference between them is not a climb. Recorded as finding #4 in
+   * docs/DESIGN.md.
+   *
+   * **It is `undefined` for a team that had ₹0 at last week's close.** Teams on
+   * zero are separated only by the tie-break, so a team logging its first sale
+   * would otherwise appear to climb fifteen places on ₹500 — noise wearing a
+   * climb's clothes. A team with no standing to improve on did not improve on
+   * it. See `biggestMover` in lib/climber.ts.
+   */
+  prevWeekRank?: number
 }
 
 /**

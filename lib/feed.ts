@@ -100,7 +100,27 @@ function toTeam(row: Record<string, string>): Team | null {
     weekRevenue,
     todayRevenue,
     totalUnits,
+    ...prevWeekRankOf(row.prev_week_rank),
   }
+}
+
+/**
+ * `prev_week_rank`, if the sheet publishes it.
+ *
+ * **Deliberately not in `FEED_HEADERS`.** Every column in that list is required
+ * and a missing one throws away the whole fetch; this one is optional so the
+ * biggest-mover panel ships before the sheet grows the column and starts using
+ * it the moment it does, with no second deploy and no version check.
+ *
+ * A blank cell and a `0` both mean *no previous standing*: blank is how the
+ * sheet says a team had banked nothing at last week's close, and `0` is what a
+ * formula emits when it means the same thing but was written by someone else.
+ * Neither is a rank, and rank 1 is the smallest real value.
+ */
+function prevWeekRankOf(raw: string | undefined): { prevWeekRank?: number } {
+  const value = toNumber((raw ?? '').trim())
+  if (value === null || value < 1) return {}
+  return { prevWeekRank: Math.round(value) }
 }
 
 function rows(csv: string): Record<string, string>[] {

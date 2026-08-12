@@ -138,10 +138,25 @@ describe('Podium', () => {
   })
 
   it('renders three cards with no feed at all', () => {
-    const text = render(<Podium ranked={[]} />)
-    // Three dashes, one per card. An empty first paint is a real state and the
-    // board holds its shape through it rather than assembling on screen.
-    expect(text.match(/—/g)).toHaveLength(3)
+    // An empty first paint is a real state and the board holds its shape through
+    // it rather than assembling on screen.
+    //
+    // **Asserted per element, not by counting dashes in the whole slide.** This
+    // counted three em dashes and broke the day the mover panel gained a fourth
+    // for its own empty state — a true change that looked like a regression,
+    // because the count was standing in for "one per card" and stopped meaning
+    // it. Reaching for the cards directly cannot drift that way.
+    const host = document.createElement('div')
+    document.body.append(host)
+    const root = createRoot(host)
+    act(() => root.render(<Podium ranked={[]} />))
+    const figures = [...host.querySelectorAll('.tv-pod-card .tv-figure')]
+    expect(figures).toHaveLength(3)
+    expect(figures.every((el) => el.textContent === '—')).toBe(true)
+    // The panel has nothing to report either, and says so the same way.
+    expect(host.querySelector('.tv-pod-mover-empty')?.textContent).toBe('—')
+    act(() => root.unmount())
+    host.remove()
   })
 
   it('draws three cards on plinths and seven pills, borrowing nothing from /weekly', () => {

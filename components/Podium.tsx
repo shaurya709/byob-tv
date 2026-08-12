@@ -1,5 +1,6 @@
 'use client'
 
+import { MoverPanel } from '@/components/MoverPanel'
 import { VentureLogo } from '@/components/VentureLogo'
 import { formatRupees } from '@/lib/format'
 import type { Team } from '@/lib/types'
@@ -425,8 +426,21 @@ export function Podium({ ranked }: { ranked: readonly Team[] }) {
           has only 55.0vw of height to give it. `fr` asks for a share of whatever
           height the frame actually has, so first place is 84% of the board at
           every aspect rather than 815px at one of them. */}
-      <div style={{ display: 'grid', gridTemplateRows: '78fr 22fr', minHeight: 0 }}>
+      {/* **`auto` for the panel, not a fraction.** The panel sizes to its own
+          content and first place takes whatever is left, so a change to the
+          panel's type or padding cannot silently squeeze the card by a
+          proportion nobody chose. The card shortening is the point — the panel
+          lives in the space that shortening creates. */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateRows: 'minmax(0, 1fr) auto',
+          rowGap: 'var(--s-pod-stack-gap, 2.8vw)',
+          minHeight: 0,
+        }}
+      >
         <PodiumCard team={first} place={1} />
+        <MoverPanel ranked={ranked} />
       </div>
 
       <div
