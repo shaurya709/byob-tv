@@ -20,10 +20,11 @@ import type { Team } from '@/lib/types'
  *
  * ── Rank is said three times ──
  *
- * Card size, the metal, and the badge. Deliberately redundant: a greyscale
- * reproduction loses the metals, a photograph taken at an angle loses a badge,
- * and either one still ranks. This argument has survived two redesigns of this
- * slide and it is the reason none of the three ever carries rank alone.
+ * Card size, the metal, and the numeral. Deliberately redundant: a greyscale
+ * reproduction loses the metals, a photograph cropped to the cards loses the
+ * numerals' overhang, and either one still ranks. This argument has survived
+ * three redesigns of this slide and it is why none of the three carries rank
+ * alone.
  *
  * ── What this deliberately spends ──
  *
@@ -48,17 +49,15 @@ const IDLE_TIMELINES = ['tv-idle-1', 'tv-idle-2', 'tv-idle-3'] as const
  *
  * The alternative is three branches on `place` scattered through the render, and
  * the failure mode there is a card that picks up second place's metal and third
- * place's ink because two of the branches disagreed.
+ * place's padding because two of the branches disagreed.
  */
 const PLACES = {
   1: {
     metal: 'var(--metal-gold)',
-    ink: 'var(--metal-gold-ink)',
     fill: 'var(--deep-teal)',
     plinth: 'var(--h-pod-plinth-1)',
     disc: 'var(--d-pod-disc-1)',
-    badge: 'var(--d-pod-badge-1)',
-    badgeFont: 'var(--t-pod-badge-1)',
+    numeral: 'var(--fs-pod-num-1)',
     nameFont: 'var(--t-pod-name-1)',
     nameTrack: 'var(--track-pod-name-1)',
     figFont: 'var(--t-pod-fig-1)',
@@ -67,12 +66,10 @@ const PLACES = {
   },
   2: {
     metal: 'var(--metal-silver)',
-    ink: 'var(--metal-silver-ink)',
     fill: 'var(--deep-forest-green)',
     plinth: 'var(--h-pod-plinth-r)',
     disc: 'var(--d-pod-disc-r)',
-    badge: 'var(--d-pod-badge-r)',
-    badgeFont: 'var(--t-pod-badge-r)',
+    numeral: 'var(--fs-pod-num-r)',
     nameFont: 'var(--t-pod-name-r)',
     nameTrack: 'var(--track-pod-name-r)',
     figFont: 'var(--t-pod-fig-r)',
@@ -84,12 +81,10 @@ const PLACES = {
   },
   3: {
     metal: 'var(--metal-bronze)',
-    ink: 'var(--metal-bronze-ink)',
     fill: 'var(--deep-forest-green)',
     plinth: 'var(--h-pod-plinth-r)',
     disc: 'var(--d-pod-disc-r)',
-    badge: 'var(--d-pod-badge-r)',
-    badgeFont: 'var(--t-pod-badge-r)',
+    numeral: 'var(--fs-pod-num-r)',
     nameFont: 'var(--t-pod-name-r)',
     nameTrack: 'var(--track-pod-name-r)',
     figFont: 'var(--t-pod-fig-r)',
@@ -157,8 +152,8 @@ function nameOf(team: Team): string {
 }
 
 /**
- * One podium card: a badge, a mark in a white disc, a name, a figure — standing
- * on its metal.
+ * One podium card: a numeral breaking its top edge, a mark in a white disc, a
+ * name, a figure — standing on its metal.
  */
 function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
   const p = PLACES[place]
@@ -166,8 +161,26 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
   return (
     <div
       className="tv-pod-plinth"
-      style={{ '--pod-metal': p.metal, '--h-pod-plinth': p.plinth } as React.CSSProperties}
+      style={
+        {
+          '--pod-metal': p.metal,
+          '--h-pod-plinth': p.plinth,
+          '--fs-pod-num': p.numeral,
+        } as React.CSSProperties
+      }
     >
+      {/* Before the card in document order, so the card paints over it and the
+          sheen shows only on the strip of metal the card does not cover. */}
+      <span className="tv-pod-shine" aria-hidden />
+
+      {/* The part of the numeral that breaks above the card, on the white page.
+          Its twin lives inside the card below; together they are one glyph. The
+          rank is announced once, by the copy inside, so a screen reader does not
+          hear it twice. */}
+      <span className="tv-pod-num-above" aria-hidden>
+        <span className="tv-pod-numeral">{place}</span>
+      </span>
+
       <div
         className="tv-pod-card"
         style={
@@ -177,11 +190,8 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
           } as React.CSSProperties
         }
       >
-        <span
-          className="tv-pod-badge tv-figure"
-          style={{ '--pod-metal-ink': p.ink, width: p.badge, font: p.badgeFont } as React.CSSProperties}
-        >
-          {place}
+        <span className="tv-pod-num-inside">
+          <span className="tv-pod-numeral">{place}</span>
         </span>
 
         {/* `perspective` sits on the mark's **direct parent**. It applies to an
@@ -270,17 +280,24 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
 /**
  * Ranks 4–10, as pill bars.
  *
- * **The fill is measured against the list's own leader, not against rank 1.**
- * Against ₹54,782 every bar here would sit under four fifths of the track and
- * the seven would read as identical. The list is its own contest, and the shape
- * exists so the drop-off down it is visible without reading a figure.
+ * **Each bar measures the gap to the team immediately above it**, not a share of
+ * some board-wide maximum. Two earlier versions measured against rank 1 and then
+ * against the list's own leader, and both had the same defect: whoever led the
+ * list drew a full bar and therefore looked finished. Rank 4 is not finished —
+ * it is ₹466 behind third place, the tightest gap on the board and the one thing
+ * about rank 4 worth showing.
+ *
+ * So the bar answers "how close am I to catching the venture above me", which is
+ * a question every row can be losing. The row above rank 4 is third place, on
+ * its podium card, which is why this takes the whole ranked list rather than the
+ * slice it draws. A full bar becomes impossible by construction: you cannot be
+ * 100% of the venture ahead of you without being ahead of them.
  */
-function Strip({ teams, fromRank }: { teams: readonly Team[]; fromRank: number }) {
+function Strip({ ranked, fromRank }: { ranked: readonly Team[]; fromRank: number }) {
+  const teams = ranked.slice(fromRank - 1)
   // An empty strip carries no heading. Apparatus describing absence is the same
   // filler as a "no data" message, in a smaller typeface.
   if (teams.length === 0) return null
-
-  const leader = Math.max(...teams.map((team) => team.totalRevenue), 0)
 
   return (
     <div
@@ -291,7 +308,14 @@ function Strip({ teams, fromRank }: { teams: readonly Team[]; fromRank: number }
         height: '100%',
       }}
     >
-      {teams.map((team, index) => (
+      {teams.map((team, index) => {
+        // The venture one rank above this one — third place for the first row,
+        // and the row above for every other. Reading it out of the full ranked
+        // list rather than the slice is what lets rank 4 measure itself against
+        // a podium card rather than against itself.
+        const above = ranked[fromRank - 2 + index]
+        const ahead = above?.totalRevenue ?? 0
+        return (
         <div key={team.teamId} className="tv-pod-pill">
           <div
             className="tv-pod-pill-fill"
@@ -299,8 +323,12 @@ function Strip({ teams, fromRank }: { teams: readonly Team[]; fromRank: number }
               // Floored at the pill's left cap. A bar three percent long is a
               // lozenge that reads as a rendering fault rather than as a small
               // number; at the cap's width it reads as "the bar starts here".
-              // On real data the floor never binds — rank 10 is 38% of rank 4.
-              width: leader <= 0 ? 0 : `${Math.max(13, (100 * team.totalRevenue) / leader)}%`,
+              width:
+                ahead <= 0 ? 0 : `${Math.max(13, (100 * team.totalRevenue) / ahead)}%`,
+              // Staggered, so seven sheens do not cross the board in unison —
+              // which reads as the whole strip blinking rather than as light
+              // moving over each bar.
+              ['--d-pod-shine-delay' as string]: `${(index * 0.45).toFixed(2)}s`,
             }}
           />
           <span
@@ -327,7 +355,8 @@ function Strip({ teams, fromRank }: { teams: readonly Team[]; fromRank: number }
             {revenueOf(team)}
           </span>
         </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -390,7 +419,7 @@ export function Podium({ ranked }: { ranked: readonly Team[] }) {
           <PodiumCard team={third} place={3} />
         </div>
 
-        <Strip teams={visible.slice(PODIUM_PLACES)} fromRank={PODIUM_PLACES + 1} />
+        <Strip ranked={visible} fromRank={PODIUM_PLACES + 1} />
       </div>
     </div>
   )

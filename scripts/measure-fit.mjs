@@ -55,13 +55,22 @@ for (const [width, height] of SIZES) {
     // reported 207.5px of clearance on a grid whose real top was 24px under the
     // header — a comfortable number that described the wrong edge.
     //
-    // **`.tv-pod-plinth`, not `.tv-pod-card`.** The plinth is the card's outer
-    // box; the dark card is absolutely positioned inside it and inset from the
-    // bottom, so measuring the card alone describes an edge that is not the
-    // object's. The mark is deliberately absent from this list too: it bobs, so
-    // its top depends on which animation frame the measurement caught.
+    // **`.tv-pod-num-above` first, because it is genuinely the topmost thing.**
+    // Each rank numeral breaks above its card's edge, so the plinth's own top is
+    // no longer the top of the slide — measured, a board reporting 86.4px of
+    // clearance had its first-place numeral 42.8px from the frame edge. This is
+    // the third time this script has described the wrong edge: `.tv-card` on
+    // /weekly reported 207.5px on a grid whose real top was 24px, and the medal
+    // that preceded these numerals reported 26.1px on a board whose real top was
+    // 3.9px. The rule that keeps falling over is that the outermost *ink* is not
+    // always the outermost *box*.
+    //
+    // `.tv-pod-plinth`, not `.tv-pod-card`: the card is positioned inside the
+    // plinth and inset from the bottom, so its box is not the object's. The mark
+    // stays out of this list — it bobs, so its top depends on which animation
+    // frame the measurement caught.
     const tops = [
-      ...document.querySelectorAll('.tv-pod-plinth, .tv-card-cell'),
+      ...document.querySelectorAll('.tv-pod-num-above, .tv-pod-plinth, .tv-card-cell'),
     ].map((el) => el.getBoundingClientRect().top)
     const cards = [...document.querySelectorAll('.tv-pod-plinth')].map((el) =>
       el.getBoundingClientRect(),

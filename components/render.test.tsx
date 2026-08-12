@@ -160,7 +160,14 @@ describe('Podium', () => {
     act(() => root.render(<Podium ranked={rankTeams(competingTeams(all))} />))
     expect(host.querySelectorAll('.tv-pill')).toHaveLength(0)
     expect(host.querySelectorAll('.tv-pod-card')).toHaveLength(3)
-    expect(host.querySelectorAll('.tv-pod-badge')).toHaveLength(3)
+    // Six numerals for three cards. Each rank is drawn twice — once above the
+    // card's edge in Deep Teal and once inside it in white — and the pair is one
+    // glyph split by the edge. A count of three would mean one half is missing
+    // and the numerals are rendering whole in a single colour, which is the
+    // failure this treatment can have while still looking deliberate.
+    expect(host.querySelectorAll('.tv-pod-numeral')).toHaveLength(6)
+    expect(host.querySelectorAll('.tv-pod-num-above')).toHaveLength(3)
+    expect(host.querySelectorAll('.tv-pod-num-inside')).toHaveLength(3)
     expect(host.querySelectorAll('.tv-pod-pill')).toHaveLength(7)
     // Each card stands on its own metal. Three plinths and three cards, never
     // three cards and one plinth — the plinth is where the metal is declared,

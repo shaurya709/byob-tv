@@ -292,17 +292,29 @@
      13.6° from the brand tangerine, and its numeral clears 4.51:1 — real AA
      rather than large-only.
 
-     ── The inks ──
+     ── Three literals, and that is now the whole exemption ──
 
-     Each numeral is the dark tone of its own metal, never black and never
-     white. Measured on the fill it sits on: gold 6.15:1, silver 5.93:1,
-     bronze 4.51:1. */
+     There were six. Each metal also carried a dark "ink" for the numeral inside
+     its badge, and when the badges became numerals that break the card's edge —
+     Deep Teal above it, white inside — those three had nothing left to colour.
+     They are deleted rather than left in place: a token nobody reads is a
+     literal this file is claiming an exemption for and not using. */
   --metal-gold: #D9A441;
   --metal-silver: #A8AFB5;
   --metal-bronze: #CD6237;
-  --metal-gold-ink: #3B2A05;
-  --metal-silver-ink: #2B3136;
-  --metal-bronze-ink: #2C1207;
+
+  /* ── Each metal as a ramp, so it reads as metal rather than as a colour ──
+
+     A flat fill of any of the three reads as yellow, grey and orange — which is
+     what a single hex *is*. What makes a surface look metallic is a gradient
+     from a shaded edge through the body to a specular highlight, so each base
+     gets one step darker and one step lighter.
+
+     Both steps are mixes against `--midnight-charcoal` and `--white`, which are
+     brand tokens, so the exemption above still covers exactly three literals and
+     gains no more. */
+  --metal-lo: 26%;
+  --metal-hi: 48%;
 
   /* ========= PODIUM — a spine, three cards on plinths, seven pills =========
 
@@ -346,16 +358,13 @@
      the short cards give theirs slightly less, so the step between them reads
      as more than the cards' own size difference. */
   --d-pod-disc-1: 18.8vw;
-  --d-pod-disc-r: 9.8vw;
+  --d-pod-disc-r: 8.6vw;
 
   /* The badge, as a share of its card's width. The short cards' is a *larger*
      share so that all three badges land at a similar absolute size — a badge
      scaled strictly with its card would make third place's numeral too small to
      read across a corridor, and the numeral is one of the three things carrying
      rank. */
-  --d-pod-badge-1: 5.7vw;
-  --d-pod-badge-r: 3.8vw;
-  --s-pod-badge-inset: 1.5vw;
 
   /* The plinth: the metal rect the card stands on, visible only below it.
      Rank 1's is thicker in absolute terms, which is what the design asks for,
@@ -364,12 +373,38 @@
   --h-pod-plinth-r: 1.4vw;
 
   --r-pod-card: 1.25vw;
-  --s-pod-card-pad: 2.6vw 1.8vw 2vw;
-  /* The short cards keep the design's generous head room and give it back at the
-     foot, where the design also crams its name and figure against the bottom
-     edge. Reducing the head room instead was tried and it moves the mark off the
-     optical centre the three cards share. */
-  --s-pod-card-pad-r: 2.6vw 1.5vw 1.2vw;
+
+  /* ── The rank numeral that breaks the card's top edge ──
+
+     One numeral, split by the edge: the part above sits on the white page in
+     Deep Teal, the part below sits inside the card in white. It is drawn twice
+     and each copy is clipped to its own side, which is the only way to give one
+     glyph two colours along a curve.
+
+     **The split is on cap height, not font size**, and it is exact rather than
+     approximate. `text-box: trim-both cap alphabetic` trims the element's box to
+     the cap itself — measured on this face, a 200px numeral trims to 137.6px, a
+     ratio of 0.688 that agrees with the canvas metric to three places. Splitting
+     on font size instead would put the cut a fifth of an em too low, because a
+     line box is not a glyph. */
+  --fs-pod-num-1: clamp(48px, 11vw, 230px);
+  --fs-pod-num-r: clamp(30px, 7vw, 146px);
+  --k-pod-num-cap: 0.688;
+  --k-pod-num-above: 0.3;
+  --s-pod-num-x: 7%;
+
+  /* How long one sweep takes, and how long the metal rests between sweeps.
+     Slow, because this wall's rule is that movement means something happened —
+     a sheen that hurried would be competing with an overtake. */
+  --t-pod-shine: 7s;
+  --s-pod-card-pad: 3.2vw 1.8vw 2vw;
+  /* Head room grew on all three when the badges became numerals that break the
+     card's top edge: the numeral now reaches into the card's upper-left corner,
+     and the mark has to start below it. Measured before the change, second
+     place's numeral cut 6px into its own disc. The short cards' disc came down
+     to 8.6vw in the same move — head room and disc size are one budget, and
+     taking the room without giving any back just moves the collision. */
+  --s-pod-card-pad-r: 3.6vw 1.5vw 1.2vw;
 
   /* ── The list ──
 
@@ -409,7 +444,7 @@
      corridor of air the wordmark does not want. 0.86 closes the stack up, which
      is what lets the letters be large enough to span the band without the four
      of them costing more height than the spine has. */
-  --t-pod-byob: 400 clamp(52px, 10.45vw, 220px) / 0.86 var(--font-display-black),
+  --t-pod-byob: 400 clamp(44px, 8.88vw, 187px) / 1.01 var(--font-display-black),
     var(--font-serif);
 
   /* The air between the lockup and the wordmark, and the air on **both** sides
@@ -423,8 +458,6 @@
   --t-pod-fig-r: 800 clamp(26px, 3.5vw, 74px) / 1 var(--font-sans);
   --t-pod-fig-row: 800 clamp(13px, 1.45vw, 30px) / 1 var(--font-sans);
   --t-pod-rank-row: 800 clamp(12px, 1.3vw, 27px) / 1 var(--font-sans);
-  --t-pod-badge-1: 800 clamp(18px, 2.3vw, 48px) / 1 var(--font-sans);
-  --t-pod-badge-r: 800 clamp(15px, 1.8vw, 38px) / 1 var(--font-sans);
 
   --t-pod-name-1: 800 clamp(13px, 1.5vw, 31px) / 1.1 var(--font-sans);
   --t-pod-name-r: 800 clamp(10px, 1.1vw, 23px) / 1.1 var(--font-sans);
@@ -528,6 +561,17 @@
 
    Transform only, so this is compositor work rather than layout — forty
    minutes of reflow a day would be the alternative. */
+
+/* ── The sheen ──
+
+   Off-screen left, across, then held off-screen right for the rest of the cycle.
+   The hold is most of the timeline on purpose: a sheen that swept continuously
+   would read as a loading bar, where one that passes and then leaves reads as
+   light moving over metal. */
+@keyframes tv-shine {
+  0% { transform: translateX(-115%); }
+  38%, 100% { transform: translateX(115%); }
+}
 
 @keyframes tv-idle-1 {
   0%, 4%   { transform: translateY(0) rotateY(0deg) rotate(0deg); }
@@ -1110,8 +1154,123 @@
     position: relative;
     width: 100%;
     height: 100%;
-    background: var(--pod-metal);
+    /* A ramp across the strip rather than a flat fill — shaded at the ends,
+       brightest just off centre. This is what separates gold from yellow. */
+    background: linear-gradient(
+      98deg,
+      color-mix(in srgb, var(--midnight-charcoal) var(--metal-lo), var(--pod-metal)) 0%,
+      var(--pod-metal) 34%,
+      color-mix(in srgb, var(--white) var(--metal-hi), var(--pod-metal)) 52%,
+      var(--pod-metal) 70%,
+      color-mix(in srgb, var(--midnight-charcoal) var(--metal-lo), var(--pod-metal)) 100%
+    );
     border-radius: var(--r-pod-card);
+    /* Declared here because `--fs-pod-num` arrives here, inline, per card. A
+       `calc()` on it written at `:root` substitutes a variable that does not
+       exist there, goes invalid at computed-value time, and hands every numeral
+       a junk size on a page that otherwise looks correct — the weekly grid did
+       exactly that once, rendering marks at 10.3 x 16px. */
+    --d-pod-num-cap: calc(var(--fs-pod-num) * var(--k-pod-num-cap));
+    --h-pod-overhang: calc(var(--d-pod-num-cap) * var(--k-pod-num-above));
+  }
+
+  /* ── The travelling sheen ──
+
+     **A transform, not an animated `background-position`.** Both look identical;
+     only one is compositor work. Ten of these repainting continuously for the
+     weeks this page stays open is main-thread cost on a laptop driving a TV, and
+     a moving gradient position repaints every frame where a translated layer
+     does not.
+
+     It needs its own element rather than a pseudo on the plinth, because a
+     `clip-path` on a transformed element travels *with* the element and stops
+     clipping anything. A wrapper that holds still and a child that moves inside
+     it is the version that works.
+
+     **This spends the wall's rule that movement means something happened**, and
+     it is the third thing on the board to do so. It is kept slow and low in
+     contrast, and it rests for most of its cycle, so it reads as a surface
+     property rather than as an event. If an overtake ever stops landing on this
+     board, this is the first thing to remove. */
+  .tv-pod-shine {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--r-pod-card);
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .tv-pod-shine::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 38%,
+      color-mix(in srgb, var(--white) 62%, transparent) 50%,
+      transparent 62%
+    );
+    animation: tv-shine var(--t-pod-shine) cubic-bezier(0.5, 0, 0.5, 1) infinite;
+  }
+
+  /* ── One numeral, two colours, split by the card's edge ──
+
+     Drawn twice at the same position and clipped to opposite sides of the card's
+     top edge. **The inside copy is clipped by a box carrying the card's own
+     radius**, so where the numeral meets a corner it follows the curve rather
+     than a square rect — which is visible on the short cards, whose numeral sits
+     nearer the corner than first place's does. */
+  .tv-pod-numeral {
+    position: absolute;
+    left: var(--s-pod-num-x);
+    font: 400 var(--fs-pod-num) / 1 var(--font-display-black), var(--font-serif);
+    /* Trims the box to the cap, so `top` positions the cap and not a line box. */
+    text-box: trim-both cap alphabetic;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: var(--track-pod-fig);
+  }
+
+  .tv-pod-num-above {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(-1 * var(--h-pod-overhang));
+    height: var(--h-pod-overhang);
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .tv-pod-num-above .tv-pod-numeral {
+    top: 0;
+    color: var(--deep-teal);
+  }
+
+  .tv-pod-num-inside {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--r-pod-card);
+    overflow: hidden;
+    pointer-events: none;
+  }
+
+  .tv-pod-num-inside .tv-pod-numeral {
+    top: calc(-1 * var(--h-pod-overhang));
+    color: var(--white);
+  }
+
+  /* Without `text-box` the box is a line box rather than a cap box, so the two
+     halves would meet in the wrong place and the overhang would be wrong by
+     about a fifth of an em. Rather than split it wrongly, keep the whole numeral
+     inside the card: a large numeral in the corner is a worse design than the
+     split one, and it is not a broken one. */
+  @supports not (text-box: trim-both cap alphabetic) {
+    .tv-pod-num-above {
+      display: none;
+    }
+    .tv-pod-num-inside .tv-pod-numeral {
+      top: 0;
+      line-height: 1.1;
+    }
   }
 
   /* **No `overflow: hidden`.** Nothing hangs off this card — the badge sits
@@ -1126,23 +1285,6 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-  }
-
-  /* The rank badge: a filled circle in the card's own metal, inside the card's
-     top-left corner. The numeral is the dark tone of that same metal — never
-     black, never white — which is what keeps three badges reading as three
-     medals rather than as three coloured chips. */
-  .tv-pod-badge {
-    position: absolute;
-    top: var(--s-pod-badge-inset);
-    left: var(--s-pod-badge-inset);
-    display: grid;
-    place-items: center;
-    aspect-ratio: 1;
-    border-radius: 50%;
-    background: var(--pod-metal);
-    color: var(--pod-metal-ink);
-    letter-spacing: var(--track-pod-fig);
   }
 
   /* The white disc the mark sits in. The mark is *contained*, never cropped and
@@ -1194,6 +1336,26 @@
     background: var(--pod-fill);
     border-radius: var(--radius-pill);
     pointer-events: none;
+    /* Clips its own sweep. The fill is already a rounded rect, so the sheen
+       follows the bar's ends without a second shape to maintain. */
+    overflow: hidden;
+  }
+
+  /* The same sweep as the plinths, at lower contrast because it crosses a pale
+     mint rather than a metal, and offset so the ten of them do not flash in
+     unison — which would read as the whole board blinking. */
+  .tv-pod-pill-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      100deg,
+      transparent 38%,
+      color-mix(in srgb, var(--white) 78%, transparent) 50%,
+      transparent 62%
+    );
+    animation: tv-shine var(--t-pod-shine) cubic-bezier(0.5, 0, 0.5, 1) infinite;
+    animation-delay: var(--d-pod-shine-delay, 0s);
   }
 
   /* `> span`, never `> *`. The fill is a `div` and is absolutely positioned; a
@@ -1236,7 +1398,9 @@
 
   /* Someone will eventually drive this wall from a machine with the OS
      reduce-motion setting on, and a permanently moving mark is precisely what
-     that setting exists to stop. */
+     that setting exists to stop. The sheen goes with them, and it goes to
+     `display: none` rather than `animation: none` — a stopped sweep would leave
+     a bright band frozen across one side of every plinth. */
   @media (prefers-reduced-motion: reduce) {
     .tv-look-1,
     .tv-look-2,
@@ -1245,6 +1409,11 @@
     .tv-idle-2,
     .tv-idle-3 {
       animation: none;
+    }
+
+    .tv-pod-shine,
+    .tv-pod-pill-fill::after {
+      display: none;
     }
   }
 

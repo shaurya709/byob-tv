@@ -53,6 +53,18 @@ both gold and bronze from one token pulls them *together*, and the distance
 between them is the whole problem a three-metal system has. Silver at 208° has
 no brand relative — the palette contains no cool grey.
 
+**Each metal is a ramp, not a flat fill**, and a flat fill is exactly why the
+first version read as yellow, grey and orange — which is what a single hex *is*.
+What makes a surface look metallic is a gradient from a shaded edge through the
+body to a specular highlight, plus a sheen that travels. Both extra steps are
+mixes against `--midnight-charcoal` and `--white`, so the exemption still covers
+exactly three literals.
+
+**Three, down from six.** Each metal also carried a dark ink for the numeral in
+its badge; when the badges became numerals that break the card's edge, those
+three had nothing left to colour and were deleted. A token nobody reads is a
+literal this file claims an exemption for and does not use.
+
 **Bronze is not the specified `#B07542`.** That value measured 11° from gold,
 2.8° from `--tangerine-600` — close enough to read as the brand tangerine rather
 than as a metal — and its numeral cleared only 3.89:1. Pushing it redder alone
@@ -102,6 +114,64 @@ The final band deliberately reuses `TIMER_UNDER_MS` rather than declaring its ow
 days *down* to 3 weeks and understates by three. Nearest is implemented because
 it is what the approved image renders — 25 days as "4 WEEKS TO GO". Changing it
 to `ceil` is one word, and there is a test pinning the behaviour either way.
+
+## 5b. The rank numerals break the card's edge
+
+One glyph per card, split by the card's top edge: 30% above it on the white page
+in Deep Teal, 70% inside it in white. Drawn twice and each copy clipped to its
+own side, which is the only way to give one glyph two colours along a curve.
+
+**The split is on cap height and it is exact, not approximate.** `text-box:
+trim-both cap alphabetic` trims the element's box to the cap itself — measured on
+this face, a 200px numeral trims to 137.6px, a ratio of 0.688 that agrees with
+the canvas metric to three places. Splitting on font size instead puts the cut
+about a fifth of an em too low, because a line box is not a glyph. Measured on
+the running board: 30.0% above on all three cards, with the two copies aligned to
+0.0px.
+
+The inside copy is clipped by a box carrying the card's own radius, so where the
+numeral meets a corner it follows the curve rather than a square rect.
+
+**The discs had to move.** Second place's numeral cut 6px into its own mark
+before the head room grew; head room and disc diameter are one budget, so taking
+the room without giving any back only moves the collision. The short cards' disc
+came down to 8.6vw in the same change. Clearances now measure 16.6 / 14.1 /
+9.6px.
+
+Without `text-box` support the whole numeral stays inside the card rather than
+splitting in the wrong place — a worse design, but not a broken one.
+
+## 5c. The list bar measures the gap above it
+
+Each bar is that team's revenue as a share of **the team immediately above it**,
+not of any board-wide maximum. Two earlier versions measured against rank 1 and
+then against the list's own leader, and both had the same defect: whoever led the
+list drew a full bar and looked finished. Rank 4 is not finished — it is ₹466
+behind third place, the tightest gap on the board.
+
+The row above rank 4 is third place, on its podium card, which is why the
+component takes the whole ranked list rather than the slice it draws. A full bar
+is now impossible by construction: you cannot be 100% of the venture ahead of you
+without being ahead of them.
+
+## 5d. The sheen
+
+A highlight travels left to right across each plinth and each filled bar, once
+every seven seconds, resting off-screen for most of the cycle.
+
+**A transform, not an animated `background-position`.** Both look identical; only
+one is compositor work, and ten elements repainting continuously for the weeks
+this page stays open is main-thread cost on a laptop driving a TV. It needs its
+own element rather than a pseudo on the plinth, because a `clip-path` on a
+transformed element travels *with* the element and stops clipping anything.
+
+**This spends the wall's rule that movement means something happened**, and it is
+the third thing on the board to do so after the idle marks. It is slow, low in
+contrast, and rests for most of its cycle, so it reads as a surface property
+rather than as an event. If an overtake ever stops landing here, this is the
+first thing to remove. `prefers-reduced-motion` hides it with `display: none`
+rather than `animation: none` — a stopped sweep would freeze a bright band across
+one side of every plinth.
 
 ## 6. Where the image lost
 

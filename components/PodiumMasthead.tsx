@@ -3,7 +3,6 @@
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 
-import { AsOf } from '@/components/AsOf'
 import { TICK_MS, TICK_SLOW_MS } from '@/config'
 import { computeCountdownState, mastheadCountdown } from '@/lib/countdown'
 import { fleaInstant } from '@/lib/feed'
@@ -27,18 +26,22 @@ import type { Snapshot } from '@/lib/types'
  * stamp, the same countdown brain — and all three are still here, in a different
  * arrangement rather than a different system.
  *
- * ── The foot is a colophon, and every line of it earns its place ──
+ * ── What the spine no longer carries ──
  *
- * **The lockup**, because this is a Mesa campus wall and the brand does not
- * leave it. **The as-of stamp**, because the wall shows no error state by
- * design: a fetch that fails keeps the last good data and goes on rendering
- * perfectly healthy stale numbers for days, and this stamp is the only thing
- * that makes that visible. **"Total revenue"**, once, because `/podium` ranks on
- * all-time and `/weekly` on the week's, and without it the only difference
- * between two slides minutes apart is which numbers happen to be larger.
+ * It held a colophon at its foot: the lockup, a "Total revenue" caption and the
+ * as-of stamp. The lockup moved to the head; the other two were removed by
+ * decision, and both removals cost something worth writing down.
  *
- * Once, not per card. Three cards each captioned with the same two words is
- * apparatus repeating itself, and the caption belongs to the board.
+ * **The caption** was the one line telling a passer-by that these figures are
+ * all-time where `/weekly`'s are the week's, on two slides that rotate on one
+ * screen minutes apart.
+ *
+ * **The as-of stamp** was the only thing that made a frozen wall visible. This
+ * board shows no error state by design — a fetch that fails keeps the last good
+ * data and goes on rendering perfectly healthy stale numbers for days. Nothing
+ * on `/podium` now says when those numbers were written. `/weekly` still carries
+ * it in the shared header, so the information is not gone from the wall; it is
+ * gone from this slide.
  */
 
 /**
@@ -135,7 +138,10 @@ export function PodiumMasthead({ snapshot }: { snapshot: Snapshot | null }) {
         alt="Mesa School of Business"
         width={448}
         height={128}
-        style={{ width: '62%', height: 'auto' }}
+        // 81%, up 30% from 62%. At the smaller size the lockup read as a
+        // footnote beside a wordmark this heavy; a brand mark that has to be
+        // looked for is not doing its job on a wall read at six metres.
+        style={{ width: '81%', height: 'auto' }}
         unoptimized
       />
 
@@ -144,7 +150,11 @@ export function PodiumMasthead({ snapshot }: { snapshot: Snapshot | null }) {
           which is the only version that stays readable at a glance. */}
       <h1
         className="tv-pod-byob"
-        style={{ margin: 0, marginTop: 'var(--s-pod-spine-lead)' }}
+        // `auto`, so the wordmark and everything under it sit at the foot of
+        // the spine and the slack collects under the lockup. This is what the
+        // as-of stamp used to occupy; removing it moved the air rather than
+        // leaving a hole where the stamp was.
+        style={{ margin: 0, marginTop: 'auto' }}
         aria-label="BYOB"
       >
         {['B', 'Y', 'O', 'B'].map((letter, index) => (
@@ -188,13 +198,6 @@ export function PodiumMasthead({ snapshot }: { snapshot: Snapshot | null }) {
           What stays is the as-of stamp, which is load-bearing for a different
           reason: the wall shows no error state, so a failed fetch renders
           perfectly healthy stale numbers for days and this is the only tell. */}
-      {/* `auto` above pins the stamp to the foot and puts every remaining pixel
-          between it and the countdown. It is the one element here that should
-          absorb the slack: it is the quietest thing on the frame, and it is the
-          only one whose exact position carries no meaning. */}
-      <div style={{ marginTop: 'auto' }}>
-        <AsOf snapshot={snapshot} />
-      </div>
     </aside>
   )
 }
