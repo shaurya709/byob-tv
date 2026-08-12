@@ -1,10 +1,14 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+
+import { DevFlipTrigger } from '@/components/DevFlipTrigger'
 import { WallHeader } from '@/components/WallHeader'
 import { WeeklyGrid } from '@/components/WeeklyGrid'
 import { WATCH_RANKS_WEEKLY } from '@/config'
 import { openWeek } from '@/lib/feed'
 import { competingTeams, rankByWeek } from '@/lib/ranking'
+import { useKick } from '@/lib/useKick'
 import { useWallData, type BoardSpec } from '@/lib/useWallData'
 
 /**
@@ -15,14 +19,13 @@ import { useWallData, type BoardSpec } from '@/lib/useWallData'
  * the sort input, and Motion's layout animation would answer that with a small
  * shift on every poll. Movement on this wall means something happened.
  *
- * ── Detection runs; the flip does not exist yet ──
+ * ── The freeze rides the flip exactly ──
  *
- * `useWallData` still detects overtakes and queues them — that is deliberate and
- * is what keeps `BoardState` seeded, so a TV plugged in next week behaves like
- * one running since day one. What is gone is the boot kick that used to play
- * them. The flip replaces it (spec §3) and is the next slice; until it lands
- * nothing drains the queue, which is harmless because `KICK_QUEUE_CAP` bounds it
- * at four and the board re-sorts on data either way.
+ * Cards are keyed by team id, so a snapshot applied mid-flip would re-slot the
+ * two contestants underneath their own animation — they would arrive at a
+ * destination that had moved. Held snapshots land on settle instead, which is
+ * also what makes the ending invisible: both cards finish exactly on the
+ * positions the re-sorted board is about to give them.
  */
 const BOARD: BoardSpec = {
   name: 'weekly',
@@ -35,7 +38,17 @@ const BOARD: BoardSpec = {
 }
 
 export default function WeeklyPage() {
-  const { snapshot } = useWallData(BOARD)
+  const { snapshot, queueVersion, freeze, thaw } = useWallData(BOARD)
+  // The dev trigger writes to the same queue the detector writes to; this
+  // counter is only the nudge that tells `useKick` to look, exactly as
+  // `queueVersion` does. Adding to it keeps one drain and one reader.
+  const [devTicks, setDevTicks] = useState(0)
+  const { playing: kick, settled } = useKick(BOARD.name, queueVersion + devTicks)
+
+  useEffect(() => {
+    if (kick !== null) freeze()
+    else thaw()
+  }, [kick, freeze, thaw])
 
   const week = snapshot === null ? null : openWeek(snapshot.cohort)
   const teams = competingTeams(snapshot?.teams ?? [])
@@ -55,7 +68,14 @@ export default function WeeklyPage() {
           hardcoded 4. */}
       <WallHeader snapshot={snapshot} label={week === null ? undefined : `BYOB Week ${week}`} />
 
-      <WeeklyGrid teams={teams} />
+      <WeeklyGrid teams={teams} kick={kick} onSettled={settled} />
+
+      <DevFlipTrigger
+        teams={teams}
+        week={week}
+        onQueued={() => setDevTicks((n) => n + 1)}
+        onReset={settled}
+      />
     </main>
   )
 }

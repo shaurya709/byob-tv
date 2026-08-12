@@ -193,9 +193,22 @@ per-kick geometry, and its cross-column suppression logic.
 
 **The replacement: cards flip, travel, and unflip.** When the order changes:
 
-1. The affected card flips to its back
-2. Face-down, it travels to its new position
-3. It unflips at the destination, face-up in its new place
+1. The affected card flips to its back, and **its base is absorbed upward into the
+   disc** — not faded where it stands. The disc reads as having picked the card's
+   contents up rather than as having outlived them.
+2. Face-down, it travels to its new position, resizing on the way if the destination
+   is in a row of a different height.
+3. It unflips at the destination, face-up in its new place, and the base slides back
+   down out of the disc and reappears.
+
+**The base travels too, while it is invisible.** Both halves are separately positioned —
+the mark is centred in the space above the base, the base is pinned to the cell's bottom
+edge — so they move by *different* vertical amounts between rows of different heights, and
+the cue carries both. Measured with only the mark travelling: rank 5 arrived showing
+Snapper's mark above CHAKHANA's figures, a card split in two.
+
+**Sliding cards travel in full view.** A card merely making room never turns over, so both
+its halves simply move on the same window the contestants cross on.
 
 **The card back is Deep Forest green carrying the Mesa logo** — `var(--deep-forest-green)`,
 the existing token, not a new value.
@@ -219,6 +232,11 @@ A team moving from rank 11 to rank 10 crosses from row 2 to row 1, and the two r
 different heights, so the card changes size mid-travel. **The size change is part of the
 travel**, not a jump at either end.
 
+**Everything between the two contestants drops one place as well, without flipping.** A
+climb of one rank is the pure exchange this design describes and there is nothing in
+between; a climb of seven moves six other cards, and they are not part of the contest.
+They slide with their faces up, so the two that turn over stay the only story on screen.
+
 `columnLength` and its cross-column suppression are deleted, along with its
 `overtake.test.ts` cases. The suppression existed because the kick rendered as vertical
 slides *inside one column* and a cross-column climb had no line to travel
@@ -231,6 +249,23 @@ are on one frame — so the retirement has nothing left to do.
 Named or not. `AGENTS.md` claimed "a team with an empty `venture_name` never fires a
 trigger"; the detection path never enforced it, and the behaviour is the one we want.
 The doc is corrected to match rather than the code changed to obey it.
+
+### The geometry is read once, before anything moves
+
+`WeeklyGrid` takes one layout measurement per flip, when the event arrives and never while
+anything is animating, and the cues are pure numbers from then on.
+
+**Untransformed layout only.** Row 1's marks are permanently mid-idle, so
+`getBoundingClientRect` on one returns a bobbing, rotating box and deltas computed from it
+would differ on every frame. Cells never move, and `offsetTop` / `offsetHeight` ignore
+transforms, so together they describe where a mark *would* be at rest — which is where it
+has to travel to.
+
+### The idle is suspended for the duration of a flip
+
+The two would otherwise fight for the same `transform`, and a CSS animation beats an inline
+style — so the idle would simply win and the card would never turn over. It is also the
+right call visually: the flip is the event, where the idle is only weather.
 
 ### Reduced motion
 

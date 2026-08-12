@@ -1,7 +1,13 @@
+'use client'
+
+import { useEffect } from 'react'
+import { motion, type Easing } from 'motion/react'
+
 import { HOT_TODAY_MIN } from '@/config'
 import { VentureDisc } from '@/components/VentureDisc'
 import { VentureName } from '@/components/VentureName'
 import { formatRupees } from '@/lib/format'
+import { BEATS, TOTAL, at, type FlipCue } from '@/lib/flipTimeline'
 import type { Team } from '@/lib/types'
 
 /**
@@ -43,11 +49,90 @@ import type { Team } from '@/lib/types'
  */
 const HOT = 'var(--green-600)'
 
+/**
+ * The disc's whole journey: it crosses to the other card's slot and, if that slot
+ * belongs to a row of a different height, arrives already the size that row draws
+ * it at. The resize rides the travel rather than snapping at either end.
+ *
+ * `x`/`y` hold at zero until the travel opens, so the flip happens in place, and
+ * hold at the destination afterwards so the unflip happens there. Both end
+ * exactly on the position the re-sorted board will give this card, which is what
+ * makes the settle invisible.
+ */
+const TRAVEL_EASE: Easing[] = ['linear', 'easeInOut', 'linear']
+const BASE_EASE_LONG: Easing[] = ['linear', 'easeIn', 'linear', 'linear', 'easeOut']
+
+function travelMotion(cue: FlipCue) {
+  const window = at(BEATS.travel, cue.role === 'defender' ? cue.shift : 0)
+  return {
+    animate: {
+      x: [0, 0, cue.dx, cue.dx],
+      y: [0, 0, cue.dy, cue.dy],
+      scale: [1, 1, cue.scale, cue.scale],
+    },
+    transition: {
+      duration: TOTAL,
+      times: [0, ...window, 1],
+      ease: TRAVEL_EASE,
+    },
+  }
+}
+
+/**
+ * The base is drawn *up into the disc* and gone, then slides back down out of it.
+ *
+ * Not a fade where it stands. It scales toward the mark above it as it goes, so
+ * the disc reads as having picked the card's contents up — which is what makes
+ * the face-down disc feel like it is carrying the team rather than having
+ * outlived it. `transformOrigin: top` is what aims the collapse at the disc.
+ *
+ * It finishes before the turn does, so nothing is still legible while the card is
+ * edge-on, and it returns only after the card has landed and turned face-up.
+ */
+function baseMotion(cue: FlipCue) {
+  const out = at(BEATS.baseOut, cue.shift)
+  const travel = at(BEATS.travel, cue.role === 'defender' ? cue.shift : 0)
+  const back = at(BEATS.baseIn, 0)
+  return {
+    animate: {
+      opacity: [1, 1, 0, 0, 0, 1],
+      scaleY: [1, 1, 0.35, 0.35, 0.35, 1],
+      // **The base crosses too, while nobody can see it.** It is invisible for
+      // the whole travel window, so this move is never watched — but without it
+      // the base reappears in the slot the card came from while its own mark is
+      // standing in the new one. Measured: rank 5 showed Snapper's mark above
+      // CHAKHANA's figures, a card arriving in two pieces.
+      x: [0, 0, 0, cue.dx, cue.dx, cue.dx],
+      y: [0, 0, -8, cue.baseDy - 8, cue.baseDy, cue.baseDy],
+    },
+    transition: {
+      duration: TOTAL,
+      times: [0, out[0], out[1], travel[1], back[0], back[1]],
+      ease: BASE_EASE_LONG,
+    },
+  }
+}
+
+/**
+ * A card merely making room. It never turns over, so both halves simply travel,
+ * in full view, on the same window the contestants cross on — and the base has
+ * to go with the mark or the card tears in half exactly as a contestant's would.
+ */
+function slideBaseMotion(cue: FlipCue) {
+  const travel = at(BEATS.travel, cue.shift)
+  return {
+    animate: { x: [0, 0, cue.dx, cue.dx], y: [0, 0, cue.baseDy, cue.baseDy] },
+    transition: { duration: TOTAL, times: [0, ...travel, 1], ease: TRAVEL_EASE },
+  }
+}
+
 export function VentureCard({
   team,
   rank,
   idle,
   delaySeconds,
+  cue,
+  onSettled,
 }: {
   team: Team
   rank: number
@@ -55,8 +140,33 @@ export function VentureCard({
   idle?: string
   /** Phase offset, so ten marks on one row never fall into step. */
   delaySeconds?: number
+  /** Set only while this card is in a flip. Absent means an ordinary, inert card. */
+  cue?: FlipCue
+  /** Called once, by the attacker's card, when the last beat finishes. */
+  onSettled?: () => void
 }) {
   const hot = team.todayRevenue >= HOT_TODAY_MIN
+  const flips = cue !== undefined && cue.role !== 'slide'
+  // `false`, not `undefined`, for a card with no cue: the reset to x/y 0 has to
+  // land in the same commit as the settle's re-slot, or the board would be seen
+  // reordering under a card that had already finished moving.
+  const travel = cue === undefined ? { animate: { x: 0, y: 0, scale: 1 }, transition: { duration: 0 } } : travelMotion(cue)
+  const base =
+    cue === undefined ? {} : flips ? baseMotion(cue) : slideBaseMotion(cue)
+
+  /**
+   * The deadlock guard. `onSettled` is the only thing standing between the queue
+   * and a wedge: if this card unmounts before its animation completes — the
+   * rotation moving on mid-flip, or a board that re-sorted underneath it —
+   * nothing would ever report the flip finished and `playing` would pin forever.
+   * The cleanup reports it instead. Idempotent by construction, so the normal
+   * path calling both is harmless.
+   */
+  const attacker = cue?.role === 'attacker'
+  useEffect(() => {
+    if (!attacker) return
+    return () => onSettled?.()
+  }, [attacker, onSettled])
 
   return (
     <div
@@ -65,9 +175,17 @@ export function VentureCard({
       // base at its bottom, and measuring that reported 207px of header
       // clearance on a grid whose real top was 24px below it.
       className="tv-card-cell"
+      // The brain reads cell geometry by rank when a flip starts. Untransformed
+      // layout only — `getBoundingClientRect` on a cell is safe because cells
+      // never move; it is the disc inside them that does.
+      data-rank={rank}
       style={{
         height: '100%',
         position: 'relative',
+        // A card in a flip paints over its neighbours. Without this the disc
+        // crosses *under* the cards it is passing, which reads as the board
+        // swallowing it rather than as one card overtaking another.
+        ...(cue === undefined ? {} : { zIndex: 3 }),
       }}
     >
       {/* Board apparatus, not the team's. It sits on the *cell*, deliberately
@@ -103,7 +221,15 @@ export function VentureCard({
       {/* The disc, centred over the base and lifted clear of it. Its bottom sits
           `--s-card-lift` above the base's top edge — small, because the shadow
           is what says "floating" and distance on its own just reads as a gap. */}
-      <div
+      <motion.div
+        {...travel}
+        // The travel is the longest-running property in the sequence, so its
+        // completion is the sequence's. Component-level, not transition-level:
+        // the old kick measured the per-transition `onComplete` never firing at
+        // all once the transition carried per-property overrides, which wedged
+        // the queue with nothing on screen progressing.
+        onAnimationComplete={attacker ? onSettled : undefined}
+        className="tv-disc-travel"
         style={{
           position: 'absolute',
           left: 0,
@@ -121,14 +247,21 @@ export function VentureCard({
           perspective: '900px',
         }}
       >
-        <VentureDisc team={team} idle={idle} delaySeconds={delaySeconds} />
-      </div>
+        <VentureDisc
+          team={team}
+          idle={idle}
+          delaySeconds={delaySeconds}
+          {...(flips ? { flipShift: cue.shift } : {})}
+        />
+      </motion.div>
 
       {/* The base. This is the card now — the fill, the border and the radius
           are all here rather than around the whole cell. */}
-      <div
+      <motion.div
         className="tv-card"
+        {...base}
         style={{
+          transformOrigin: 'top center',
           position: 'absolute',
           left: 0,
           right: 0,
@@ -207,7 +340,7 @@ export function VentureCard({
             </>
           )}
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }
