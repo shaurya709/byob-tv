@@ -115,12 +115,23 @@ function Caption({ align }: { align: 'center' | 'right' }) {
  * One pillar: a mark, a capital, a shaft carrying the rank, a base, then the
  * name and the figure.
  *
- * The mark sits in a fixed-height row and is bottom-aligned inside it. That is
- * what lets first place have a larger mark while all three capitals still land
- * on one line — aligning the marks by their tops instead would stagger every
- * slab, shaft and figure across the frame.
+ * The pillars align on their *bases*, and the shafts step down by rank, so the
+ * marks ride up with their own columns — first place highest. The name and the
+ * figure hang below the base, which means they land on one line across all
+ * three without being told to.
  */
-function Pillar({ team, place, ink }: { team: Team | undefined; place: number; ink: string }) {
+function Pillar({
+  team,
+  place,
+  ink,
+  shaft,
+}: {
+  team: Team | undefined
+  place: number
+  ink: string
+  /** This pillar's shaft height. Stepped by rank — see `PodiumBand`. */
+  shaft: string
+}) {
   const logo = place === 1 ? POD_LOGO_FIRST : POD_LOGO_REST
 
   return (
@@ -132,11 +143,12 @@ function Pillar({ team, place, ink }: { team: Team | undefined; place: number; i
         alignItems: 'center',
       }}
     >
-      {/* The mark's row. Its height is first place's diameter whatever this
-          pillar's own mark measures, so the capital line below is shared. */}
+      {/* The mark's row, sized to this pillar's own mark. The capitals ride
+          their shafts and are *meant* to sit at different heights — the shared
+          line on this podium is the floor, not the top. */}
       <div
         style={{
-          height: POD_LOGO_FIRST,
+          height: logo,
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'center',
@@ -180,7 +192,7 @@ function Pillar({ team, place, ink }: { team: Team | undefined; place: number; i
         className="tv-pod-shaft"
         style={{
           width: 'var(--w-pod-shaft)',
-          height: 'var(--h-pod-shaft)',
+          height: shaft,
           display: 'flex',
           justifyContent: 'center',
           paddingTop: 'var(--s-4)',
@@ -258,16 +270,22 @@ function Pillar({ team, place, ink }: { team: Team | undefined; place: number; i
 function PodiumBand({ places }: { places: (Team | undefined)[] }) {
   const [first, second, third] = places
   const pods = [
-    { team: second, place: 2, fill: 'var(--pod-2)', slab: 'var(--slab-2)', ink: 'var(--soft-mint)' },
-    { team: first, place: 1, fill: 'var(--pod-1)', slab: 'var(--slab-1)', ink: 'var(--soft-mint)' },
-    { team: third, place: 3, fill: 'var(--pod-3)', slab: 'var(--slab-3)', ink: 'var(--deep-teal)' },
+    // prettier-ignore
+    { team: second, place: 2, fill: 'var(--pod-2)', slab: 'var(--slab-2)', ink: 'var(--soft-mint)', shaft: 'var(--h-pod-shaft-2)' },
+    // prettier-ignore
+    { team: first, place: 1, fill: 'var(--pod-1)', slab: 'var(--slab-1)', ink: 'var(--soft-mint)', shaft: 'var(--h-pod-shaft-1)' },
+    // prettier-ignore
+    { team: third, place: 3, fill: 'var(--pod-3)', slab: 'var(--slab-3)', ink: 'var(--deep-teal)', shaft: 'var(--h-pod-shaft-3)' },
   ]
 
   return (
     <div
       style={{
         display: 'flex',
-        alignItems: 'flex-start',
+        // `flex-end`, so the three bases land on one floor while the shafts
+        // step down by rank. That shared ground line is what makes the group
+        // read as a single podium instead of three columns of unequal size.
+        alignItems: 'flex-end',
         justifyContent: 'center',
         gap: 'var(--s-pod-gap)',
         perspective: '900px',
@@ -278,7 +296,7 @@ function PodiumBand({ places }: { places: (Team | undefined)[] }) {
           key={pod.place}
           style={{ '--pod-fill': pod.fill, '--slab-fill': pod.slab } as React.CSSProperties}
         >
-          <Pillar team={pod.team} place={pod.place} ink={pod.ink} />
+          <Pillar team={pod.team} place={pod.place} ink={pod.ink} shaft={pod.shaft} />
         </div>
       ))}
     </div>

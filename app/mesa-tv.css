@@ -176,17 +176,21 @@
      compose correctly on the TV and wrongly in every dev window, which is the
      one thing this file's `vw` convention exists to prevent.
 
-     **All three pillars are identical in size.** Rank is carried by the colour
-     ramp, by the mark's diameter and by the numeral — never by height. Three
-     tiles of unequal height was the previous design, and it read as three
-     unrelated cards rather than as one podium.
+     **The shafts step down by rank and share one ground line**, because that
+     is what a podium is. First place stands tallest in the middle, second and
+     third descend either side, and the bases all land on the same floor — the
+     shared baseline is what makes the three read as one object rather than as
+     three cards. Colour, mark diameter and numeral reinforce the order; they
+     do not have to carry it alone.
 
      The slabs are deliberately wider than the shaft. That overhang is the
      whole difference between reading as a column and reading as a bar. */
   --w-pod: 19.79vw;
   --w-pod-shaft: 11.46vw;
   --w-pod-slab: 12.92vw;
-  --h-pod-shaft: 11.98vw;
+  --h-pod-shaft-1: 11.98vw;
+  --h-pod-shaft-2: 9.38vw;
+  --h-pod-shaft-3: 7.55vw;
   --h-pod-slab: 0.73vw;
   --s-pod-gap: 4.69vw;
 
