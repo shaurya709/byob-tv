@@ -183,26 +183,59 @@
      three cards. Colour, mark diameter and numeral reinforce the order; they
      do not have to carry it alone.
 
-     The slabs are deliberately wider than the shaft. That overhang is the
-     whole difference between reading as a column and reading as a bar. */
+     The slabs are deliberately wider than the shaft — a 14px overhang each
+     side. That is the whole difference between reading as a column and reading
+     as a bar.
+
+     **The gap you see is not `--s-pod-gap`.** It is that gap plus the empty
+     margin either side of the shaft inside its own column, because the column
+     is as wide as the venture name under it while the shaft is not. Halving
+     the visible gap therefore meant widening the shafts as well as closing the
+     columns up: 250px of daylight became 125px.
+
+     **The podium is sized to leave the strip room, not the other way round.**
+     These are the top ten of the cohort and the seven names below the podium
+     have to be legible from the same distance as the three on it. The band was
+     cut twice to pay for that.
+
+     One trap worth knowing if you retune these: the `--s-*` spacing scale is
+     fixed px, not `vw`. Every gap and padding on the frame therefore stays put
+     while these shrink, so a band that merely fits at 1920 will overlap the
+     header at 1600 — measured at -15.8px before this was budgeted properly.
+     Leave real slack, and check 1600x900 as well as 1920x1080. */
   --w-pod: 19.79vw;
-  --w-pod-shaft: 11.46vw;
-  --w-pod-slab: 12.92vw;
-  --h-pod-shaft-1: 11.98vw;
-  --h-pod-shaft-2: 9.38vw;
-  --h-pod-shaft-3: 7.55vw;
-  --h-pod-slab: 0.73vw;
-  --s-pod-gap: 4.69vw;
+  --w-pod-shaft: 15.63vw;
+  --w-pod-slab: 17.08vw;
+  --h-pod-shaft-1: 8.5vw;
+  --h-pod-shaft-2: 6.6vw;
+  --h-pod-shaft-3: 5.2vw;
+  --h-pod-slab: 0.63vw;
+  --s-pod-gap: 2.34vw;
 
   /* The board's horizontal extent: three pillars and the two gaps between
      them, 1320px at 1920. The strip below is set to exactly this so ranks
      4–10 read as a continuation of the podium and not as a second object. */
   --w-pod-board: calc(3 * var(--w-pod) + 2 * var(--s-pod-gap));
-  --w-pod-total: 8vw;
+  --w-pod-total: 9vw;
 
   /* A rule between strip rows. This separates rows; it does not draw a shape
      around them, which is what `.tv-pill` does on the weekly board. */
   --stroke-hair: 1px;
+
+  /* ── The strip's own scale ──
+
+     **Deliberately not `--h-row`.** That token is 2.3vw because the weekly
+     board puts *forty* rows on one frame, in two columns of twenty. This strip
+     carries seven, in one column, and inheriting the forty-row height left the
+     top ten looking like an afterthought squeezed under the podium — cramped
+     type, no air, and a third of the frame empty.
+
+     So the row keeps the weekly board's *language* — rank outside, mark, name
+     centred, figure right — at the size seven rows can actually afford. The
+     podium above was shrunk to pay for it. */
+  --h-pod-row: 3.0vw;
+  --h-pod-col-head: 1.67vw;
+  --w-pod-rank: 2.6vw;
 
   /* ── The ramp ──
 
@@ -229,14 +262,15 @@
 
   /* Podium type. Heavy — 800, the top of MesaBody's declared axis — because a
      rank numeral at this size is a shape before it is a number. */
-  --t-tv-pod-rank: 800 clamp(30px, 3.33vw, 70px) / 1 var(--font-sans);
-  --t-tv-pod-name: 600 clamp(14px, 1.35vw, 28px) / 1.15 var(--font-sans);
-  --t-tv-pod-figure: 800 clamp(20px, 2.19vw, 46px) / 1 var(--font-sans);
+  --t-tv-pod-rank: 800 clamp(24px, 2.6vw, 55px) / 1 var(--font-sans);
+  --t-tv-pod-name: 600 clamp(13px, 1.3vw, 27px) / 1.15 var(--font-sans);
+  --t-tv-pod-figure: 800 clamp(18px, 2vw, 42px) / 1 var(--font-sans);
   /* The "TOTAL REVENUE" caption, on the pillars and over the strip's figure
      column. Same role and same size as the weekly board's column headings. */
-  --t-tv-pod-label: 700 clamp(9px, 0.573vw, 12px) / 1 var(--font-sans);
-  --t-tv-pod-row-name: 500 clamp(12px, 1.15vw, 24px) / 1.1 var(--font-sans);
-  --t-tv-pod-row-figure: 600 clamp(12px, 1.15vw, 24px) / 1 var(--font-sans);
+  --t-tv-pod-label: 700 clamp(9px, 0.65vw, 14px) / 1 var(--font-sans);
+  --t-tv-pod-row-rank: 500 clamp(13px, 1.45vw, 30px) / 1 var(--font-sans);
+  --t-tv-pod-row-name: 500 clamp(13px, 1.5vw, 31px) / 1.1 var(--font-sans);
+  --t-tv-pod-row-figure: 700 clamp(13px, 1.55vw, 32px) / 1 var(--font-sans);
 
   /* ── Idle intensity: "playful" ──
 

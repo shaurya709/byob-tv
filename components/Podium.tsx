@@ -30,15 +30,19 @@ import type { Team } from '@/lib/types'
 const TOP = 10
 const PODIUM_PLACES = 3
 
-/** The strip's mark, matching the weekly board's row exactly. The *scale*
-    matches so the two boards feel like one wall; the decoration differs so
-    they read as two different boards. */
-const STRIP_LOGO = 30
+/** The strip's mark.
+ *
+ * **Larger than the weekly board's 30px, on purpose.** That board fits forty
+ * marks on a frame; this one shows seven, and matching its size made the top
+ * ten look like a footnote under the podium. The row keeps `/weekly`'s
+ * *structure* — rank outside, mark, name centred, figure right — at the scale
+ * seven rows can afford. */
+const STRIP_LOGO = '2.08vw'
 
 /** The mark on a pillar. First place's is larger — one of the two things left
     carrying rank now that all three columns are the same height. */
-const POD_LOGO_FIRST = 132
-const POD_LOGO_REST = 104
+const POD_LOGO_FIRST = '5.2vw'
+const POD_LOGO_REST = '4.2vw'
 
 const IDLE_TIMELINES = ['tv-idle-1', 'tv-idle-2', 'tv-idle-3'] as const
 
@@ -152,7 +156,7 @@ function Pillar({
           display: 'flex',
           alignItems: 'flex-end',
           justifyContent: 'center',
-          marginBottom: 'var(--s-4)',
+          marginBottom: 'var(--s-3)',
         }}
       >
         {/* An empty box where a mark would go holds the stack's geometry steady
@@ -217,7 +221,7 @@ function Pillar({
         style={{ width: 'var(--w-pod-slab)', height: 'var(--h-pod-slab)' }}
       />
 
-      <div style={{ marginTop: 'var(--s-5)', width: '100%' }}>
+      <div style={{ marginTop: 'var(--s-4)', width: '100%' }}>
         <span
           style={{
             font: 'var(--t-tv-pod-name)',
@@ -322,10 +326,10 @@ function Strip({ teams, fromRank }: { teams: readonly Team[]; fromRank: number }
 
   const row: React.CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: `var(--w-rank) ${STRIP_LOGO}px minmax(0, 1fr) var(--w-pod-total)`,
+    gridTemplateColumns: `var(--w-pod-rank) ${STRIP_LOGO} minmax(0, 1fr) var(--w-pod-total)`,
     alignItems: 'center',
-    gap: 'var(--s-3)',
-    height: 'var(--h-row)',
+    gap: 'var(--s-5)',
+    height: 'var(--h-pod-row)',
   }
 
   return (
@@ -334,7 +338,7 @@ function Strip({ teams, fromRank }: { teams: readonly Team[]; fromRank: number }
           names. Two copies of this template would drift apart on the first
           change, and nobody would notice until a label pointed at the wrong
           column. */}
-      <div style={{ ...row, height: 'var(--h-col-head)', alignItems: 'end' }}>
+      <div style={{ ...row, height: 'var(--h-pod-col-head)', alignItems: 'end' }}>
         <span />
         <span />
         <span />
@@ -353,7 +357,7 @@ function Strip({ teams, fromRank }: { teams: readonly Team[]; fromRank: number }
           <span
             className="tv-figure"
             style={{
-              font: 'var(--t-tv-row-rank)',
+              font: 'var(--t-tv-pod-row-rank)',
               // One colour for all seven, matching the weekly board's ranks
               // exactly. The rank is board apparatus, not a tier.
               color: 'var(--midnight-charcoal)',
@@ -407,7 +411,7 @@ export function Podium({ ranked }: { ranked: readonly Team[] }) {
         // comes from — it is not padding anyone had to measure.
         gridTemplateRows: 'auto auto',
         alignContent: 'center',
-        gap: 'var(--s-10)',
+        gap: 'var(--s-8)',
         height: '100%',
       }}
     >

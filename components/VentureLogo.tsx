@@ -53,17 +53,27 @@ function initialFor(team: Team): string {
   return team.teamId.trim().slice(-1)
 }
 
-export function VentureLogo({ team, size }: { team: Team; size: number }) {
-  const radius = Math.round(size * 0.18)
+/**
+ * `size` takes a number of pixels, or any CSS length.
+ *
+ * The weekly board passes a number, because its rows are a fixed 30px mark.
+ * The podium passes `vw`: a mark that stayed put while every dimension around
+ * it scaled was measured climbing into the header band at 1600x900, which is
+ * the whole reason this component accepts a CSS length at all.
+ */
+export function VentureLogo({ team, size }: { team: Team; size: number | string }) {
+  const dim = typeof size === 'number' ? `${size}px` : size
+  const radius = `calc(${dim} * 0.18)`
 
   if (LOGOS.includes(team.teamId)) {
     return (
       <Image
         src={`/logos/${team.teamId}.png`}
         alt={team.ventureName || team.teamId}
-        width={size}
-        height={size}
-        style={{ width: size, height: size, borderRadius: radius, objectFit: 'contain' }}
+        // Intrinsic hints for the image loader only; the CSS below sizes it.
+        width={200}
+        height={200}
+        style={{ width: dim, height: dim, borderRadius: radius, objectFit: 'contain' }}
         unoptimized
       />
     )
@@ -75,8 +85,8 @@ export function VentureLogo({ team, size }: { team: Team; size: number }) {
       aria-label={team.ventureName || team.teamId}
       role="img"
       style={{
-        width: size,
-        height: size,
+        width: dim,
+        height: dim,
         borderRadius: radius,
         background: tint,
         color: LIGHT_TINTS.has(tint) ? 'var(--midnight-charcoal)' : 'var(--white)',
@@ -86,10 +96,10 @@ export function VentureLogo({ team, size }: { team: Team; size: number }) {
         // Optically centred: a capital sits high in its em box, so centring the
         // box leaves the letter looking a touch above centre in a square.
         lineHeight: 1,
-        paddingTop: Math.round(size * 0.03),
+        paddingTop: `calc(${dim} * 0.03)`,
         fontFamily: 'var(--font-serif)',
         fontWeight: 700,
-        fontSize: Math.round(size * 0.52),
+        fontSize: `calc(${dim} * 0.52)`,
       }}
     >
       {initialFor(team)}
