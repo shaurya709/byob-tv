@@ -107,6 +107,22 @@ type Place = keyof typeof PLACES
 const MARK_IN_DISC = 0.82
 
 /**
+ * How ranks 4–10 draw their bar. **Two options, under evaluation.**
+ *
+ * `inline` — the bar is the row: one pill per team, filled from the left, with
+ * the rank, mark, name and figure sitting on top of it.
+ *
+ * `stacked` — the bar runs *under* the row: a plain row of rank, mark, name and
+ * figure, with a thin track beneath it.
+ *
+ * The question they answer is whether one shape can be both a table row and a
+ * bar chart. A pill tall enough to hold a 48px mark is a fairly weak bar; a
+ * separate bar is a stronger chart and one more piece of furniture per team.
+ * Whichever loses gets deleted, along with this type.
+ */
+export type ListVariant = 'inline' | 'stacked'
+
+/**
  * Who is on the board. The top ten of whatever it is handed, and nothing else.
  *
  * The three cards render whether or not anyone is trading: a podium with second
@@ -173,11 +189,11 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
           sheen shows only on the strip of metal the card does not cover. */}
       <span className="tv-pod-shine" aria-hidden />
 
-      {/* The part of the numeral that breaks above the card, on the white page.
-          Its twin lives inside the card below; together they are one glyph. The
-          rank is announced once, by the copy inside, so a screen reader does not
-          hear it twice. */}
-      <span className="tv-pod-num-above" aria-hidden>
+      {/* The numeral, whole, in Deep Teal — and then the card is painted over
+          it, so what survives is exactly the part hanging off the corner. Its
+          twin inside the card supplies the white half. The rank is announced
+          once, by the copy inside, so a screen reader does not hear it twice. */}
+      <span className="tv-pod-num-outside" aria-hidden>
         <span className="tv-pod-numeral">{place}</span>
       </span>
 
@@ -293,11 +309,77 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
  * slice it draws. A full bar becomes impossible by construction: you cannot be
  * 100% of the venture ahead of you without being ahead of them.
  */
-function Strip({ ranked, fromRank }: { ranked: readonly Team[]; fromRank: number }) {
+function Strip({
+  ranked,
+  fromRank,
+  variant,
+}: {
+  ranked: readonly Team[]
+  fromRank: number
+  variant: ListVariant
+}) {
   const teams = ranked.slice(fromRank - 1)
   // An empty strip carries no heading. Apparatus describing absence is the same
   // filler as a "no data" message, in a smaller typeface.
   if (teams.length === 0) return null
+
+  // **One reference for all seven bars: the venture ranked immediately above the
+  // list.** Measuring each row against the row directly above it — which this
+  // did briefly — produces a chart that is not a ranking: rank 6 drew a longer
+  // bar than rank 5, and rank 10 drew a nearly full one, because each was only
+  // ever describing its own local gap. Against one shared reference the bars
+  // descend, which is what a leaderboard has to do, and rank 4 still cannot fill
+  // its track because it is behind third place.
+  const above = ranked[fromRank - 2]
+  const reference = above?.totalRevenue ?? teams[0]?.totalRevenue ?? 0
+
+  const share = (team: Team) =>
+    reference <= 0
+      ? 0
+      : // Floored at the pill's left cap. A bar three percent long is a lozenge
+        // that reads as a rendering fault rather than as a small number.
+        Math.max(11, Math.min(100, (100 * team.totalRevenue) / reference))
+
+  const rank = (index: number) => (
+    <span
+      className="tv-figure"
+      style={{
+        font: 'var(--t-pod-rank-row)',
+        letterSpacing: 'var(--track-pod-fig)',
+        color: 'var(--pod-rank-ink)',
+        textAlign: 'center',
+      }}
+    >
+      {fromRank + index}
+    </span>
+  )
+
+  const mark = (team: Team) => (
+    <span className="tv-pod-row-mark">
+      <VentureLogo team={team} size="var(--d-pod-row-logo)" />
+    </span>
+  )
+
+  const name = (team: Team) => <span className="tv-pod-pill-name">{nameOf(team)}</span>
+
+  const figure = (team: Team) => (
+    <span
+      className="tv-figure"
+      style={{
+        font: 'var(--t-pod-fig-row)',
+        letterSpacing: 'var(--track-pod-fig)',
+        color: 'var(--deep-teal)',
+        textAlign: 'right',
+      }}
+    >
+      {revenueOf(team)}
+    </span>
+  )
+
+  // Staggered, so seven sheens do not cross the board in unison — which reads as
+  // the whole strip blinking rather than as light moving over each bar.
+  const delay = (index: number) =>
+    ({ ['--d-pod-shine-delay' as string]: `${(index * 0.9).toFixed(2)}s` }) as React.CSSProperties
 
   return (
     <div
@@ -308,60 +390,46 @@ function Strip({ ranked, fromRank }: { ranked: readonly Team[]; fromRank: number
         height: '100%',
       }}
     >
-      {teams.map((team, index) => {
-        // The venture one rank above this one — third place for the first row,
-        // and the row above for every other. Reading it out of the full ranked
-        // list rather than the slice is what lets rank 4 measure itself against
-        // a podium card rather than against itself.
-        const above = ranked[fromRank - 2 + index]
-        const ahead = above?.totalRevenue ?? 0
-        return (
-        <div key={team.teamId} className="tv-pod-pill">
+      {teams.map((team, index) =>
+        variant === 'inline' ? (
+          <div key={team.teamId} className="tv-pod-pill">
+            <div
+              className="tv-pod-pill-fill"
+              style={{ width: `${share(team)}%`, ...delay(index) }}
+            />
+            {rank(index)}
+            {mark(team)}
+            {name(team)}
+            {figure(team)}
+          </div>
+        ) : (
           <div
-            className="tv-pod-pill-fill"
-            style={{
-              // Floored at the pill's left cap. A bar three percent long is a
-              // lozenge that reads as a rendering fault rather than as a small
-              // number; at the cap's width it reads as "the bar starts here".
-              width:
-                ahead <= 0 ? 0 : `${Math.max(13, (100 * team.totalRevenue) / ahead)}%`,
-              // Staggered, so seven sheens do not cross the board in unison —
-              // which reads as the whole strip blinking rather than as light
-              // moving over each bar.
-              ['--d-pod-shine-delay' as string]: `${(index * 0.45).toFixed(2)}s`,
-            }}
-          />
-          <span
-            className="tv-figure"
-            style={{
-              font: 'var(--t-pod-rank-row)',
-              letterSpacing: 'var(--track-pod-fig)',
-              color: 'var(--pod-rank-ink)',
-              textAlign: 'center',
-            }}
+            key={team.teamId}
+            style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
           >
-            {fromRank + index}
-          </span>
-          <span className="tv-pod-pill-name">{nameOf(team)}</span>
-          <span
-            className="tv-figure"
-            style={{
-              font: 'var(--t-pod-fig-row)',
-              letterSpacing: 'var(--track-pod-fig)',
-              color: 'var(--deep-teal)',
-              textAlign: 'right',
-            }}
-          >
-            {revenueOf(team)}
-          </span>
-        </div>
-        )
-      })}
+            <div className="tv-pod-stack">
+              {rank(index)}
+              {mark(team)}
+              {name(team)}
+              {figure(team)}
+            </div>
+            <div className="tv-pod-underbar">
+              <span style={{ width: `${share(team)}%` }} />
+            </div>
+          </div>
+        ),
+      )}
     </div>
   )
 }
 
-export function Podium({ ranked }: { ranked: readonly Team[] }) {
+export function Podium({
+  ranked,
+  variant = 'inline',
+}: {
+  ranked: readonly Team[]
+  variant?: ListVariant
+}) {
   const visible = podiumTeams(ranked)
   // Explicit indices, not a destructure of `visible`: the three cards have to
   // exist before the feed does, and `slice` on an empty list yields nothing to
@@ -394,14 +462,17 @@ export function Podium({ ranked }: { ranked: readonly Team[] }) {
           has only 55.0vw of height to give it. `fr` asks for a share of whatever
           height the frame actually has, so first place is 84% of the board at
           every aspect rather than 815px at one of them. */}
-      <div style={{ display: 'grid', gridTemplateRows: '84fr 16fr', minHeight: 0 }}>
+      <div style={{ display: 'grid', gridTemplateRows: '78fr 22fr', minHeight: 0 }}>
         <PodiumCard team={first} place={1} />
       </div>
 
       <div
         style={{
           display: 'grid',
-          gridTemplateRows: '42.3fr 52.1fr',
+          // 36/58, from 42.3/52.1. The list took height from the cards when its
+          // rows gained a mark: a row that must hold a 48px disc cannot be 57px
+          // tall, and seven of them is 100px the cards had to find.
+          gridTemplateRows: '36fr 58fr',
           rowGap: 'var(--s-pod-stack-gap, 2.8vw)',
           minWidth: 0,
           minHeight: 0,
@@ -419,7 +490,7 @@ export function Podium({ ranked }: { ranked: readonly Team[] }) {
           <PodiumCard team={third} place={3} />
         </div>
 
-        <Strip ranked={visible} fromRank={PODIUM_PLACES + 1} />
+        <Strip ranked={visible} fromRank={PODIUM_PLACES + 1} variant={variant} />
       </div>
     </div>
   )

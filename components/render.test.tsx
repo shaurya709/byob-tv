@@ -166,7 +166,7 @@ describe('Podium', () => {
     // and the numerals are rendering whole in a single colour, which is the
     // failure this treatment can have while still looking deliberate.
     expect(host.querySelectorAll('.tv-pod-numeral')).toHaveLength(6)
-    expect(host.querySelectorAll('.tv-pod-num-above')).toHaveLength(3)
+    expect(host.querySelectorAll('.tv-pod-num-outside')).toHaveLength(3)
     expect(host.querySelectorAll('.tv-pod-num-inside')).toHaveLength(3)
     expect(host.querySelectorAll('.tv-pod-pill')).toHaveLength(7)
     // Each card stands on its own metal. Three plinths and three cards, never

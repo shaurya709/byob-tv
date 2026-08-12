@@ -357,8 +357,8 @@
   /* The white disc, as a share of its card's width. Rank 1's is half the card;
      the short cards give theirs slightly less, so the step between them reads
      as more than the cards' own size difference. */
-  --d-pod-disc-1: 18.8vw;
-  --d-pod-disc-r: 8.6vw;
+  --d-pod-disc-1: 16.6vw;
+  --d-pod-disc-r: 7vw;
 
   /* The badge, as a share of its card's width. The short cards' is a *larger*
      share so that all three badges land at a similar absolute size — a badge
@@ -376,27 +376,33 @@
 
   /* ── The rank numeral that breaks the card's top edge ──
 
-     One numeral, split by the edge: the part above sits on the white page in
-     Deep Teal, the part below sits inside the card in white. It is drawn twice
-     and each copy is clipped to its own side, which is the only way to give one
-     glyph two colours along a curve.
+     One numeral sitting **on** the card's top-left corner, breaking two edges at
+     once: the part outside the card is Deep Teal on the white page, the part
+     inside is white. It is drawn twice, and the two copies are separated by
+     *paint order* rather than by a clip — see `.tv-pod-num-outside`.
 
-     **The split is on cap height, not font size**, and it is exact rather than
-     approximate. `text-box: trim-both cap alphabetic` trims the element's box to
-     the cap itself — measured on this face, a 200px numeral trims to 137.6px, a
-     ratio of 0.688 that agrees with the canvas metric to three places. Splitting
-     on font size instead would put the cut a fifth of an em too low, because a
-     line box is not a glyph. */
-  --fs-pod-num-1: clamp(48px, 11vw, 230px);
-  --fs-pod-num-r: clamp(30px, 7vw, 146px);
+     Sizes are still expressed through the cap, not the font size, because the
+     offsets are fractions of the cap: `text-box: trim-both cap alphabetic` trims
+     the element's box to the cap itself, measured on this face at 0.688 of the
+     em, agreeing with the canvas metric to three places. A line box is not a
+     glyph, and every offset here would be a fifth of an em out if it were. */
+  --fs-pod-num-1: clamp(44px, 9.5vw, 199px);
+  --fs-pod-num-r: clamp(28px, 6.2vw, 130px);
   --k-pod-num-cap: 0.688;
-  --k-pod-num-above: 0.3;
-  --s-pod-num-x: 7%;
+  /* How far the numeral hangs off the card, as a share of its own cap height and
+     its own width. It **sits on the corner** rather than inset from it, so it
+     breaks two edges at once. */
+  --k-pod-num-up: 0.44;
+  --k-pod-num-left: 0.17;
 
-  /* How long one sweep takes, and how long the metal rests between sweeps.
-     Slow, because this wall's rule is that movement means something happened —
-     a sheen that hurried would be competing with an overtake. */
-  --t-pod-shine: 7s;
+  /* One cycle: the sweep, then the rest. **Both got longer, and the rest got
+     longer by more.** At 7s the highlight crossed in 2.7s and came back every
+     4.3s, which reads as a pulse rather than as light catching a surface. It is
+     now a 4.2s crossing every 18s, so the metal is still for four fifths of its
+     life. Slow and rare, because this wall's rule is that movement means
+     something happened and a sheen that hurried would compete with an
+     overtake. */
+  --t-pod-shine: 18s;
   --s-pod-card-pad: 3.2vw 1.8vw 2vw;
   /* Head room grew on all three when the badges became numerals that break the
      card's top edge: the numeral now reaches into the card's upper-left corner,
@@ -404,7 +410,7 @@
      place's numeral cut 6px into its own disc. The short cards' disc came down
      to 8.6vw in the same move — head room and disc size are one budget, and
      taking the room without giving any back just moves the collision. */
-  --s-pod-card-pad-r: 3.6vw 1.5vw 1.2vw;
+  --s-pod-card-pad-r: 3.1vw 1.4vw 1.1vw;
 
   /* ── The list ──
 
@@ -413,10 +419,27 @@
      here instead, so the short pair and the list share one left edge and one
      right edge and the whole right-hand block reads as a single column. A 39px
      inset with nothing depending on it reads as a mistake, not a decision. */
-  --s-pod-row-gap: 0.85vw;
+  --s-pod-row-gap: 0.62vw;
   --w-pod-rank: 2.4vw;
   --w-pod-total: 7.6vw;
-  --s-pod-pill-x: 1.7vw;
+  --s-pod-pill-x: 1.5vw;
+
+  /* ── The list's mark ──
+
+     2.5vw is 48px at 1920, and it is a floor rather than a preference: below
+     about 50px these wordmarks stop resolving into anything and become coloured
+     dots. Adding a mark to each row is what forced the rest of the board to give
+     height back — a row holding a 48px disc cannot be 57px tall.
+
+     Ten ventures on one frame are recognised by their artwork long before anyone
+     reads a word of it, and the list was the only part of this board still
+     identifying a team by name alone. */
+  --d-pod-row-logo: 2.5vw;
+  --s-pod-row-mark-gap: 1.1vw;
+
+  /* Option B only: the bar that runs *under* a team's row rather than behind it. */
+  --h-pod-underbar: 0.55vw;
+  --s-pod-underbar-gap: 0.5vw;
 
   /* ── Two registers, deliberately opposed ──
 
@@ -454,8 +477,8 @@
   --s-pod-spine-lead: 1.1vw;
   --s-pod-spine-gap: 1.95vw;
   --t-pod-count: 800 clamp(30px, 4.2vw, 88px) / 1 var(--font-sans);
-  --t-pod-fig-1: 800 clamp(44px, 6.1vw, 128px) / 1 var(--font-sans);
-  --t-pod-fig-r: 800 clamp(26px, 3.5vw, 74px) / 1 var(--font-sans);
+  --t-pod-fig-1: 800 clamp(40px, 5.5vw, 115px) / 1 var(--font-sans);
+  --t-pod-fig-r: 800 clamp(24px, 3.1vw, 65px) / 1 var(--font-sans);
   --t-pod-fig-row: 800 clamp(13px, 1.45vw, 30px) / 1 var(--font-sans);
   --t-pod-rank-row: 800 clamp(12px, 1.3vw, 27px) / 1 var(--font-sans);
 
@@ -570,7 +593,7 @@
    light moving over metal. */
 @keyframes tv-shine {
   0% { transform: translateX(-115%); }
-  38%, 100% { transform: translateX(115%); }
+  23%, 100% { transform: translateX(115%); }
 }
 
 @keyframes tv-idle-1 {
@@ -1171,7 +1194,6 @@
        a junk size on a page that otherwise looks correct — the weekly grid did
        exactly that once, rendering marks at 10.3 x 16px. */
     --d-pod-num-cap: calc(var(--fs-pod-num) * var(--k-pod-num-cap));
-    --h-pod-overhang: calc(var(--d-pod-num-cap) * var(--k-pod-num-above));
   }
 
   /* ── The travelling sheen ──
@@ -1222,7 +1244,8 @@
      nearer the corner than first place's does. */
   .tv-pod-numeral {
     position: absolute;
-    left: var(--s-pod-num-x);
+    left: calc(-1 * var(--d-pod-num-cap) * var(--k-pod-num-left));
+    top: calc(-1 * var(--d-pod-num-cap) * var(--k-pod-num-up));
     font: 400 var(--fs-pod-num) / 1 var(--font-display-black), var(--font-serif);
     /* Trims the box to the cap, so `top` positions the cap and not a line box. */
     text-box: trim-both cap alphabetic;
@@ -1230,18 +1253,23 @@
     letter-spacing: var(--track-pod-fig);
   }
 
-  .tv-pod-num-above {
+  /* **No clip at all — the card does the clipping by being opaque and painted
+     later.** A rectangular clip above the card was the first version, and it
+     only worked while the numeral broke exactly one edge. A numeral sitting on
+     the corner breaks two, and the region beside the corner's arc belongs to
+     neither a top rect nor the card's rounded rect — so it fell through both and
+     left a notch out of the glyph.
+
+     Paint order has no such seam: the teal copy is drawn whole, the card is
+     drawn over it, and what survives is exactly the part outside the card,
+     following the corner radius for free. */
+  .tv-pod-num-outside {
     position: absolute;
-    left: 0;
-    right: 0;
-    top: calc(-1 * var(--h-pod-overhang));
-    height: var(--h-pod-overhang);
-    overflow: hidden;
+    inset: 0;
     pointer-events: none;
   }
 
-  .tv-pod-num-above .tv-pod-numeral {
-    top: 0;
+  .tv-pod-num-outside .tv-pod-numeral {
     color: var(--deep-teal);
   }
 
@@ -1254,7 +1282,6 @@
   }
 
   .tv-pod-num-inside .tv-pod-numeral {
-    top: calc(-1 * var(--h-pod-overhang));
     color: var(--white);
   }
 
@@ -1264,11 +1291,12 @@
      inside the card: a large numeral in the corner is a worse design than the
      split one, and it is not a broken one. */
   @supports not (text-box: trim-both cap alphabetic) {
-    .tv-pod-num-above {
+    .tv-pod-num-outside {
       display: none;
     }
     .tv-pod-num-inside .tv-pod-numeral {
       top: 0;
+      left: 4%;
       line-height: 1.1;
     }
   }
@@ -1317,12 +1345,63 @@
   .tv-pod-pill {
     position: relative;
     display: grid;
-    grid-template-columns: var(--w-pod-rank) minmax(0, 1fr) var(--w-pod-total);
+    grid-template-columns:
+      var(--w-pod-rank) var(--d-pod-row-logo) minmax(0, 1fr) var(--w-pod-total);
     align-items: center;
     gap: var(--s-pod-pill-x);
     padding-inline: var(--s-pod-pill-x);
     height: 100%;
     background: var(--pod-track);
+    border-radius: var(--radius-pill);
+  }
+
+  /* The list's mark. No white mount and no ring: these sit on pale mint rather
+     than on a dark card, so the artwork already has an edge and a mount would
+     only add a second circle around every one of them. */
+  .tv-pod-row-mark {
+    width: var(--d-pod-row-logo);
+    height: var(--d-pod-row-logo);
+    border-radius: 50%;
+    overflow: hidden;
+  }
+
+  /* ══ Option B — the bar runs under the row rather than behind it ══
+
+     Under evaluation against Option A, which is the pill above. Delete whichever
+     loses, and this comment with it.
+
+     The argument for it: a pill that is both a row and a bar chart is doing two
+     jobs with one shape, and the taller that pill has to be to hold a 48px mark,
+     the less it reads as a bar. Splitting them lets the row be a row at whatever
+     height the mark needs, and lets the bar be as thin as a bar wants to be.
+
+     The argument against: two shapes per team is more furniture on a board whose
+     whole design argument has been to remove it. */
+  .tv-pod-stack {
+    display: grid;
+    grid-template-columns:
+      var(--w-pod-rank) var(--d-pod-row-logo) minmax(0, 1fr) var(--w-pod-total);
+    align-items: center;
+    gap: var(--s-pod-pill-x);
+    padding-inline: var(--s-pod-pill-x);
+  }
+
+  .tv-pod-underbar {
+    position: relative;
+    height: var(--h-pod-underbar);
+    margin-top: var(--s-pod-underbar-gap);
+    margin-inline: var(--s-pod-pill-x);
+    background: var(--pod-track);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+  }
+
+  /* Deeper than the pill's fill: a 10px bar on pale mint needs more separation
+     from its own track than a 70px one does, or the two read as one flat bar. */
+  .tv-pod-underbar > span {
+    position: absolute;
+    inset: 0 auto 0 0;
+    background: color-mix(in srgb, var(--green-600) 62%, var(--deep-forest-green));
     border-radius: var(--radius-pill);
   }
 
