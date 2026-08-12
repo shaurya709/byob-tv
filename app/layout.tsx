@@ -3,7 +3,7 @@ import localFont from 'next/font/local'
 import './globals.css'
 
 /**
- * All three faces are self-hosted, so the wall makes **no runtime request to a
+ * All four faces are self-hosted, so the wall makes **no runtime request to a
  * font CDN**. That matters more here than in a normal app: this runs unattended for
  * weeks, and a font request that fails silently falls back to Georgia or
  * Helvetica on a screen nobody is watching closely enough to notice.
@@ -79,6 +79,33 @@ const displayBlack = localFont({
   variable: '--font-display-black',
 })
 
+/**
+ * Bebas Neue, for venture names on `/podium` and nothing else.
+ *
+ * **The fourth family, and the point at which this needs saying out loud:** two
+ * faces is what guarantees two TVs set the same frame identically, and this wall
+ * now carries four. Each addition has been scoped to one job — Archivo Black to
+ * the `BYOB` wordmark, this to venture names — and all four are bundled, so the
+ * risk is bundle size rather than a CDN that might not answer. Together the two
+ * additions are 18KB. But a fifth should be argued for rather than assumed.
+ *
+ * Bundled, not linked, for the same reason as the others: a
+ * `fonts.googleapis.com` request is a runtime network dependency on a wall that
+ * runs unattended for weeks.
+ *
+ * **One weight, and no real lowercase** — Bebas Neue maps lowercase to capitals
+ * by design, which suits a name that was already being uppercased in CSS. It
+ * also means every token that sets it must ask for 400: at 800 the browser
+ * synthesises a fake bold by smearing the outlines, which on a condensed face
+ * closes the counters and turns a name into a block at six metres.
+ */
+const condensed = localFont({
+  src: './fonts/BebasNeue-Regular.woff2',
+  weight: '400',
+  display: 'block',
+  variable: '--font-condensed',
+})
+
 export const metadata: Metadata = {
   title: 'BYOB Wall',
   description: 'Live leaderboard and Mesa Flea countdown for BYOB Cohort 2026.',
@@ -98,7 +125,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en-IN"
-      className={`${mesaBody.variable} ${mesaSerifVariable.variable} ${displayBlack.variable}`}
+      className={[
+        mesaBody.variable,
+        mesaSerifVariable.variable,
+        displayBlack.variable,
+        condensed.variable,
+      ].join(' ')}
     >
       <body>{children}</body>
     </html>

@@ -393,7 +393,13 @@
      its own width. It **sits on the corner** rather than inset from it, so it
      breaks two edges at once. */
   --k-pod-num-up: 0.44;
-  --k-pod-num-left: 0.17;
+  /* How far the numeral hangs off the card's left edge, as a share of its own
+     cap. **Down from 0.17**: the numerals sat too far out. Second and third are
+     pulled in further than first, because their card has a neighbour 33px to its
+     left and a numeral hanging into that gap starts to read as belonging to the
+     card it is nearer. First place's left is open frame, so it can hang more. */
+  --k-pod-num-left: 0.02;
+  --k-pod-num-left-r: -0.04;
 
   /* One cycle: the sweep, then the rest. **Both got longer, and the rest got
      longer by more.** At 7s the highlight crossed in 2.7s and came back every
@@ -482,9 +488,20 @@
   --t-pod-fig-row: 800 clamp(13px, 1.45vw, 30px) / 1 var(--font-sans);
   --t-pod-rank-row: 800 clamp(12px, 1.3vw, 27px) / 1 var(--font-sans);
 
-  --t-pod-name-1: 800 clamp(13px, 1.5vw, 31px) / 1.1 var(--font-sans);
-  --t-pod-name-r: 800 clamp(10px, 1.1vw, 23px) / 1.1 var(--font-sans);
-  --t-pod-name-row: 800 clamp(12px, 1.32vw, 27px) / 1.1 var(--font-sans);
+  /* ── Venture names, in Bebas Neue ──
+
+     **Weight 400, not 800.** The face has one weight; asking for 800 makes the
+     browser synthesise a bold by smearing the outlines, which on a condensed
+     face closes the counters and turns a name into a block at six metres.
+
+     **Sized up, not across.** Bebas is condensed and its cap is a large share of
+     its em, so at the size the sans was set it reads smaller *and* narrower.
+     These are raised about a fifth to put the cap back where it was; the width
+     they give back is what lets a long venture name fit its row without
+     truncating. */
+  --t-pod-name-1: 400 clamp(16px, 1.86vw, 39px) / 1.05 var(--font-condensed);
+  --t-pod-name-r: 400 clamp(12px, 1.38vw, 29px) / 1.05 var(--font-condensed);
+  --t-pod-name-row: 400 clamp(15px, 1.68vw, 35px) / 1.05 var(--font-condensed);
   --t-pod-label: 800 clamp(8px, 0.72vw, 15px) / 1.3 var(--font-sans);
 
   /* Tracking. Figures negative, names positive, and the smaller the name the
@@ -1244,7 +1261,7 @@
      nearer the corner than first place's does. */
   .tv-pod-numeral {
     position: absolute;
-    left: calc(-1 * var(--d-pod-num-cap) * var(--k-pod-num-left));
+    left: calc(-1 * var(--d-pod-num-cap) * var(--k-pod-num-hang));
     top: calc(-1 * var(--d-pod-num-cap) * var(--k-pod-num-up));
     font: 400 var(--fs-pod-num) / 1 var(--font-display-black), var(--font-serif);
     /* Trims the box to the cap, so `top` positions the cap and not a line box. */
@@ -1342,19 +1359,6 @@
      No card, no border, no shadow. The podium is solid objects and the list is
      bars, and that contrast is the point — giving these rows card treatment is
      what made an earlier version of this slide look like a shorter `/weekly`. */
-  .tv-pod-pill {
-    position: relative;
-    display: grid;
-    grid-template-columns:
-      var(--w-pod-rank) var(--d-pod-row-logo) minmax(0, 1fr) var(--w-pod-total);
-    align-items: center;
-    gap: var(--s-pod-pill-x);
-    padding-inline: var(--s-pod-pill-x);
-    height: 100%;
-    background: var(--pod-track);
-    border-radius: var(--radius-pill);
-  }
-
   /* The list's mark. No white mount and no ring: these sit on pale mint rather
      than on a dark card, so the artwork already has an edge and a mount would
      only add a second circle around every one of them. */
@@ -1365,18 +1369,20 @@
     overflow: hidden;
   }
 
-  /* ══ Option B — the bar runs under the row rather than behind it ══
+  /* ── One team's row, and the bar beneath it ──
 
-     Under evaluation against Option A, which is the pill above. Delete whichever
-     loses, and this comment with it.
+     **Two shapes per team, not one.** The alternative shipped for a day: a
+     single pill that was both the row and the bar, filled from the left with the
+     rank, mark, name and figure sitting on it. It was rejected on looking at the
+     two side by side — a pill tall enough to hold a 48px mark is a weak bar, and
+     at 70px of height the fill reads as a tinted row rather than as a measured
+     length. Splitting them lets the row be whatever height the mark needs and
+     lets the bar be as thin as a bar wants to be.
 
-     The argument for it: a pill that is both a row and a bar chart is doing two
-     jobs with one shape, and the taller that pill has to be to hold a 48px mark,
-     the less it reads as a bar. Splitting them lets the row be a row at whatever
-     height the mark needs, and lets the bar be as thin as a bar wants to be.
-
-     The argument against: two shapes per team is more furniture on a board whose
-     whole design argument has been to remove it. */
+     The cost is one more piece of furniture per team on a board whose design
+     argument has otherwise been to remove it. It is paid because the chart is
+     the reason the list exists: the figures are already written out, so a bar
+     that cannot be read as a bar is decoration. */
   .tv-pod-stack {
     display: grid;
     grid-template-columns:
@@ -1396,53 +1402,32 @@
     overflow: hidden;
   }
 
-  /* Deeper than the pill's fill: a 10px bar on pale mint needs more separation
-     from its own track than a 70px one does, or the two read as one flat bar. */
-  .tv-pod-underbar > span {
+  /* Deeper than the fill this replaced: a 10px bar on pale mint needs more
+     separation from its own track than a 70px one did, or the two read as one
+     flat bar. */
+  .tv-pod-underbar-fill {
     position: absolute;
     inset: 0 auto 0 0;
     background: color-mix(in srgb, var(--green-600) 62%, var(--deep-forest-green));
     border-radius: var(--radius-pill);
-  }
-
-  /* Behind the content, never over it: the fill is a surface, and a name that
-     changed colour halfway along its own bar would read as a defect. */
-  .tv-pod-pill-fill {
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    background: var(--pod-fill);
-    border-radius: var(--radius-pill);
-    pointer-events: none;
-    /* Clips its own sweep. The fill is already a rounded rect, so the sheen
-       follows the bar's ends without a second shape to maintain. */
     overflow: hidden;
   }
 
-  /* The same sweep as the plinths, at lower contrast because it crosses a pale
-     mint rather than a metal, and offset so the ten of them do not flash in
-     unison — which would read as the whole board blinking. */
-  .tv-pod-pill-fill::after {
-    content: '';
+  /* The sheen follows the bar here rather than staying on the pill that used to
+     hold it. It runs on the *filled* length, not the track: light travelling
+     along an empty part of the bar would read as progress that is not there. */
+  .tv-pod-underbar-shine {
     position: absolute;
     inset: 0;
     background: linear-gradient(
       100deg,
       transparent 38%,
-      color-mix(in srgb, var(--white) 78%, transparent) 50%,
+      color-mix(in srgb, var(--white) 55%, transparent) 50%,
       transparent 62%
     );
     animation: tv-shine var(--t-pod-shine) cubic-bezier(0.5, 0, 0.5, 1) infinite;
     animation-delay: var(--d-pod-shine-delay, 0s);
-  }
-
-  /* `> span`, never `> *`. The fill is a `div` and is absolutely positioned; a
-     blanket rule here re-declares `position` on it, drops it back into flow, and
-     it silently claims the first grid cell — measured: every figure wrapped onto
-     a second line inside its own pill. */
-  .tv-pod-pill > span {
-    position: relative;
+    pointer-events: none;
   }
 
   /* **The figure has its own grid track, so a long name cannot reach it.** The
@@ -1457,7 +1442,7 @@
      It stays because a venture can be renamed from a spreadsheet on any given
      Tuesday, and the failure mode without it is a name overlapping a number on
      an unattended wall for a week. */
-  .tv-pod-pill-name {
+  .tv-pod-row-name {
     font: var(--t-pod-name-row);
     letter-spacing: var(--track-pod-name-row);
     text-transform: uppercase;
@@ -1491,7 +1476,7 @@
     }
 
     .tv-pod-shine,
-    .tv-pod-pill-fill::after {
+    .tv-pod-underbar-shine {
       display: none;
     }
   }

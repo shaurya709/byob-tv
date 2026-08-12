@@ -80,7 +80,7 @@ for (const [width, height] of SIZES) {
     // silently started counting the caption row as row one when the strip gained
     // a column heading, and a measurement that quietly describes a different
     // element is worse than no measurement.
-    const rows = [...document.querySelectorAll('.tv-pod-pill')]
+    const rows = [...document.querySelectorAll('.tv-pod-stack')]
     const last = rows.at(-1)?.getBoundingClientRect()
     const sorted = [...cards].sort((a, b) => a.x - b.x)
     return {

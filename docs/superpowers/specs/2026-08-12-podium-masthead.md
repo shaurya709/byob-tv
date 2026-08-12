@@ -85,6 +85,20 @@ height, Manrope 800 carries **80% of its ink** and sets 8% narrower. The two
 levers that recover some of that without a second font family are size and the
 negative tracking, and both are spent.
 
+**Four families, and that needs saying out loud.** Two is what guarantees two TVs
+set the same frame identically; this wall now carries four. Each addition is
+scoped to one job — Archivo Black to the `BYOB` wordmark, Bebas Neue to venture
+names — and both are bundled rather than linked, so the risk is 18KB of bundle
+rather than a CDN that might not answer. A fifth should be argued for rather than
+assumed.
+
+**Venture names are Bebas Neue at weight 400.** The face has one weight, and
+asking for 800 makes the browser synthesise a bold by smearing the outlines,
+which on a condensed face closes the counters and turns a name into a block at
+six metres. The sizes are raised about a fifth because Bebas is condensed and its
+cap is a large share of its em — that puts the cap back where the sans had it,
+and the width it gives back is what lets a long venture name fit its row.
+
 **`BYOB` is set in Archivo Black**, a third family added by decision after the
 first build and scoped to that one word. It is *bundled* — a 9.8KB latin woff2 in
 `app/fonts/` with its OFL licence — never linked: a `fonts.googleapis.com`
@@ -129,8 +143,18 @@ about a fifth of an em too low, because a line box is not a glyph. Measured on
 the running board: 30.0% above on all three cards, with the two copies aligned to
 0.0px.
 
-The inside copy is clipped by a box carrying the card's own radius, so where the
-numeral meets a corner it follows the curve rather than a square rect.
+The copies are separated by **paint order**, not by clipping: the Deep Teal copy
+is drawn whole and the card is painted over it, so what survives is exactly the
+part outside, following the corner radius for free. A rectangular clip was the
+first version and it only worked while the numeral broke one edge — on a corner
+it breaks two, and the region beside the arc belonged to neither clip and took a
+notch out of the glyph.
+
+**Measured clearances.** First place hangs 2.5px left of its own card; second and
+third sit 3.3px *inside* theirs and clear the card to their left by 35.9px at
+1920 and 29.9px at 1600. The short cards are pulled in further than first place
+because their card has a neighbour 33px away, and a numeral hanging into that gap
+starts to read as belonging to the card it is nearer.
 
 **The discs had to move.** Second place's numeral cut 6px into its own mark
 before the head room grew; head room and disc diameter are one budget, so taking
@@ -140,6 +164,24 @@ came down to 8.6vw in the same change. Clearances now measure 16.6 / 14.1 /
 
 Without `text-box` support the whole numeral stays inside the card rather than
 splitting in the wrong place — a worse design, but not a broken one.
+
+## 5b2. The list is a row with a bar under it, not a filled pill
+
+**Two shapes per team, chosen over one.** A single pill that was both the row and
+the bar shipped for a day and was rejected on looking at the two side by side: a
+pill tall enough to hold a 48px mark is a weak bar, and at 70px of height the
+fill reads as a tinted row rather than as a measured length. Splitting them lets
+the row be whatever height the mark needs and lets the bar be as thin as a bar
+wants to be.
+
+The cost is one more piece of furniture per team on a board whose design argument
+has otherwise been to remove it. It is paid because the chart is the reason the
+list exists — the figures are already written out beside it, so a bar that cannot
+be read as a bar is decoration.
+
+Every row now carries its venture's mark. That is what forced the rest of the
+board to give height back: a row holding a 48px disc cannot be 57px tall, and
+seven of them is 100px the cards had to find.
 
 ## 5c. The list bar measures the gap above it
 

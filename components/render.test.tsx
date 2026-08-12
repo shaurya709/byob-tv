@@ -168,7 +168,10 @@ describe('Podium', () => {
     expect(host.querySelectorAll('.tv-pod-numeral')).toHaveLength(6)
     expect(host.querySelectorAll('.tv-pod-num-outside')).toHaveLength(3)
     expect(host.querySelectorAll('.tv-pod-num-inside')).toHaveLength(3)
-    expect(host.querySelectorAll('.tv-pod-pill')).toHaveLength(7)
+    // One row and one bar per rank 4-10. The pill that used to be both is gone:
+    // a shape doing two jobs is what this list was rejected for.
+    expect(host.querySelectorAll('.tv-pod-stack')).toHaveLength(7)
+    expect(host.querySelectorAll('.tv-pod-underbar')).toHaveLength(7)
     // Each card stands on its own metal. Three plinths and three cards, never
     // three cards and one plinth — the plinth is where the metal is declared,
     // and a shared one would give second place first place's gold.

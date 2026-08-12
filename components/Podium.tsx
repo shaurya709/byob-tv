@@ -58,6 +58,7 @@ const PLACES = {
     plinth: 'var(--h-pod-plinth-1)',
     disc: 'var(--d-pod-disc-1)',
     numeral: 'var(--fs-pod-num-1)',
+    numHang: 'var(--k-pod-num-left)',
     nameFont: 'var(--t-pod-name-1)',
     nameTrack: 'var(--track-pod-name-1)',
     figFont: 'var(--t-pod-fig-1)',
@@ -70,6 +71,7 @@ const PLACES = {
     plinth: 'var(--h-pod-plinth-r)',
     disc: 'var(--d-pod-disc-r)',
     numeral: 'var(--fs-pod-num-r)',
+    numHang: 'var(--k-pod-num-left-r)',
     nameFont: 'var(--t-pod-name-r)',
     nameTrack: 'var(--track-pod-name-r)',
     figFont: 'var(--t-pod-fig-r)',
@@ -85,6 +87,7 @@ const PLACES = {
     plinth: 'var(--h-pod-plinth-r)',
     disc: 'var(--d-pod-disc-r)',
     numeral: 'var(--fs-pod-num-r)',
+    numHang: 'var(--k-pod-num-left-r)',
     nameFont: 'var(--t-pod-name-r)',
     nameTrack: 'var(--track-pod-name-r)',
     figFont: 'var(--t-pod-fig-r)',
@@ -105,22 +108,6 @@ type Place = keyof typeof PLACES
  * mark keeps an edge against a dark card.
  */
 const MARK_IN_DISC = 0.82
-
-/**
- * How ranks 4–10 draw their bar. **Two options, under evaluation.**
- *
- * `inline` — the bar is the row: one pill per team, filled from the left, with
- * the rank, mark, name and figure sitting on top of it.
- *
- * `stacked` — the bar runs *under* the row: a plain row of rank, mark, name and
- * figure, with a thin track beneath it.
- *
- * The question they answer is whether one shape can be both a table row and a
- * bar chart. A pill tall enough to hold a 48px mark is a fairly weak bar; a
- * separate bar is a stronger chart and one more piece of furniture per team.
- * Whichever loses gets deleted, along with this type.
- */
-export type ListVariant = 'inline' | 'stacked'
 
 /**
  * Who is on the board. The top ten of whatever it is handed, and nothing else.
@@ -182,6 +169,7 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
           '--pod-metal': p.metal,
           '--h-pod-plinth': p.plinth,
           '--fs-pod-num': p.numeral,
+          '--k-pod-num-hang': p.numHang,
         } as React.CSSProperties
       }
     >
@@ -309,15 +297,7 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
  * slice it draws. A full bar becomes impossible by construction: you cannot be
  * 100% of the venture ahead of you without being ahead of them.
  */
-function Strip({
-  ranked,
-  fromRank,
-  variant,
-}: {
-  ranked: readonly Team[]
-  fromRank: number
-  variant: ListVariant
-}) {
+function Strip({ ranked, fromRank }: { ranked: readonly Team[]; fromRank: number }) {
   const teams = ranked.slice(fromRank - 1)
   // An empty strip carries no heading. Apparatus describing absence is the same
   // filler as a "no data" message, in a smaller typeface.
@@ -360,7 +340,7 @@ function Strip({
     </span>
   )
 
-  const name = (team: Team) => <span className="tv-pod-pill-name">{nameOf(team)}</span>
+  const name = (team: Team) => <span className="tv-pod-row-name">{nameOf(team)}</span>
 
   const figure = (team: Team) => (
     <span
@@ -390,46 +370,29 @@ function Strip({
         height: '100%',
       }}
     >
-      {teams.map((team, index) =>
-        variant === 'inline' ? (
-          <div key={team.teamId} className="tv-pod-pill">
-            <div
-              className="tv-pod-pill-fill"
-              style={{ width: `${share(team)}%`, ...delay(index) }}
-            />
+      {teams.map((team, index) => (
+        <div
+          key={team.teamId}
+          style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
+        >
+          <div className="tv-pod-stack">
             {rank(index)}
             {mark(team)}
             {name(team)}
             {figure(team)}
           </div>
-        ) : (
-          <div
-            key={team.teamId}
-            style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}
-          >
-            <div className="tv-pod-stack">
-              {rank(index)}
-              {mark(team)}
-              {name(team)}
-              {figure(team)}
-            </div>
-            <div className="tv-pod-underbar">
-              <span style={{ width: `${share(team)}%` }} />
-            </div>
+          <div className="tv-pod-underbar">
+            <span className="tv-pod-underbar-fill" style={{ width: `${share(team)}%` }}>
+              <span className="tv-pod-underbar-shine" style={delay(index)} />
+            </span>
           </div>
-        ),
-      )}
+        </div>
+      ))}
     </div>
   )
 }
 
-export function Podium({
-  ranked,
-  variant = 'inline',
-}: {
-  ranked: readonly Team[]
-  variant?: ListVariant
-}) {
+export function Podium({ ranked }: { ranked: readonly Team[] }) {
   const visible = podiumTeams(ranked)
   // Explicit indices, not a destructure of `visible`: the three cards have to
   // exist before the feed does, and `slice` on an empty list yields nothing to
@@ -490,7 +453,7 @@ export function Podium({
           <PodiumCard team={third} place={3} />
         </div>
 
-        <Strip ranked={visible} fromRank={PODIUM_PLACES + 1} variant={variant} />
+        <Strip ranked={visible} fromRank={PODIUM_PLACES + 1} />
       </div>
     </div>
   )
