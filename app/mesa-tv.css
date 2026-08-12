@@ -292,29 +292,18 @@
      13.6° from the brand tangerine, and its numeral clears 4.51:1 — real AA
      rather than large-only.
 
-     ── The exemption now covers three ramps, not three values ──
+     ── Flat values, and the shine does the work ──
 
-     Each metal is a gradient: a lighter top, the value below in the middle, a
-     darker bottom. Only the three middles are literals; both ends are mixes
-     against `--white` and `--midnight-charcoal`, so the count of hardcoded hexes
-     this file claims an exemption for is still three.
+     Each metal is a single colour with a highlight that travels across it. The
+     vertical ramp that preceded this is gone: a static gradient reads as a
+     colour that has been shaded, where a moving highlight reads as light
+     crossing a surface — which is what actually says "metal" on a screen nobody
+     is standing close to.
 
-     **What the ramp does to the numeral's contrast**, sampled from the rendered
-     glyph rather than computed from the stops — top, middle and bottom thirds of
-     the ink, against white:
-
-       gold    1.84 -> 2.16 -> 3.77 : 1
-       silver  1.85 -> 2.17 -> 3.72 : 1
-       bronze  3.70 -> 5.20 -> 7.53 : 1
-
-     So the ramp does **not** close the 3:1 thread, and it was worth measuring
-     rather than assuming: the dark end clears the floor comfortably, but the
-     highlight is lighter than the flat value was, so the top of a gold or silver
-     numeral is thinner than it used to be rather than thicker. What it buys is a
-     glyph whose lower two thirds are legible where the whole thing sat at 2.2:1.
-     Dropping the highlight and ramping from the base downward clears the floor
-     outright, at the cost of the lit-from-above look the ramp exists for. Bronze
-     needs none of that — it clears everywhere.
+     It also puts the numeral's contrast back where the flat values put it, gold
+     at 2.25:1 and silver at 2.22:1 against the 3:1 display floor. That thread
+     stays open by choice, and rank is carried by the pillar's height and by the
+     foot as well as by the numeral.
 
      ── The specified values, restored, with the measurement on the record ──
 
@@ -492,45 +481,6 @@
      rather than a neutral. That is deliberate: it dulls the two warm metals the
      way a real shadow does, and it keeps silver's ramp **cool** — measured, the
      silver stops run hue 210 -> 208 -> 197 rather than drifting warm. */
-  /* **Eight stops, not three.** Three was a wash — a 24% lift and a 36% shade
-     read as one flat colour with slightly different ends, which is what "flat"
-     kept meaning. Metal is a *specular band*: dark at the shoulder, the value,
-     a fast run up to near-white at the halfway line, then back down through the
-     value to a dark base with a thin bounce light under it. The band is what the
-     eye reads as a curved lit surface; the hue only says which metal it is. */
-  --metal-gold-ramp: linear-gradient(
-    172deg,
-    color-mix(in srgb, var(--midnight-charcoal) 42%, var(--metal-gold)) 0%,
-    var(--metal-gold) 20%,
-    color-mix(in srgb, var(--white) 46%, var(--metal-gold)) 38%,
-    color-mix(in srgb, var(--white) 80%, var(--metal-gold)) 47%,
-    color-mix(in srgb, var(--white) 40%, var(--metal-gold)) 55%,
-    var(--metal-gold) 70%,
-    color-mix(in srgb, var(--midnight-charcoal) 46%, var(--metal-gold)) 88%,
-    color-mix(in srgb, var(--white) 22%, var(--metal-gold)) 100%
-  );
-  --metal-silver-ramp: linear-gradient(
-    172deg,
-    color-mix(in srgb, var(--midnight-charcoal) 42%, var(--metal-silver)) 0%,
-    var(--metal-silver) 20%,
-    color-mix(in srgb, var(--white) 46%, var(--metal-silver)) 38%,
-    color-mix(in srgb, var(--white) 80%, var(--metal-silver)) 47%,
-    color-mix(in srgb, var(--white) 40%, var(--metal-silver)) 55%,
-    var(--metal-silver) 70%,
-    color-mix(in srgb, var(--midnight-charcoal) 46%, var(--metal-silver)) 88%,
-    color-mix(in srgb, var(--white) 22%, var(--metal-silver)) 100%
-  );
-  --metal-bronze-ramp: linear-gradient(
-    172deg,
-    color-mix(in srgb, var(--midnight-charcoal) 42%, var(--metal-bronze)) 0%,
-    var(--metal-bronze) 20%,
-    color-mix(in srgb, var(--white) 46%, var(--metal-bronze)) 38%,
-    color-mix(in srgb, var(--white) 80%, var(--metal-bronze)) 47%,
-    color-mix(in srgb, var(--white) 40%, var(--metal-bronze)) 55%,
-    var(--metal-bronze) 70%,
-    color-mix(in srgb, var(--midnight-charcoal) 46%, var(--metal-bronze)) 88%,
-    color-mix(in srgb, var(--white) 22%, var(--metal-bronze)) 100%
-  );
   /* How far the numeral hangs off the card, as a share of its own cap height and
      its own width. It **sits on the corner** rather than inset from it, so it
      breaks two edges at once. */
@@ -546,6 +496,32 @@
 
   /* The travelling highlight itself, shared by the numerals and the feet so one
      sweep crosses a pillar's metal as a single event. */
+  /* ── The gloss ──
+
+     **This is the shine that lives in the colour**, distinct from the highlight
+     that travels across it. It is a fixed band of white laid over the metal, and
+     the important part is that it only ever *adds* light: the base value stays
+     exactly itself in the shadow half, so the metal reads as pure gold rather
+     than as gold that has been shaded.
+
+     **The band is centred on 50%**, so it sits across the middle of a numeral
+     and the middle of a foot rather than off toward one edge — it was peaking at
+     38% and read as lit from the left rather than as lustre.
+
+     That is what the vertical ramp before this got wrong. It darkened the metal
+     at both ends to fake a curved surface and the result read as a dirtier
+     colour, not a shinier one. Lustre is a highlight, not a tonal range. */
+  --metal-gloss: linear-gradient(
+    104deg,
+    color-mix(in srgb, var(--white) 4%, transparent) 0%,
+    color-mix(in srgb, var(--white) 12%, transparent) 26%,
+    color-mix(in srgb, var(--white) 42%, transparent) 42%,
+    color-mix(in srgb, var(--white) 72%, transparent) 50%,
+    color-mix(in srgb, var(--white) 42%, transparent) 58%,
+    color-mix(in srgb, var(--white) 12%, transparent) 74%,
+    color-mix(in srgb, var(--white) 4%, transparent) 100%
+  );
+
   --metal-sweep: linear-gradient(
     100deg,
     transparent 34%,
@@ -775,8 +751,8 @@
    move the glyph. It repaints only the numeral's own box, three of them, for
    about a fifth of each cycle. */
 @keyframes tv-metal-sweep {
-  0% { background-position: 210% 0, 0 0; }
-  22%, 100% { background-position: -110% 0, 0 0; }
+  0% { background-position: 130% 0, 0 0, 0 0; }
+  30%, 100% { background-position: -30% 0, 0 0, 0 0; }
 }
 
 @keyframes tv-shine {
@@ -1442,7 +1418,8 @@
      metal twice in one colour rather than twice in two. */
   .tv-pod-foot {
     height: var(--h-pod-foot);
-    background: var(--pod-metal-ramp);
+    background-color: var(--pod-metal);
+    background-image: var(--metal-gloss);
     border-radius: 0 0 var(--r-pod-card) var(--r-pod-card);
   }
 
@@ -1475,11 +1452,18 @@
      on the glyph's shoulder rather than above it. */
   @supports (background-clip: text) or (-webkit-background-clip: text) {
     .tv-pod-numeral {
-      /* Two layers: a highlight that travels, over the metal that does not.
-         Both are clipped to the glyph. */
-      background-image: var(--metal-sweep), var(--pod-metal-ramp);
-      background-size: 260% 100%, 100% 100%;
-      background-position: 210% 0, 0 0;
+      /* Two layers, both clipped to the glyph: a highlight that travels, over
+         the flat metal that does not. The second layer is a gradient only
+         because `background-image` cannot take a colour — it is the same value
+         top to bottom. */
+      background-image: var(--metal-sweep), var(--metal-gloss),
+        linear-gradient(var(--pod-metal), var(--pod-metal));
+      /* 170%, not 260%: the sweep is only *visible* while the band overlaps the
+         glyph, and a wider image spends most of its travel off both ends — at
+         260% the highlight was on the numeral for about 0.4s in every 9s, which
+         on a wall is a flicker nobody catches. */
+      background-size: 170% 100%, 100% 100%, 100% 100%;
+      background-position: 130% 0, 0 0, 0 0;
       background-repeat: no-repeat;
       -webkit-background-clip: text;
       background-clip: text;

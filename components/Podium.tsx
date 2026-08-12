@@ -59,9 +59,9 @@ const PLACES = {
   // many **fixed** steps this pillar stands above rank 3 — not a fraction of
   // anything, because a proportional step flattens the staircase the moment the
   // podium gets shorter, and the staircase is the composition.
-  1: { fill: 'var(--deep-teal)', metal: 'var(--metal-gold)', ramp: 'var(--metal-gold-ramp)', riser: 2 },
-  2: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-silver)', ramp: 'var(--metal-silver-ramp)', riser: 1 },
-  3: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-bronze)', ramp: 'var(--metal-bronze-ramp)', riser: 0 },
+  1: { fill: 'var(--deep-teal)', metal: 'var(--metal-gold)', riser: 2 },
+  2: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-silver)', riser: 1 },
+  3: { fill: 'var(--deep-forest-green)', metal: 'var(--metal-bronze)', riser: 0 },
 } as const
 
 type Place = keyof typeof PLACES
@@ -138,7 +138,6 @@ function PodiumCard({ team, place }: { team: Team | undefined; place: Place }) {
       style={
         {
           '--pod-metal': p.metal,
-          '--pod-metal-ramp': p.ramp,
           '--h-pod-riser-here': `calc(${p.riser} * var(--h-pod-riser))`,
         } as React.CSSProperties
       }
