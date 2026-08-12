@@ -25,7 +25,6 @@ const BOARD: BoardSpec = {
   rank: rankByWeek,
   earned: (team) => team.weekRevenue,
   watchTo: WATCH_RANKS_WEEKLY,
-  columnLength: 20,
 }
 
 /** Teams with week revenue descending by fixture order: C401 leads on 42k. */

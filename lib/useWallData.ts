@@ -46,8 +46,6 @@ export type BoardSpec = {
   rank: (teams: readonly Team[]) => Team[]
   earned: (team: Team) => number
   watchTo: number
-  /** Rows per rendered column, if the board is laid out in columns. See `DetectInput`. */
-  columnLength?: number
 }
 
 export function useWallData(board: BoardSpec): WallData {
@@ -142,13 +140,12 @@ export function useWallData(board: BoardSpec): WallData {
       // Detection runs only on a freshly gated fetch. The boot cache is
       // render-only: reconciling it would emit nothing anyway, since detection
       // is idempotent, and would cost a write for nothing.
-      const { name, rank, earned, watchTo, columnLength } = board
+      const { name, rank, earned, watchTo } = board
       const { state, events } = detect(readBoard(name), {
         ranked: rank(fresh.teams),
         week: openWeek(fresh.cohort),
         watchTo,
         earned,
-        columnLength,
       })
       writeBoard(name, state)
       if (events.length > 0) {

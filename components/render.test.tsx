@@ -6,12 +6,12 @@ import { describe, expect, it } from 'vitest'
 
 import { FleaDial } from '@/components/FleaDial'
 import { Podium, podiumTeams } from '@/components/Podium'
-import { VenturePill } from '@/components/VenturePill'
-import { WeeklyLeaderboard, columnsOf } from '@/components/WeeklyLeaderboard'
+import { VentureCard } from '@/components/VentureCard'
+import { pagesOf } from '@/components/VentureName'
+import { ROW_LENGTH, WeeklyGrid, rowsOf } from '@/components/WeeklyGrid'
 import { HOT_TODAY_MIN } from '@/config'
 import type { CountdownState } from '@/lib/countdown'
 import { formatRupees, ordinal } from '@/lib/format'
-import { timelineFor } from '@/lib/kickTimeline'
 import { competingTeams, rankTeams } from '@/lib/ranking'
 import { team, teams } from '@/test/fixtures'
 
@@ -183,102 +183,123 @@ describe('podiumTeams', () => {
   })
 })
 
-describe('WeeklyLeaderboard', () => {
+describe('WeeklyGrid', () => {
+  const board = () =>
+    competingTeams(teams().map((row, index) => ({ ...row, weekRevenue: 1_000 * (42 - index) })))
+
   it('puts all forty competing teams on screen at once', () => {
-    const board = competingTeams(
-      teams().map((row, index) => ({ ...row, weekRevenue: 1_000 * (42 - index) })),
-    )
-    const text = render(<WeeklyLeaderboard teams={board} />)
+    const text = render(<WeeklyGrid teams={board()} />)
     expect(text).toContain('Venture 1')
     expect(text).toContain('Venture 40')
     // The spares are not on the board at all.
     expect(text).not.toContain('Venture 41')
   })
 
-  /** Down then across: ranks 1-20 are one column, 21-40 the next. */
-  it('splits the columns in reading order', () => {
-    const board = competingTeams(
-      teams().map((row, index) => ({ ...row, weekRevenue: 1_000 * (42 - index) })),
-    )
-    const [left, right] = columnsOf(board)
-    expect(left).toHaveLength(20)
-    expect(right).toHaveLength(20)
-    expect(left[0].teamId).toBe('SLE-C401')
-    expect(left[19].teamId).toBe('SLE-C420')
-    expect(right[0].teamId).toBe('SLE-C421')
+  /**
+   * Reading order: ten per row, left to right then top to bottom. Rank 1 at the
+   * top-left of row 1, rank 40 at the bottom-right of row 4.
+   */
+  it('lays the ranks out in reading order, ten to a row', () => {
+    const rows = rowsOf(board())
+    expect(rows).toHaveLength(4)
+    for (const row of rows) expect(row).toHaveLength(ROW_LENGTH)
+    expect(rows[0][0].teamId).toBe('SLE-C401')
+    expect(rows[0][9].teamId).toBe('SLE-C410')
+    expect(rows[1][0].teamId).toBe('SLE-C411')
+    expect(rows[3][9].teamId).toBe('SLE-C440')
+  })
+
+  /**
+   * Forty cards, always, all visible — never paged, scrolled or rotated. A fit
+   * problem is solved by taking height out of the ramp, so a board that quietly
+   * started rendering thirty would be the failure this asserts against.
+   */
+  it('renders a card for every competing team, never a subset', () => {
+    expect(rowsOf(board()).flat()).toHaveLength(40)
   })
 
   it('renders an empty board without inventing anything to put in it', () => {
-    expect(render(<WeeklyLeaderboard teams={[]} />)).toBe('')
+    expect(render(<WeeklyGrid teams={[]} />)).toBe('')
   })
 })
 
-describe('VenturePill', () => {
+describe('VentureCard', () => {
   /**
-   * Forty rows of ₹0 every morning is noise, and the column exists to say who
-   * is moving today. Silence is the honest answer for everyone else.
+   * Forty cards showing ₹0 every morning is noise, and the figure exists to say
+   * who is moving today. Silence is the honest answer for everyone else.
    */
   it('shows nothing rather than a zero for a team that has not sold today', () => {
-    const text = render(<VenturePill team={team({ weekRevenue: 4_000, todayRevenue: 0 })} rank={7} />)
+    const text = render(<VentureCard team={team({ weekRevenue: 4_000, todayRevenue: 0 })} rank={7} />)
     expect(text).toContain(formatRupees(4_000))
     expect(text).not.toContain(formatRupees(0))
   })
 
   it('shows today once there is something to show', () => {
-    const text = render(<VenturePill team={team({ todayRevenue: HOT_TODAY_MIN })} rank={7} />)
+    const text = render(<VentureCard team={team({ todayRevenue: HOT_TODAY_MIN })} rank={7} />)
     expect(text).toContain(formatRupees(HOT_TODAY_MIN))
   })
 
-  it('falls back to the team id for a venture with no name yet', () => {
-    const text = render(<VenturePill team={team({ teamId: 'SLE-C418', ventureName: '' })} rank={9} />)
-    expect(text).toContain('SLE-C418')
+  /**
+   * Both figures survived the redesign. The card was nearly reduced to one
+   * number; week and today are separate facts and the wall shows both.
+   */
+  it('carries both revenue figures, not just the week', () => {
+    const text = render(
+      <VentureCard team={team({ weekRevenue: 12_000, todayRevenue: 3_000 })} rank={2} />,
+    )
+    expect(text).toContain(formatRupees(12_000))
+    expect(text).toContain(formatRupees(3_000))
   })
 
   /**
-   * The deadlock guard. `playing` is only ever cleared by `onSettled`; an
-   * attacker row unmounting before its animation completes — rotation moving
-   * on, or an animation that never started — would otherwise pin the queue
-   * forever. The unmount cleanup must report the kick settled.
+   * An unnamed team shows its Team ID: identity, not a missing field. Most of
+   * the cohort is unnamed, so a blank here would make the board look unfinished.
    */
-  it('reports settled from unmount when the attacker row dies mid-kick', () => {
-    let settles = 0
-    const host = document.createElement('div')
-    document.body.append(host)
-    const root = createRoot(host)
-    act(() =>
-      root.render(
-        <VenturePill
-          team={team({})}
-          rank={8}
-          cue={{ role: 'attacker', rows: -2, timeline: timelineFor(3) }}
-          onSettled={() => settles++}
-        />,
-      ),
-    )
-    expect(settles).toBe(0)
-    act(() => root.unmount())
-    host.remove()
-    expect(settles).toBe(1)
+  it('shows the team id for a venture with no name yet', () => {
+    const text = render(<VentureCard team={team({ teamId: 'SLE-C418', ventureName: '' })} rank={9} />)
+    expect(text).toContain('SLE-C418')
   })
 
-  it('does not report settled from an unmounting row that was not the attacker', () => {
-    let settles = 0
-    const host = document.createElement('div')
-    document.body.append(host)
-    const root = createRoot(host)
-    act(() =>
-      root.render(
-        <VenturePill
-          team={team({})}
-          rank={5}
-          cue={{ role: 'defender', rows: 0, timeline: timelineFor(3) }}
-          onSettled={() => settles++}
-        />,
-      ),
-    )
-    act(() => root.unmount())
-    host.remove()
-    expect(settles).toBe(0)
+  it('never shows a bare zero for a team that has not traded at all', () => {
+    const text = render(<VentureCard team={team({ weekRevenue: 0, todayRevenue: 0 })} rank={38} />)
+    expect(text).not.toContain('₹0')
+  })
+})
+
+/**
+ * The marquee's one rule: the visible portion always ends at a word boundary.
+ * A continuous scroll cannot promise that, so the name is paged by whole words.
+ */
+describe('VentureName paging', () => {
+  // Every character is 10px wide — a stand-in for the real font, so the cases
+  // below are about where the breaks land and not about Manrope's metrics.
+  const measure = (s: string) => s.length * 10
+
+  it('keeps whole words on every page', () => {
+    const pages = pagesOf('Chai Point Collective', 120, measure)
+    expect(pages).toEqual(['Chai Point', 'Collective'])
+    for (const page of pages) expect(page).not.toMatch(/^\s|\s$/)
+  })
+
+  it('leaves a name that fits as a single page, so it never animates', () => {
+    expect(pagesOf('Pluck', 120, measure)).toEqual(['Pluck'])
+  })
+
+  /**
+   * A single word longer than the card gets its own page and is allowed to
+   * overflow it. Splitting it would break the only rule this component has, and
+   * a word that long is a data problem rather than a layout one.
+   */
+  it('never splits a word that is wider than the card', () => {
+    expect(pagesOf('Supercalifragilistic', 100, measure)).toEqual(['Supercalifragilistic'])
+  })
+
+  it('treats runs of whitespace as one break', () => {
+    expect(pagesOf('  Kite   Coffee  ', 120, measure)).toEqual(['Kite Coffee'])
+  })
+
+  it('has nothing to page when the name is empty', () => {
+    expect(pagesOf('   ', 120, measure)).toEqual([])
   })
 })
 
@@ -309,11 +330,11 @@ describe('formatting', () => {
  * animation — including a team's week revenue ticking up by ₹200 without moving,
  * which happens on most polls. On a wall that reads as movement, and movement
  * here is supposed to mean something happened. The rule is that the board tree
- * carries no `layout` prop at all; the kick moves things explicitly instead.
+ * carries no `layout` prop at all; the flip moves cards explicitly instead.
  */
 describe('silent reflow', () => {
   it('no component in the board tree uses Motion layout animation', () => {
-    for (const file of ['VenturePill.tsx', 'WeeklyLeaderboard.tsx', 'Podium.tsx']) {
+    for (const file of ['VentureCard.tsx', 'WeeklyGrid.tsx', 'Podium.tsx']) {
       const source = readFileSync(`${process.cwd()}/components/${file}`, 'utf8')
       expect(source, file).not.toMatch(/\blayout(Id)?\b\s*[=:]|\blayout\}/)
     }

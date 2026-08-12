@@ -42,8 +42,15 @@ for (const [width, height] of SIZES) {
   const r = await page.evaluate(() => {
     const n = (v) => +Number(v).toFixed(1)
     const header = document.querySelector('header')?.getBoundingClientRect()
+    // The topmost thing under the header on either slide: the podium's marks and
+    // capitals, or the weekly grid's first row of cards. **`.tv-card` is not
+    // optional here** — without it this returned `null` on /weekly, and a null
+    // clearance prints as "no number" rather than as a failure, which is the
+    // quietest possible way for the one measurement this script exists for to
+    // stop being taken. Measured while it was missing: -9.6px at 1600x900,
+    // reported as `null`.
     const tops = [
-      ...document.querySelectorAll('[class*="tv-idle-"], .tv-pod-slab'),
+      ...document.querySelectorAll('[class*="tv-idle-"], .tv-pod-slab, .tv-card'),
     ].map((el) => el.getBoundingClientRect().top)
     const shafts = [...document.querySelectorAll('.tv-pod-shaft')].map((el) =>
       el.getBoundingClientRect(),

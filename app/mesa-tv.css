@@ -95,51 +95,98 @@
      the smallest type on the wall — present, never competing. */
   --t-tv-ticker: 500 clamp(11px, 0.95vw, 20px) / 1 var(--font-mono);
 
-  /* ========= WEEKLY BOARD =========
-
-     Forty rows on one frame, so the row height is what the whole slide is built
-     around. 40px at 1920 leaves 1080 - header - padding with a little air; the
-     type is then sized to sit inside that with its descenders clear.
-
-     **Every column is a fixed width, including the name**, and each row is then
-     centred in its half of the frame. Letting the name absorb the slack instead
-     measured fine and read badly: with short venture names the revenue figures
-     were flung to the far edge, leaving 550px of white between "Pluck" and its
-     number. At six metres the eye cannot carry an association across that gap.
-     Fixed widths also mean every row is identical, so the four fields line up
-     down a column of twenty. */
   --h-header: 3.4vw;
-  --h-row: 2.3vw;
-  --h-col-head: 1.5vw;
-  --w-rank: 1.9vw;
-  --w-name: 18.5vw;
-  --w-week: 5.9vw;
-  --w-today: 4.8vw;
 
-  /* Weight 500, matching the venture name beside it: the rank went from a
-     bold tiered accent to quiet board apparatus in Midnight Charcoal, and a
-     700 number next to a 500 name read as a fortieth emphasis. */
-  --t-tv-row-rank: 500 clamp(12px, 1.15vw, 24px) / 1 var(--font-sans);
-  --t-tv-row-name: 500 clamp(12px, 1.15vw, 24px) / 1.1 var(--font-sans);
-  --t-tv-row-week: 600 clamp(12px, 1.15vw, 24px) / 1 var(--font-sans);
-  --t-tv-row-today: 500 clamp(11px, 1.05vw, 22px) / 1 var(--font-sans);
-  --t-tv-row-today-hot: 700 clamp(11px, 1.05vw, 22px) / 1 var(--font-sans);
+  /* ========= WEEKLY BOARD — the 4 x 10 card grid =========
 
-  /* Column headings on the weekly board. Smaller than the rows they label, so
-     they read as apparatus rather than as a fortieth entry. */
-  --t-tv-col-head: 700 clamp(9px, 0.78vw, 16px) / 1 var(--font-sans);
+     Forty cards on one frame, ten per row, ranked left to right then top to
+     bottom. **Forty, always, all visible** — not paged, not scrolled, not
+     rotated. A team that has to wait its turn on screen is not on the wall.
+     If this stops fitting, height comes out of the ramp below; paging is not
+     the escape hatch. See docs/superpowers/specs/2026-08-12-weekly-card-grid.md.
 
-  /* The pill's track is a fixed width, not `auto`, so the pill can shrink inside
-     it during a kick without resizing the row or re-centring the board. Its
-     three fixed columns, the logo, the three inner gaps and the two paddings. */
-  --w-pill: calc(30px + var(--w-name) + var(--w-week) + var(--w-today) + 5 * var(--s-3));
+     ── THE RAMP: the four numbers to adjust, and the only four ──
 
-  /* The row pill. Both are `--midnight-charcoal` at low alpha — the same base
-     the system's own `--border` is mixed from, so this introduces no new hue.
-     The stroke is what draws the shape; the fill is barely there, because forty
-     filled pills would turn a typographic board into a table. */
-  --tv-pill-fill: rgba(17, 33, 33, 0.03);
-  --tv-pill-stroke: rgba(17, 33, 33, 0.08);
+     Row heights descend from row 1 to row 4. Cards within a row are identical;
+     only the row-to-row height changes. These are a *visual* judgement — found
+     by looking at 1920, not derived — so they live here as four constants and
+     nothing else in the layout encodes a height.
+
+     The budget, measured from the running frame at 1920x1080: the content box
+     is 1824x1000, the header takes 65.27px, so the grid gets 934.73px. Three
+     12px gaps leaves **898.73px for the four rows to divide**.
+
+     Row 4 is the floor, and the floor is the greater of two constraints — the
+     text block (~24px legible at three to five metres) and a ~50px logo half.
+     Both land near 125-135px. Row 1 does not need to be large: with row 4 at
+     its floor the other three still average ~256px.
+
+     ── THE ONE RULE ADJUSTMENTS MUST KEEP: the four must sum to <= 44.3vw ──
+
+     Not 46.8vw, which is what the budget arithmetic above appears to allow.
+     Two things eat the difference and neither is visible in the numbers:
+
+     - The three row gaps and the frame's padding are `--s-*`, fixed px. They
+       hold their size while every `vw` here shrinks, so a ramp that exactly
+       fills 1920 is *over* budget at 1600. Measured at 46.8vw: -9.6px of
+       clearance at 1600x900, the grid sitting under the header, on a board that
+       looked perfect at 1920.
+     - The grid is centred, so leftover height splits half above and half below.
+       Clearance is therefore *half* the slack, and a ramp that leaves 20px over
+       leaves only 10px of air.
+
+     44.3vw holds >=10px of clearance at every size `scripts/measure-fit.mjs`
+     renders, and the tightest is 1600x900, not the smallest. Re-run it after
+     touching any of the four. */
+  --h-card-1: 12.4vw;   /* 238px @1920 */
+  --h-card-2: 11.5vw;   /* 221px */
+  --h-card-3: 10.6vw;   /* 204px */
+  --h-card-4: 9.8vw;    /* 188px — logo half 93px, well above the ~50px floor */
+
+  /* The grid's own spacing. Fixed px, and therefore the `--s-*` trap: these
+     hold their size while every `vw` above shrinks, so the ramp has less room
+     at 1600 than the arithmetic at 1920 suggests. `measure-fit.mjs` is what
+     catches it. */
+  --s-card-gap: var(--s-3);
+  --s-card-pad: var(--s-2);
+
+  /* ── The text block is a fixed height on all forty cards ──
+
+     Row-to-row variance is absorbed **entirely by the logo half**. That is the
+     rule "if the bottom half is tight, take the space from the logo, never from
+     a figure", turned into geometry: the name and both figures are the same
+     size on rank 1 and rank 40, so forty cards read as one system and only the
+     marks change scale. It also means the row-4 floor is a single subtraction
+     rather than a per-row negotiation. */
+  --h-card-text: 4.1vw;
+
+  /* The card's own width, spelled out because the mark needs it as a *length*
+     and the grid only ever expresses it as a fraction. Ten columns and nine
+     gaps inside the frame's content box; it agrees with the rendered card to
+     0.1px at 1920 (171.6), and it is the only place that arithmetic is written
+     down. */
+  --w-card: calc((100vw - 2 * var(--s-12) - 9 * var(--s-card-gap)) / 10);
+
+  /* Type is constant across all forty cards — see the text block note above.
+     Week revenue is the largest thing on the card: it is the figure the board
+     exists to show. */
+  --t-tv-card-name: 500 clamp(11px, 0.95vw, 20px) / 1.15 var(--font-sans);
+  --t-tv-card-week: 700 clamp(15px, 1.45vw, 30px) / 1 var(--font-sans);
+  --t-tv-card-today: 500 clamp(10px, 0.9vw, 19px) / 1 var(--font-sans);
+  --t-tv-card-today-hot: 700 clamp(10px, 0.9vw, 19px) / 1 var(--font-sans);
+  --t-tv-card-rank: 600 clamp(10px, 0.85vw, 18px) / 1 var(--font-sans);
+
+  /* The rank badge, top-left, overlaying the logo half. Constant across the
+     ramp: it is board apparatus, and apparatus that grew with its row would
+     make rank 1's badge an emphasis of its own. */
+  --d-card-badge: 1.55vw;
+
+  /* The card. Barely-there fill and a hairline stroke, both `--midnight-charcoal`
+     at low alpha — the same base the system's own `--border` is mixed from, so
+     no new hue enters. Forty strongly filled cards would turn the board into a
+     spreadsheet; the marks are what should carry the colour. */
+  --tv-card-fill: rgba(17, 33, 33, 0.02);
+  --tv-card-stroke: rgba(17, 33, 33, 0.08);
 
   /* The slide heading — "BYOB WEEK 4" on the weekly board.
 
@@ -430,13 +477,103 @@
     border-radius: var(--radius-lg);
   }
 
-  /* One per row on the weekly board, at all times — not only during a kick.
-     Fully rounded ends, so the closed state at the end of Beat A is a circle
-     around the logo rather than a rectangle that has to become one. */
-  .tv-pill {
-    background: var(--tv-pill-fill);
-    border: var(--stroke-thin) solid var(--tv-pill-stroke);
-    border-radius: calc(var(--h-row) / 2);
+  /* ── One grid row, and the mark size it implies ──
+
+     **This must live on the row, not in `:root`.** `--h-card` is set per row by
+     the component, so a `calc()` written at `:root` substitutes a `--h-card`
+     that does not exist there, becomes invalid at computed-value time, and
+     silently hands every logo a junk size. Measured when it was written that
+     way: rows 1–2 rendered marks at 10.3 × 16px and rows 3–4 at 153.6px, on a
+     page that otherwise looked entirely correct.
+
+     **`min()`, because which axis binds changes down the ramp.** A contained
+     square mark is min(space across, space down). At the current ramp row 1 is
+     *width*-bound (155.6 against 158.7) while rows 2–4 are height-bound. A bare
+     height subtraction would therefore have pushed row 1's mark past the card's
+     sides. Either bound can win as the ramp is tuned, so the expression says so
+     rather than assuming — and the ~50px legibility floor is checked against the
+     mark's rendered height, which is what actually shrinks. */
+  .tv-card-row {
+    --d-card-logo: min(
+      calc(var(--h-card) - var(--h-card-text) - 2 * var(--s-card-pad)),
+      calc(var(--w-card) - 2 * var(--s-card-pad))
+    );
+  }
+
+  /* One per team on the weekly board. Forty of these on one frame. */
+  .tv-card {
+    background: var(--tv-card-fill);
+    border: var(--stroke-thin) solid var(--tv-card-stroke);
+    border-radius: var(--radius-sm);
+  }
+
+  /* ── The name marquee ──
+
+     **Word-paged, not a continuous scroll.** A continuous marquee shows half a
+     word at the clipping edge for most of its cycle; the rule is that the
+     visible portion *always* ends at a word boundary, so instead the name is
+     split into pages of whole words, each exactly one card wide, and the track
+     steps between them. Every held state is therefore a complete, readable
+     phrase — which is also the right shape for a wall people glance at rather
+     than read.
+
+     **Only names that overflow get this class at all.** A name that fits is
+     rendered as plain text with no animation attached, rather than one that
+     happens to travel zero pixels — forty perpetual no-op animations is exactly
+     the JS-thread-for-the-life-of-the-page cost `tv-breathe` was written to
+     avoid.
+
+     **CSS, not Motion**, for the same reason: this runs for weeks, unrelated to
+     any state change. The page count decides the class, because keyframe
+     percentages depend on it and CSS cannot compute them from a variable.
+
+     Timing is long holds joined by short slides: ~4s per page, ~0.6s to move.
+     `alternate` walks back through the pages at the same speed rather than
+     snapping three pages wide in one slide duration. Tune by watching. */
+  .tv-marquee {
+    display: flex;
+    width: 100%;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+    animation-timing-function: var(--ease-in-out);
+  }
+
+  /* Each page is exactly the card's text width, so a step is always -100%. */
+  .tv-marquee > span {
+    flex: 0 0 100%;
+    white-space: nowrap;
+  }
+
+  .tv-marquee-2 { animation-name: tv-marquee-2; animation-duration: 8.6s; }
+  .tv-marquee-3 { animation-name: tv-marquee-3; animation-duration: 13.2s; }
+  .tv-marquee-4 { animation-name: tv-marquee-4; animation-duration: 17.8s; }
+
+  /* hold 4s / slide 0.6s, expressed as percentages of each total above. */
+  @keyframes tv-marquee-2 {
+    0%, 46.51% { transform: translateX(0); }
+    53.49%, 100% { transform: translateX(-100%); }
+  }
+
+  @keyframes tv-marquee-3 {
+    0%, 30.30% { transform: translateX(0); }
+    34.85%, 65.15% { transform: translateX(-100%); }
+    69.70%, 100% { transform: translateX(-200%); }
+  }
+
+  @keyframes tv-marquee-4 {
+    0%, 22.47% { transform: translateX(0); }
+    25.84%, 48.31% { transform: translateX(-100%); }
+    51.69%, 74.16% { transform: translateX(-200%); }
+    77.53%, 100% { transform: translateX(-300%); }
+  }
+
+  /* Reduced motion holds page one — still a whole number of words, so the card
+     reads as a deliberately short label rather than as a cut-off name. */
+  @media (prefers-reduced-motion: reduce) {
+    .tv-marquee {
+      animation: none;
+      transform: translateX(0);
+    }
   }
 
   /* A pillar's shaft, and its capital and base.

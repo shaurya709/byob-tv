@@ -44,11 +44,6 @@ export type DetectInput = {
   watchTo: number
   /** The figure that earned the climb — week revenue on `/weekly`, all-time on `/podium`. */
   earned: (team: Team) => number
-  /**
-   * Rows per rendered column, for a board laid out in columns. The weekly board
-   * is two columns of 20; the podium is one list and omits this entirely.
-   */
-  columnLength?: number
 }
 
 export type DetectResult = {
@@ -57,7 +52,7 @@ export type DetectResult = {
 }
 
 export function detect(prev: BoardState | null, input: DetectInput): DetectResult {
-  const { ranked, week, watchTo, earned, columnLength } = input
+  const { ranked, week, watchTo, earned } = input
   const state: BoardState = { week, ranks: ranksOf(ranked), earned: earnedOf(ranked, earned) }
 
   // Nothing to compare against, or the week rolled over and every figure on the
@@ -78,23 +73,18 @@ export function detect(prev: BoardState | null, input: DetectInput): DetectResul
     if (toRank >= fromRank) continue
     if (toRank > watchTo) continue
 
-    // **A kick that would cross a column boundary never fires.**
+    // **Cross-row moves are events like any other.**
     //
-    // The animation renders a kick as vertical slides inside one column: the
-    // attacker climbs its column, the defender falls one row straight down. A
-    // climb starting in one column and ending in the other has no vertical line
-    // to travel, so the event is skipped — silently, with no bespoke motion and
-    // no fallback. The data still re-sorts on the next applied snapshot.
+    // A `columnLength` check used to live here and suppress any climb that
+    // crossed between the weekly board's two columns, because the boot kick
+    // rendered as vertical slides *inside* one column and a crossing climb had
+    // no line to travel. The flip has no such constraint: a card goes face-down,
+    // travels anywhere on the grid — changing size mid-travel when it crosses
+    // between rows of different heights — and unflips. So nothing is suppressed.
     //
-    // This one check also retires every boundary defender. A defender at a
-    // column's last rank — 20, or 40 at the board's bottom edge — whose fall
-    // would cross into the next column (or off the board) can only have been
-    // attacked *from* that next column, because every rank above it is in its
-    // own column. That attack is exactly the crossing suppressed here.
-    if (columnLength !== undefined) {
-      const columnOf = (rank: number) => Math.ceil(rank / columnLength)
-      if (columnOf(fromRank) !== columnOf(toRank)) continue
-    }
+    // That check also silently retired boundary defenders, and that job is gone
+    // too: all forty cards are on one frame, so no defender can fall off the
+    // board, and the deepest watched destination is well inside it.
 
     // **You overtake by scoring, not by someone else stumbling.**
     //
