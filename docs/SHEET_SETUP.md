@@ -225,9 +225,14 @@ changes are made" on. Do not publish the entire document.
 If you published these in v1, **they are already published and the URLs are
 unchanged** — skip this section apart from the timezone check.
 
-Paste both URLs into `config.ts` as `FEED_CSV_URL` and `COHORT_CSV_URL`. They are
-public and carry no secret — the data is going onto public TVs — which is why they
-live in committed config rather than an env var a fresh deploy would be missing.
+Paste both URLs into `config.ts` as the **defaults** of `FEED_CSV_URL` and
+`COHORT_CSV_URL`. They are public and carry no secret — the data is going onto
+public TVs — which is why they stay in committed config rather than living only in
+an env var a fresh deploy would be missing.
+
+Each can still be overridden per-environment by `NEXT_PUBLIC_FEED_CSV_URL` /
+`NEXT_PUBLIC_COHORT_CSV_URL`; see the README. That override exists for local
+fixtures, so nobody has to edit the lines above and risk committing the edit.
 
 Google caches a published CSV for about five minutes. The wall polls every 60
 seconds, so it sees a change within roughly six minutes of the consolidator writing.

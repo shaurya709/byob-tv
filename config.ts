@@ -16,15 +16,60 @@ import type { TeamId } from '@/lib/types'
 /**
  * Published-to-web CSV URLs for `TV_Feed` and `TV_Cohort`.
  *
- * In config rather than env vars on purpose. They carry no secret — the sheet is
- * published publicly and the data is already going onto public TVs — and putting
- * them here means a fresh clone or a new Vercel project just works, rather than
- * deploying a wall that renders perfectly and fetches nothing.
+ * The published URLs are the **defaults**, written here in the clear. They carry
+ * no secret — the sheet is published publicly and the data is already going onto
+ * public TVs — and keeping them as the fallback means a fresh clone or a new
+ * Vercel project just works, rather than deploying a wall that renders perfectly
+ * and fetches nothing. That was the original reason for putting them in config,
+ * and it still holds.
+ *
+ * What it did not survive is **local development**. Pointing the wall at
+ * `scripts/dev-feed.mjs`'s fixtures used to mean editing the two literals below,
+ * which puts a `/mock/…` path into a *tracked* file — one `git commit -a` away
+ * from deploying a wall that fetches a URL that does not exist in production.
+ * That edit was made and discarded once already (`b5af89b`, "Restore the
+ * published CSV URLs"); a rule that has to be remembered every time is not a
+ * rule, it is a trap with good intentions.
+ *
+ * So the override is an environment variable and the fixture path never touches
+ * a tracked file:
+ *
+ * ```bash
+ * # .env.local — gitignored by the `.env*` rule, and cannot be committed
+ * NEXT_PUBLIC_FEED_CSV_URL=/mock/feed.csv
+ * NEXT_PUBLIC_COHORT_CSV_URL=/mock/cohort.csv
+ * ```
+ *
+ * `NEXT_PUBLIC_`, necessarily: both fetches happen in the browser, so the value
+ * has to be inlined into the client bundle at build time. That also means these
+ * are **build-time**, not runtime — changing one on Vercel needs a redeploy, and
+ * changing one in `.env.local` needs `next dev` restarting. No secret is exposed
+ * by the prefix; a published CSV URL is public by construction.
+ *
+ * The reads below are written out longhand on purpose. Next.js inlines
+ * `process.env.NEXT_PUBLIC_*` by *textual* substitution of the member
+ * expression, so a dynamic lookup — `process.env[name]` — silently yields
+ * `undefined` in the browser and the wall would fall back forever without
+ * saying so.
  */
-export const FEED_CSV_URL: string =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZTHFUyVPNGcV0rsFtd45y9KxvT2Yh2Bj8qs6qMqIFrY8rTtqc9sqb_fKOUyi_Us1hnJWZhHN0n-_z/pub?gid=917272830&single=true&output=csv'
-export const COHORT_CSV_URL: string =
-  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZTHFUyVPNGcV0rsFtd45y9KxvT2Yh2Bj8qs6qMqIFrY8rTtqc9sqb_fKOUyi_Us1hnJWZhHN0n-_z/pub?gid=359094552&single=true&output=csv'
+function feedUrl(override: string | undefined, published: string): string {
+  // Trimmed, and empty treated as absent: an unset `NEXT_PUBLIC_` var inlines as
+  // `undefined` in some builds and `''` in others, and a var left declared but
+  // blank on Vercel is the same intent as not setting it. All three must reach
+  // the published default rather than `fetch('')`, which resolves against the
+  // page's own URL and hands the parser an HTML document.
+  const trimmed = override?.trim() ?? ''
+  return trimmed === '' ? published : trimmed
+}
+
+export const FEED_CSV_URL: string = feedUrl(
+  process.env.NEXT_PUBLIC_FEED_CSV_URL,
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZTHFUyVPNGcV0rsFtd45y9KxvT2Yh2Bj8qs6qMqIFrY8rTtqc9sqb_fKOUyi_Us1hnJWZhHN0n-_z/pub?gid=917272830&single=true&output=csv',
+)
+export const COHORT_CSV_URL: string = feedUrl(
+  process.env.NEXT_PUBLIC_COHORT_CSV_URL,
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZTHFUyVPNGcV0rsFtd45y9KxvT2Yh2Bj8qs6qMqIFrY8rTtqc9sqb_fKOUyi_Us1hnJWZhHN0n-_z/pub?gid=359094552&single=true&output=csv',
+)
 
 /**
  * The fewest usable rows a fetch may carry and still be trusted.

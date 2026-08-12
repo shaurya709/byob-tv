@@ -236,7 +236,7 @@ export async function fetchCsv(signal?: AbortSignal): Promise<CsvCache> {
     // Fail with the actual problem rather than letting `fetch('')` resolve
     // against the page's own URL and hand the parser an HTML document.
     throw new Error(
-      'FEED_CSV_URL and COHORT_CSV_URL are unset in config.ts. Publish TV_Feed and TV_Cohort to the web as CSV and paste the URLs there.',
+      'FEED_CSV_URL and COHORT_CSV_URL resolved empty. They default to the published URLs in config.ts, so this means those defaults were emptied — or NEXT_PUBLIC_FEED_CSV_URL / NEXT_PUBLIC_COHORT_CSV_URL are set to something that trims to nothing.',
     )
   }
 

@@ -109,6 +109,20 @@ the source folder changes and paste its output into `LOGOS` in `config.ts`.
 
 Local fixtures for development. Not part of the verification harness.
 
+`dev-feed.mjs` writes `public/mock/{feed,cohort}.csv`, which `next dev` serves at
+`/mock/…`. Point the wall at them with environment variables — **never by editing
+`config.ts`**, which is tracked and has already produced one committed-then-reverted
+fixture URL:
+
+```bash
+# .env.local, gitignored by the `.env*` rule
+NEXT_PUBLIC_FEED_CSV_URL=/mock/feed.csv
+NEXT_PUBLIC_COHORT_CSV_URL=/mock/cohort.csv
+```
+
+Restart `next dev` after changing either — `NEXT_PUBLIC_` values are inlined at
+build time, not read per request.
+
 ---
 
 # Open items

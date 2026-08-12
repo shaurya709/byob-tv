@@ -39,16 +39,48 @@ The wall reads two tabs published out of the `BYOB_MASTER` Google Sheet as CSV.
 [`docs/SHEET_SETUP.md`](docs/SHEET_SETUP.md) has the formulas to paste and a
 verification checklist.
 
-Once both tabs are published, paste their URLs into `config.ts`:
+Once both tabs are published, paste their URLs into `config.ts` as the defaults:
 
 ```ts
-export const FEED_CSV_URL: string = 'https://docs.google.com/.../pub?gid=...&output=csv'
-export const COHORT_CSV_URL: string = 'https://docs.google.com/.../pub?gid=...&output=csv'
+export const FEED_CSV_URL: string = feedUrl(
+  process.env.NEXT_PUBLIC_FEED_CSV_URL,
+  'https://docs.google.com/.../pub?gid=...&output=csv',
+)
 ```
 
-They live in committed config rather than environment variables on purpose: they
-carry no secret, and a fresh clone or a new Vercel project then just works
-instead of deploying a wall that renders perfectly and fetches nothing.
+The published URLs stay in committed config on purpose: they carry no secret,
+and a fresh clone or a new Vercel project then just works instead of deploying a
+wall that renders perfectly and fetches nothing.
+
+Either can be **overridden** by an environment variable, which is how you point
+the wall at local fixtures without editing a tracked file:
+
+| Variable | Overrides |
+|---|---|
+| `NEXT_PUBLIC_FEED_CSV_URL` | `TV_Feed` |
+| `NEXT_PUBLIC_COHORT_CSV_URL` | `TV_Cohort` |
+
+Unset, blank or whitespace all mean "use the published default". The
+`NEXT_PUBLIC_` prefix is required — both fetches run in the browser — and it
+makes them **build-time** values: changing one on Vercel needs a redeploy, and
+changing one in `.env.local` needs `next dev` restarting.
+
+### Running against local fixtures
+
+`scripts/dev-feed.mjs` writes CSVs the dev server happens to serve at `/mock/…`.
+Point the wall at them from `.env.local`, which the `.env*` rule already keeps
+out of git:
+
+```bash
+# .env.local
+NEXT_PUBLIC_FEED_CSV_URL=/mock/feed.csv
+NEXT_PUBLIC_COHORT_CSV_URL=/mock/cohort.csv
+```
+
+Delete the file (and restart `next dev`) to go back to the live sheet. Nothing
+in the repository ever records that you did this — which is the point. Editing
+the literals in `config.ts` instead is how a fixture path gets committed and
+deployed, and it has happened once already.
 
 The wall polls every 60 seconds. Google caches a published CSV for about five
 minutes and the consolidator writes every ten, so a change reaches the screen
