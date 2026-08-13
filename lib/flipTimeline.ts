@@ -97,4 +97,31 @@ export type FlipCue = {
   dy: number
   /** Seconds this card's sequence is offset by. Only the defender's is non-zero. */
   shift: number
+  /**
+   * The rank this card is travelling to.
+   *
+   * The card needs it for one reason only: the weekly board's solid/pale
+   * treatment belongs to the *slot*, so a card crossing rank
+   * `SOLID_RANKS` has to change colour on the way. It changes while the mark is
+   * face-down — see `TURN_AT` — so the card opens in the colour its new rank
+   * earns rather than snapping to it after the board re-sorts.
+   *
+   * A card still never computes this: the grid reads the event and says where
+   * each card is going, exactly as it does for `dx`/`dy`.
+   */
+  toRank: number
 }
+
+/**
+ * When a travelling card changes its surface, as a fraction of `TOTAL`.
+ *
+ * The end of `flipOut`: the earliest instant the mark is fully face-down. The
+ * card body does not turn over — only the disc does — so this is the moment the
+ * eye is on the turn and not on the box, and it leaves the whole travel and the
+ * flip back in on the new colour. Switching at the settle instead would pop a
+ * card that had already finished moving.
+ *
+ * The defender's shift is added by the caller, so its surface turns a beat after
+ * the attacker's exactly as its mark does.
+ */
+export const TURN_AT = BEATS.flipOut[1]

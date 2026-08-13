@@ -9,7 +9,9 @@ import { Podium, podiumTeams } from '@/components/Podium'
 import { VentureCard } from '@/components/VentureCard'
 import { pagesOf } from '@/components/VentureName'
 import { ROW_LENGTH, WeeklyGrid, rowsOf } from '@/components/WeeklyGrid'
+import { SOLID_RANKS } from '@/config'
 import type { CountdownState } from '@/lib/countdown'
+import { STAGGER, TURN_AT } from '@/lib/flipTimeline'
 import { formatRupees, ordinal } from '@/lib/format'
 import { competingTeams, rankByWeek, rankTeams } from '@/lib/ranking'
 import { team, teams } from '@/test/fixtures'
@@ -30,6 +32,25 @@ function render(ui: React.ReactNode): string {
   const root = createRoot(host)
   act(() => root.render(ui))
   const html = host.textContent ?? ''
+  act(() => root.unmount())
+  host.remove()
+  return html
+}
+
+/**
+ * The same render, kept as markup rather than as text.
+ *
+ * For the handful of assertions that are about *which* treatment a card got
+ * rather than what it says. Colour itself is still measured in a browser — a
+ * class name is not a colour — but which class the component chose is a
+ * decision the component makes, and it is worth pinning where it is made.
+ */
+function markup(ui: React.ReactNode): string {
+  const host = document.createElement('div')
+  document.body.append(host)
+  const root = createRoot(host)
+  act(() => root.render(ui))
+  const html = host.innerHTML
   act(() => root.unmount())
   host.remove()
   return html
@@ -342,16 +363,96 @@ describe('VentureCard', () => {
   })
 
   /**
-   * **The em dash is gone, and nothing replaced it.** Twenty of forty teams have
-   * no revenue in week 4, and twenty dashes in twenty boxes as loud as the
-   * earners' taught the eye to skip the column that matters. Absence is carried
-   * by the card being quiet — `.tv-card-quiet` — not by a character.
+   * **The em dash is gone, and nothing replaced it.** A dash in a box as loud as
+   * the earners' taught the eye to skip the column that matters. Absence is
+   * carried by there being no figure, and by nothing else.
    */
   it('prints no figure at all for a team with no revenue this week', () => {
     const text = render(<VentureCard team={team({ weekRevenue: 0, todayRevenue: 0 })} rank={38} />)
     expect(text).not.toContain('₹0')
     expect(text).not.toContain('—')
     expect(text.trim()).toBe('38Aurora')
+  })
+
+  /**
+   * ── The two rules are separate, and this is the pair that proves it ──
+   *
+   * The surface follows **rank**: past `SOLID_RANKS` a card is the pale kind.
+   * The figure follows **revenue**: a team that traded has a number wherever it
+   * sits. Collapsing the two — which is what the first build did, by keying both
+   * off `weekRevenue` — either blanks ten teams who earned or puts thirty solid
+   * cards on a forty-card board.
+   */
+  it('keeps the figure on a pale card when the team traded', () => {
+    const text = render(<VentureCard team={team({ weekRevenue: 6_440 })} rank={25} />)
+    expect(text).toContain(formatRupees(6_440))
+  })
+
+  it('prints no figure on a solid card when the team has not traded', () => {
+    // A Monday: someone holds rank 3 on a week that has barely started.
+    const text = render(<VentureCard team={team({ weekRevenue: 0, todayRevenue: 0 })} rank={3} />)
+    expect(text).not.toContain('₹0')
+  })
+
+  it('takes the surface from the rank and not from the revenue', () => {
+    const earner = team({ weekRevenue: 6_440 })
+    expect(markup(<VentureCard team={earner} rank={SOLID_RANKS} />)).not.toContain('tv-card-quiet')
+    expect(markup(<VentureCard team={earner} rank={SOLID_RANKS + 1} />)).toContain('tv-card-quiet')
+  })
+
+  /**
+   * The chip goes quiet with the card it sits on. This is asserted because the
+   * rule that used to do it — `.tv-card-quiet .tv-card-badge` — was a descendant
+   * selector matching a *sibling*, so it never applied and every pale card wore
+   * a solid dark chip. A dead CSS rule reports nothing; this does.
+   */
+  it('gives a pale card an outlined rank chip', () => {
+    const earner = team({ weekRevenue: 6_440 })
+    expect(markup(<VentureCard team={earner} rank={SOLID_RANKS + 1} />)).toContain(
+      'tv-card-badge-quiet',
+    )
+    expect(markup(<VentureCard team={earner} rank={SOLID_RANKS} />)).not.toContain(
+      'tv-card-badge-quiet',
+    )
+  })
+
+  /**
+   * ── Crossing the line during an overtake ──
+   *
+   * A card climbing into the top twenty changes surface *while its mark is face
+   * down*, so it opens in its new colour rather than snapping to it once the
+   * board re-sorts. The delay is the timeline's own `TURN_AT` plus this card's
+   * shift — the defender's turns a beat later, exactly as its mark does.
+   *
+   * A flip that stays on one side of the line gets no turn at all: three cards
+   * trading places inside the top ten must not repaint themselves.
+   */
+  it('turns a climbing card solid mid-flip, on the timeline', () => {
+    const cue = { role: 'attacker', dx: 0, dy: -120, shift: 0, toRank: SOLID_RANKS } as const
+    const html = markup(
+      <VentureCard team={team({ weekRevenue: 6_440 })} rank={SOLID_RANKS + 3} cue={cue} />,
+    )
+    expect(html).toContain('tv-card-turn-solid')
+    expect(html).toContain(`--tv-turn-at: ${TURN_AT}s`)
+  })
+
+  it('turns a displaced card pale mid-flip, a beat later', () => {
+    const cue = {
+      role: 'defender',
+      dx: 0,
+      dy: 120,
+      shift: STAGGER,
+      toRank: SOLID_RANKS + 1,
+    } as const
+    const html = markup(<VentureCard team={team({ weekRevenue: 6_440 })} rank={SOLID_RANKS} cue={cue} />)
+    expect(html).toContain('tv-card-turn-quiet')
+    expect(html).toContain(`--tv-turn-at: ${TURN_AT + STAGGER}s`)
+  })
+
+  it('leaves a flip that never crosses the line alone', () => {
+    const cue = { role: 'attacker', dx: 0, dy: -120, shift: 0, toRank: 4 } as const
+    const html = markup(<VentureCard team={team({ weekRevenue: 6_440 })} rank={9} cue={cue} />)
+    expect(html).not.toContain('tv-card-turn')
   })
 })
 

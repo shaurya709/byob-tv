@@ -288,17 +288,24 @@
      read as forty stickers on a white page: the *mark* was the only object, and
      forty circles with no container is a sticker sheet.
 
-     The quiet card is for a team with no revenue this week — twenty of forty in
-     week 4. Pale mint on the page's white, a mint outline, and no figure at all.
-     It is the same card, turned down, so absence is carried by the card being
-     quiet rather than by an em dash sitting in a box as loud as its neighbours.
-     Both fills are existing brand tokens; no new hue enters. */
+     The quiet card is the board's bottom half — ranks past `SOLID_RANKS`, which
+     is twenty, so rows 3 and 4 entire. Pale mint on the page's white and a mint
+     outline: the same card, turned down, so the frame carries twenty objects
+     rather than forty and the eye is told where the contest is.
+
+     **It is no longer the no-revenue card.** That rule made thirty solid cards
+     in week 4 and said nothing by saying it about three-quarters of the board.
+     A pale card that traded still prints its figure, in Deep Forest — dark ink
+     on the pale fill, where the solid card's is near-white on the dark one.
+
+     Every fill and ink here is an existing brand token; no new hue enters. */
   --tv-card-fill: var(--deep-forest-green);
   --tv-card-fill-quiet: var(--soft-mint);
   --tv-card-stroke-quiet: var(--border-mint);
   --tv-card-name-ink: var(--mint-300);
   --tv-card-name-ink-quiet: var(--fg-muted);
   --tv-card-fig-ink: var(--white);
+  --tv-card-fig-ink-quiet: var(--deep-forest-green);
   --tv-card-badge-fill: var(--deep-teal);
   --tv-card-badge-ink: var(--mint-300);
 
@@ -1050,16 +1057,18 @@
     backface-visibility: hidden;
     display: grid;
     place-items: center;
-    background: var(--white);
-    box-shadow: 0 3px 6px color-mix(in srgb, var(--midnight-charcoal) 20%, transparent);
-  }
-
-  /* On a quiet card the mount is an outline rather than a fill — a solid white
-     disc in a pale mint box would be the brightest thing on a card whose whole
-     job is to be the quietest. */
-  .tv-card-quiet .tv-disc-face {
-    background: transparent;
-    box-shadow: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
+    /* Inherited from the card, so the mount changes with the box in one step
+       when a card crosses the line mid-flip. On a pale card it resolves to an
+       outline rather than a fill — a solid white disc in a pale mint box would
+       be the brightest thing on a card whose whole job is to be the quietest.
+       The fallbacks are what a disc outside a card would use; nothing on this
+       board renders one, and a bare `var()` with no fallback would leave the
+       mount transparent if anything ever did. */
+    background: var(--card-disc-fill, var(--white));
+    box-shadow: var(
+      --card-disc-edge,
+      0 3px 6px color-mix(in srgb, var(--midnight-charcoal) 20%, transparent)
+    );
   }
 
   /* Mesa's own mark on the logomark green — the same green the removed logo
@@ -1080,23 +1089,100 @@
      `--white` at 13%; a card is a sixth the height, and at 13% the wash stopped
      reading as a lit edge and started reading as a stripe across the top of
      forty cards. 8% is a surface cue. If it reads as a line, it is too strong. */
+  /* ── The surface is four inherited variables, not two classes ──
+
+     Everything that differs between a solid card and a pale one is declared
+     here as a custom property and read by the card and its descendants. That is
+     what lets a card crossing rank `SOLID_RANKS` mid-flip change its *whole*
+     surface — box, mount, name, figure — in one step, from one animation, at
+     one instant. Toggling a class cannot be scheduled; a variable can. */
   .tv-card {
-    background: var(--tv-card-fill);
-    border-radius: var(--radius-sm);
-    box-shadow:
+    --card-fill: var(--tv-card-fill);
+    --card-edge:
       inset 0 var(--stroke-thin) 0 color-mix(in srgb, var(--white) 8%, transparent),
       inset calc(-1 * var(--s-pod-face)) 0 var(--s-pod-face)
         color-mix(in srgb, var(--midnight-charcoal) 22%, transparent);
+    --card-name-ink: var(--tv-card-name-ink);
+    --card-fig-ink: var(--tv-card-fig-ink);
+    --card-disc-fill: var(--white);
+    --card-disc-edge: 0 3px 6px color-mix(in srgb, var(--midnight-charcoal) 20%, transparent);
+
+    background: var(--card-fill);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--card-edge);
   }
 
-  /* A team with no revenue this week. Same card, turned down.
+  /* The bottom half of the board. Same card, turned down.
 
-     No shine and no shadow: the lighting says "object", and twenty quiet cards
-     lit the same as the earners would put twenty more objects on the board. The
-     outline is all the edge it needs on white. */
+     No shine and no shadow: the lighting says "object", and twenty pale cards
+     lit the same as the top twenty would put twenty more objects on the board.
+     The outline is all the edge it needs on white.
+
+     **The figure is Deep Forest here, not the muted teal the name uses.** A
+     pale card still carries its figure — rank decides the surface, revenue
+     decides the number — and `--fg-muted` measured 3.31:1 at this size, under
+     the 4.5:1 AA wants. The fill is what makes the card quiet; the ink does not
+     have to be faint as well. */
   .tv-card-quiet {
-    background: var(--tv-card-fill-quiet);
-    box-shadow: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
+    --card-fill: var(--tv-card-fill-quiet);
+    --card-edge: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
+    --card-name-ink: var(--tv-card-name-ink-quiet);
+    --card-fig-ink: var(--tv-card-fig-ink-quiet);
+    --card-disc-fill: transparent;
+    --card-disc-edge: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
+  }
+
+  /* ── Crossing the line during an overtake ──
+
+     A card climbing into the top `SOLID_RANKS`, or dropping out of it, changes
+     surface **while its mark is face-down**: `--tv-turn-at` is the end of the
+     flip-out beat, carried in from `lib/flipTimeline.ts` so the timeline stays
+     the only thing that says when. The card then travels and turns back up
+     already wearing the colour its new rank earns, instead of snapping to it
+     after the board re-sorts under a card that had finished moving.
+
+     Duration is a single millisecond and the fill holds it: this is a step, not
+     a fade. A dark-green-to-pale-mint cross-fade passes through a muddy middle
+     that reads as the card failing to render. */
+  .tv-card-turn-quiet,
+  .tv-card-turn-solid {
+    animation-duration: 1ms;
+    animation-delay: var(--tv-turn-at);
+    animation-fill-mode: forwards;
+    animation-timing-function: step-end;
+  }
+
+  .tv-card-turn-quiet {
+    animation-name: tv-card-to-quiet;
+  }
+
+  .tv-card-turn-solid {
+    animation-name: tv-card-to-solid;
+  }
+
+  @keyframes tv-card-to-quiet {
+    to {
+      --card-fill: var(--tv-card-fill-quiet);
+      --card-edge: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
+      --card-name-ink: var(--tv-card-name-ink-quiet);
+      --card-fig-ink: var(--tv-card-fig-ink-quiet);
+      --card-disc-fill: transparent;
+      --card-disc-edge: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
+    }
+  }
+
+  @keyframes tv-card-to-solid {
+    to {
+      --card-fill: var(--tv-card-fill);
+      --card-edge:
+        inset 0 var(--stroke-thin) 0 color-mix(in srgb, var(--white) 8%, transparent),
+        inset calc(-1 * var(--s-pod-face)) 0 var(--s-pod-face)
+          color-mix(in srgb, var(--midnight-charcoal) 22%, transparent);
+      --card-name-ink: var(--tv-card-name-ink);
+      --card-fig-ink: var(--tv-card-fig-ink);
+      --card-disc-fill: var(--white);
+      --card-disc-edge: 0 3px 6px color-mix(in srgb, var(--midnight-charcoal) 20%, transparent);
+    }
   }
 
   /* The rank chip, ranks 4–40. Top-left, on the card's own surface. */
@@ -1113,9 +1199,16 @@
     border-radius: var(--radius-xs);
   }
 
-  /* On a quiet card the chip goes quiet with it — an outline on the mint rather
-     than a second dark object sitting in a pale box. */
-  .tv-card-quiet .tv-card-badge {
+  /* On a pale card the chip goes quiet with it — an outline on the mint rather
+     than a second dark object sitting in a pale box.
+
+     **Set by the component, not by a descendant selector.** The badge is a child
+     of the cell and the card is its sibling, so the `.tv-card-quiet
+     .tv-card-badge` rule this replaces never matched anything and every pale
+     card has been wearing a solid dark chip since the rebuild. The badge also
+     must not travel with a card that leaves the slot, which is the same reason
+     it sits on the cell — so it takes the cell's rank, not the card's palette. */
+  .tv-card-badge-quiet {
     color: var(--tv-card-name-ink-quiet);
     background: transparent;
     box-shadow: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
@@ -1125,14 +1218,12 @@
     font: var(--t-tv-card-name);
     letter-spacing: var(--track-overline);
     text-transform: uppercase;
-    color: var(--tv-card-name-ink);
+    /* Inherited from the card, so it turns with the box rather than a beat
+       after it. See `.tv-card` for the palette. */
+    color: var(--card-name-ink, var(--tv-card-name-ink));
     text-align: center;
     width: 100%;
     min-width: 0;
-  }
-
-  .tv-card-quiet .tv-card-name {
-    color: var(--tv-card-name-ink-quiet);
   }
 
   /* ── The metal numeral over ranks 1–3 ──

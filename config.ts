@@ -103,6 +103,29 @@ export const SPARE_TEAM_IDS: readonly TeamId[] = ['SLE-C441', 'SLE-C442']
  */
 export const HOT_TODAY_MIN = 5_000
 
+/**
+ * How far down the weekly board a card is a solid Deep Forest object. Below it,
+ * the card is the pale outlined kind.
+ *
+ * **A property of the slot, not of the team.** The rule this replaced was
+ * `weekRevenue <= 0` — the card went quiet when a team had not traded. That was
+ * right about *absence* and wrong about *weight*: in week 4 it made thirty solid
+ * cards, three full rows of dark, and a board that is three-quarters loud is not
+ * saying anything by being loud. Twenty is the top half of the frame — rows 1
+ * and 2 at ten cards a row — so the split lands on a row boundary rather than
+ * mid-row where it would read as an accident.
+ *
+ * **The figure does not follow this.** A pale card that earned still prints its
+ * figure; only a genuinely zero week prints nothing. Quiet is about how much of
+ * the board a card claims, and a team that made ₹6,440 has a number the wall is
+ * not entitled to swallow.
+ *
+ * Equal to `WATCH_RANKS_WEEKLY` today, and not derived from it: one says how far
+ * down an overtake is worth animating, the other how far down the board reads as
+ * the contest. They would move for different reasons.
+ */
+export const SOLID_RANKS = 20
+
 // ── Data quality ────────────────────────────────────────────────────────────
 
 /**

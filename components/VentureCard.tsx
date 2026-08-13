@@ -4,8 +4,9 @@ import { useEffect } from 'react'
 import { motion, type Easing } from 'motion/react'
 
 import { VentureDisc } from '@/components/VentureDisc'
+import { SOLID_RANKS } from '@/config'
 import { formatRupees } from '@/lib/format'
-import { BEATS, TOTAL, at, type FlipCue } from '@/lib/flipTimeline'
+import { BEATS, TOTAL, TURN_AT, at, type FlipCue } from '@/lib/flipTimeline'
 import { nameOf } from '@/lib/team'
 import type { Team } from '@/lib/types'
 
@@ -26,8 +27,9 @@ import type { Team } from '@/lib/types'
  * - **Nothing bound a mark to its figure.** The card does.
  * - **There was no venture name at all.** It was removed when the base was too
  *   small to hold one; the card is not.
- * - **Twenty zero-revenue teams were as loud as the earners.** They are quiet
- *   cards now — see `quiet` below.
+ * - **Every card was as loud as every other.** The bottom half of the board is
+ *   the pale outlined kind now — see `quiet` below. The rule was revenue and is
+ *   rank; the figure is what still follows revenue.
  *
  * ── One treatment per card, never both ──
  *
@@ -114,14 +116,38 @@ export function VentureCard({
   onSettled?: () => void
 }) {
   /**
-   * **A team with no revenue this week, not a team with no revenue today.**
+   * **Quiet is a fact about the slot now, not about the team.**
    *
-   * The board ranks on the week, so the week is what "has this team traded"
-   * means here. In week 4 that is twenty of forty cards, which is exactly why
-   * the quiet treatment exists: twenty em dashes in twenty boxes as loud as the
-   * earners' taught the eye to skip the column that matters.
+   * It used to be `weekRevenue <= 0`, which in week 4 left thirty solid cards on
+   * a forty-card board. Rank is the rule instead: the top `SOLID_RANKS` are
+   * solid Deep Forest, the rest are the pale outlined kind — see the token for
+   * why the line sits where it does.
+   *
+   * **A team with no revenue this week still prints no figure**, wherever it
+   * ranks. The two rules are deliberately separate: one governs how much of the
+   * board a card claims, the other whether there is a number to say. A pale card
+   * that earned keeps its figure, and a solid card that has not traded — which
+   * happens on a Monday, when twenty cards are at zero and someone still holds
+   * rank 1 — shows nothing rather than `₹0`.
    */
-  const quiet = team.weekRevenue <= 0
+  const quiet = rank > SOLID_RANKS
+  const traded = team.weekRevenue > 0
+
+  /**
+   * A card crossing the line mid-flip, and which way.
+   *
+   * The surface travels with the card because the card is what moves; the badge
+   * stays behind on the cell and is styled by the cell's own rank. `undefined`
+   * for every card that is not crossing, which is all forty of them on all but
+   * the two or three flips a week that touch rank `SOLID_RANKS`.
+   */
+  const turning =
+    cue === undefined || cue.toRank > SOLID_RANKS === quiet
+      ? undefined
+      : cue.toRank > SOLID_RANKS
+        ? 'tv-card-turn-quiet'
+        : 'tv-card-turn-solid'
+
   const flips = cue !== undefined && cue.role !== 'slide'
   // `false`, not `undefined`, for a card with no cue: the reset to x/y 0 has to
   // land in the same commit as the settle's re-slot, or the board would be seen
@@ -175,7 +201,16 @@ export function VentureCard({
           </span>
         </span>
       ) : (
-        <span className="tv-card-badge">{rank}</span>
+        // **The quiet chip is selected here, not in CSS.** The badge is a child
+        // of the cell rather than of the card — rank belongs to the board — so
+        // the `.tv-card-quiet .tv-card-badge` rule that used to carry this was a
+        // descendant selector with no descendant, and never once matched: every
+        // pale card on the board has been wearing a solid dark chip. The cell's
+        // own rank is the right authority anyway, since the badge does not
+        // travel with the card that leaves it.
+        <span className={quiet ? 'tv-card-badge tv-card-badge-quiet' : 'tv-card-badge'}>
+          {rank}
+        </span>
       )}
 
       <motion.div
@@ -186,8 +221,16 @@ export function VentureCard({
         // all once the transition carried per-property overrides, which wedged
         // the queue with nothing on screen progressing.
         onAnimationComplete={attacker ? onSettled : undefined}
-        className={quiet ? 'tv-card tv-card-quiet' : 'tv-card'}
+        className={[quiet ? 'tv-card tv-card-quiet' : 'tv-card', turning].filter(Boolean).join(' ')}
         style={{
+          // The turn's delay, in the timeline's own terms. A CSS animation
+          // rather than a timer: a card unmounts mid-flip every time the
+          // rotation moves on, and an animation dies with its element where a
+          // `setTimeout` would fire into a dead component and need tearing down
+          // at exactly the beat nothing else in this sequence needs it.
+          ...(turning === undefined
+            ? {}
+            : ({ '--tv-turn-at': `${TURN_AT + (cue?.shift ?? 0)}s` } as React.CSSProperties)),
           position: 'absolute',
           inset: 0,
           display: 'grid',
@@ -221,20 +264,21 @@ export function VentureCard({
           {nameOf(team)}
         </div>
 
-        {/* The figure the board exists to show. **Nothing at all on a quiet
-            card** — not an em dash, not a zero. The card is already saying it. */}
+        {/* The figure the board exists to show. **Nothing at all on a team that
+            has not traded** — not an em dash, not a zero. Pale is not what
+            decides this; an empty week is. */}
         <div
           className="tv-figure"
           style={{
             font: 'var(--t-tv-card-week)',
-            color: 'var(--tv-card-fig-ink)',
+            color: 'var(--card-fig-ink)',
             // Reserved whether or not there is a figure, so a quiet card's disc
             // sits on the same line as its neighbours' rather than dropping the
             // whole card half a line.
             minHeight: 'var(--h-card-fig)',
           }}
         >
-          {quiet ? '' : formatRupees(team.weekRevenue)}
+          {traded ? formatRupees(team.weekRevenue) : ''}
         </div>
       </motion.div>
     </div>

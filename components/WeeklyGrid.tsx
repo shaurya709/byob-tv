@@ -133,7 +133,7 @@ export function cuesFor(grid: HTMLElement, kick: OvertakeEvent): Map<number, Fli
     // resize on the way — which is what let the mark and its base become one
     // travelling object instead of two that had to be reassembled at the far
     // end. If a ramp ever comes back, this is the first thing that breaks.
-    cues.set(from, { role, dx: b.x - a.x, dy: b.y - a.y, shift })
+    cues.set(from, { role, dx: b.x - a.x, dy: b.y - a.y, shift, toRank: to })
   }
 
   move(kick.fromRank, kick.toRank, 'attacker', 0)
