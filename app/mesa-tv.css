@@ -400,7 +400,7 @@
      and is still visibly the green one beside the card's grey-green secondary
      ink. The solid card keeps `--bright-green`, which was drawn for exactly that
      surface and measures 6.14:1 on it. */
-  --tv-card-hot-ink-quiet: color-mix(in srgb, var(--green-600) 50%, var(--deep-forest-green));
+  --tv-card-hot-ink-quiet: color-mix(in srgb, var(--green-600) 75%, var(--deep-forest-green));
   /* A below-average day, on the pale card. **Tangerine, because this palette has
      no red**: the wall's hues are charcoal, mint, green, tangerine, forest and
      teal, and the standing rule is existing tokens only — the metals are the one
@@ -408,7 +408,13 @@
      warm signal already on this wall and it reads as the opposite of green
      without inventing a hue. `--tangerine-600` on its own measures 2.9:1 against
      soft mint, so the pale card deepens it the same way it deepens green. */
-  --tv-card-cold-ink-quiet: color-mix(in srgb, var(--tangerine-600) 55%, var(--deep-forest-green));
+  /* **Mixed with charcoal, not with Deep Forest.** Deepening an orange against a
+     green pulls it toward olive: at 55% into Deep Forest the ink measured 4.87:1
+     and a saturation of 0.50, which is mud — close enough in hue to the green
+     beside it that the two states stopped reading as opposites. Against the
+     neutral it holds 0.67 saturation at 3.63:1, still clear of the 3:1 that
+     large text needs. Contrast was never the problem here; hue was. */
+  --tv-card-cold-ink-quiet: color-mix(in srgb, var(--tangerine-600) 80%, var(--midnight-charcoal));
   --tv-card-badge-fill: var(--deep-teal);
   --tv-card-badge-ink: var(--mint-300);
 
@@ -1695,6 +1701,18 @@
 
   .tv-band-title {
     justify-self: center;
+    /* ── 15% wider, and that is the boldness too ──
+
+       Impact carries one weight, so `font-weight` cannot make it heavier —
+       rendered at 400 and forced to 700 it measures the same 710px of ink and
+       the frames are identical, because Chrome declines to synthesise a bold for
+       it. Scaling the glyphs horizontally is what is left: it widens the strokes
+       as well as the letters, which is the weight the face cannot otherwise
+       give. Horizontal only, so the cap height the band is built around does not
+       move. */
+    display: inline-block;
+    transform: scaleX(1.15);
+    transform-origin: center;
     /* Nudged right of the free span's centre. `position` rather than a margin:
        a margin on a centred item moves it by *half* what you write, which is
        the kind of arithmetic that quietly drifts the next time someone tunes
