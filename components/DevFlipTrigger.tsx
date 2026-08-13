@@ -1,5 +1,6 @@
 'use client'
 
+import { devQueueClimb } from '@/lib/devOvertake'
 import { rankByWeek } from '@/lib/ranking'
 import { clearKicks, enqueueKicks } from '@/lib/storage'
 import type { OvertakeEvent, Team } from '@/lib/types'
@@ -82,6 +83,11 @@ export function DevFlipTrigger({
       fromRank: from,
       toRank: to,
     }
+    // **The data has to move too.** An event on its own animates a climb and
+    // then settles onto the board it started from; this records what the climb
+    // is worth so the settle has somewhere to arrive. Applied on settle, not
+    // here — see lib/devOvertake.ts.
+    devQueueClimb(attacker, defender, ranked[to - 2])
     enqueueKicks('weekly', [event])
     onQueued()
   }

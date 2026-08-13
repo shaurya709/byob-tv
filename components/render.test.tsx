@@ -11,7 +11,6 @@ import { pagesOf } from '@/components/VentureName'
 import { ROW_LENGTH, WeeklyGrid, rowsOf } from '@/components/WeeklyGrid'
 import { HOT_TODAY_MIN, SOLID_RANKS } from '@/config'
 import type { CountdownState } from '@/lib/countdown'
-import { STAGGER, TURN_AT } from '@/lib/flipTimeline'
 import { formatRupees, ordinal } from '@/lib/format'
 import { competingTeams, rankByWeek, rankTeams } from '@/lib/ranking'
 import { team, teams } from '@/test/fixtures'
@@ -454,42 +453,30 @@ describe('VentureCard', () => {
   })
 
   /**
-   * ── Crossing the line during an overtake ──
+   * ── What moves during an overtake, and what does not ──
    *
-   * A card climbing into the top twenty changes surface *while its mark is face
-   * down*, so it opens in its new colour rather than snapping to it once the
-   * board re-sorts. The delay is the timeline's own `TURN_AT` plus this card's
-   * shift — the defender's turns a beat later, exactly as its mark does.
-   *
-   * A flip that stays on one side of the line gets no turn at all: three cards
-   * trading places inside the top ten must not repaint themselves.
+   * The mark travels; the card holds still and keeps its colour. The whole card
+   * used to travel, which meant an overtake across rank `SOLID_RANKS` had to
+   * change a card's fill in mid-flight — a box changing colour while it slides
+   * reads as a rendering fault. This asserts the *structure* that replaced it:
+   * a card in a flip wears `tv-card-away`, which is what fades its details out,
+   * and it carries no travel of its own.
    */
-  it('turns a climbing card solid mid-flip, on the timeline', () => {
-    const cue = { role: 'attacker', dx: 0, dy: -120, shift: 0, toRank: SOLID_RANKS } as const
+  it('fades a card in a flip and leaves its surface alone', () => {
+    const cue = { role: 'attacker', dx: 0, dy: -120, shift: 0, scale: 0.82 } as const
     const html = markup(
       <VentureCard team={team({ weekRevenue: 6_440 })} rank={SOLID_RANKS + 3} cue={cue} />,
     )
-    expect(html).toContain('tv-card-turn-solid')
-    expect(html).toContain(`--tv-turn-at: ${TURN_AT}s`)
-  })
-
-  it('turns a displaced card pale mid-flip, a beat later', () => {
-    const cue = {
-      role: 'defender',
-      dx: 0,
-      dy: 120,
-      shift: STAGGER,
-      toRank: SOLID_RANKS + 1,
-    } as const
-    const html = markup(<VentureCard team={team({ weekRevenue: 6_440 })} rank={SOLID_RANKS} cue={cue} />)
-    expect(html).toContain('tv-card-turn-quiet')
-    expect(html).toContain(`--tv-turn-at: ${TURN_AT + STAGGER}s`)
-  })
-
-  it('leaves a flip that never crosses the line alone', () => {
-    const cue = { role: 'attacker', dx: 0, dy: -120, shift: 0, toRank: 4 } as const
-    const html = markup(<VentureCard team={team({ weekRevenue: 6_440 })} rank={9} cue={cue} />)
+    expect(html).toContain('tv-card-away')
+    expect(html).toContain('tv-card-detail')
+    // Nothing schedules a surface change any more.
     expect(html).not.toContain('tv-card-turn')
+    expect(html).not.toContain('--tv-turn-at')
+  })
+
+  it('leaves a card with no cue unfaded', () => {
+    const html = markup(<VentureCard team={team({ weekRevenue: 6_440 })} rank={9} />)
+    expect(html).not.toContain('tv-card-away')
   })
 })
 

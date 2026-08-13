@@ -16,11 +16,13 @@
  *
  * ── The sequence ──
  *
- * 1. **Flip out.** The card turns to its back — Mesa on Deep Forest Green — and
- *    its base merges up into the disc and vanishes on the same window. The base
- *    does not fade where it stands: it is *absorbed*, which is what makes the
- *    disc read as having picked the card's contents up rather than as having
- *    outlived them.
+ * 1. **Flip out.** The mark turns to its back — Mesa on Deep Forest Green — and
+ *    the card's details fade out under it. **The card itself does not move.** It
+ *    used to: the whole card travelled, which meant a card crossing rank 20 had
+ *    to change colour in flight, and a box changing colour while it slides reads
+ *    as a rendering fault rather than as an overtake. The slots hold still and
+ *    keep their colour; what moves is the mark, and what changes is whose
+ *    details are printed under it.
  * 2. **The defender goes a beat later.** `STAGGER` behind the attacker, so the
  *    two read as cause and effect rather than as a simultaneous blink. This is
  *    the whole reason the flip communicates an overtake at all.
@@ -98,30 +100,13 @@ export type FlipCue = {
   /** Seconds this card's sequence is offset by. Only the defender's is non-zero. */
   shift: number
   /**
-   * The rank this card is travelling to.
+   * The destination mark's diameter as a multiple of this one's.
    *
-   * The card needs it for one reason only: the weekly board's solid/pale
-   * treatment belongs to the *slot*, so a card crossing rank
-   * `SOLID_RANKS` has to change colour on the way. It changes while the mark is
-   * face-down — see `TURN_AT` — so the card opens in the colour its new rank
-   * earns rather than snapping to it after the board re-sorts.
-   *
-   * A card still never computes this: the grid reads the event and says where
-   * each card is going, exactly as it does for `dx`/`dy`.
+   * The rows descend, so a mark crossing a row boundary arrives somewhere its
+   * own size is wrong — 107px in row 1 against 60px in row 4. The resize rides
+   * the travel rather than snapping at either end, which is also why it is one
+   * number on the cue rather than two sizes the card would have to reconcile.
    */
-  toRank: number
+  scale: number
 }
 
-/**
- * When a travelling card changes its surface, as a fraction of `TOTAL`.
- *
- * The end of `flipOut`: the earliest instant the mark is fully face-down. The
- * card body does not turn over — only the disc does — so this is the moment the
- * eye is on the turn and not on the box, and it leaves the whole travel and the
- * flip back in on the new colour. Switching at the settle instead would pop a
- * card that had already finished moving.
- *
- * The defender's shift is added by the caller, so its surface turns a beat after
- * the attacker's exactly as its mark does.
- */
-export const TURN_AT = BEATS.flipOut[1]

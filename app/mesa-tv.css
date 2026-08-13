@@ -167,7 +167,10 @@
      what shrinks is the mark, which degrades gracefully.
 
      Tuned by measurement at 1920x1080, which is the wall. The marks they yield:
-     116 / 98 / 82 / 70px, a 1.66x spread from row 1 to row 4.
+     115 / 96 / 78 / 63px, a 1.83x spread from row 1 to row 4. The last 1.2vw of
+     it came from the metal numerals: they straddle the card's top corner now
+     rather than floating clear above it, so the headroom row 1 opens for them
+     only has to receive the 55% that clears the card.
 
      **Row 4 is 63px shorter than row 3, and that is not a typo.** Its ten teams
      have not traded this week, so both figure lines collapse and the row would
@@ -184,10 +187,10 @@
      gaps, the board's padding, the headroom's two spacers — that make 1600x900
      the tightest viewport rather than the smallest. Re-run
      `scripts/measure-fit.mjs` after touching any of the four. */
-  --h-row-1: 12.9vw;
-  --h-row-2: 11.95vw;
-  --h-row-3: 11.1vw;
-  --h-row-4: 7.85vw;
+  --h-row-1: 13.3vw;
+  --h-row-2: 12.3vw;
+  --h-row-3: 11.4vw;
+  --h-row-4: 8vw;
 
   /* The grid's own spacing. Fixed px, and therefore the `--s-*` trap: these
      hold their size while every `vw` above shrinks, so the ramp has less room
@@ -237,6 +240,15 @@
      reads as a fault rather than as a long name. Which five, and by how much,
      is measured in the report — the fix for it is not this file's to choose. */
   --d-card-logo-floor: 48px;
+
+  /* How long a card's details take to leave and to come back.
+
+     260ms out at the start of the turn and 260ms in at the settle, which leaves
+     the details gone for the whole of the travel — the mark is the only thing
+     moving and there is nothing else on the card to read while it is away. Long
+     enough to be a fade rather than a cut, short enough that the settle does not
+     feel like a second event after the mark has already landed. */
+  --t-card-fade: 260ms;
   --h-card-rank: 2vw;
   --h-card-name: 1.9vw;
   --h-card-fig-line: 1.4vw;
@@ -293,8 +305,11 @@
      Black is 0.688 of the em. Sizing the gap off the font size would open 32px
      of air that nothing occupies. Measured — see scripts/measure-fit.mjs. */
   --fs-card-num: 3.6vw;
+  /* The share of the metal numeral that sits *on* the card rather than above
+     it. See `.tv-card-numeral` for what the other 55% does. */
+  --k-card-num-on: 0.45;
   --h-card-headroom: calc(
-    var(--fs-card-num) * var(--k-pod-num-cap) + var(--s-1) + var(--s-3)
+    var(--fs-card-num) * var(--k-pod-num-cap) * (1 - var(--k-card-num-on)) + var(--s-3)
   );
 
   /* ── The card ──
@@ -1137,10 +1152,19 @@
     box-shadow: 0 3px 6px color-mix(in srgb, var(--midnight-charcoal) 20%, transparent);
   }
 
-  /* Mesa's own mark on the logomark green — the same green the removed logo
-     panel used, so a card mid-flip is one object in one colour. */
+  /* Mesa's own mark on the logomark green.
+
+     **The rim is what makes it an object.** The back was flat Deep Forest,
+     chosen when the mark sat on a green panel and the two reading as one colour
+     was the point. The mark now travels *across* Deep Forest cards, and a
+     face-down disc over one of them lost its silhouette entirely — measured
+     mid-flight: the disc's own circle was invisible and only the white lockup
+     floated over the card underneath, which is exactly what "the logo
+     disappears" looks like. The rim traces the circle on both surfaces without
+     making the back brighter than the front. */
   .tv-disc-back {
     background: var(--deep-forest-green);
+    box-shadow: inset 0 0 0 var(--stroke-thin) color-mix(in srgb, var(--white) 72%, transparent);
     transform: rotateY(180deg);
   }
 
@@ -1196,55 +1220,24 @@
     --card-fig-ink: var(--tv-card-fig-ink-quiet);
   }
 
-  /* ── Crossing the line during an overtake ──
+  /* ── What a card does while its mark is away ──
 
-     A card climbing into the top `SOLID_RANKS`, or dropping out of it, changes
-     surface **while its mark is face-down**: `--tv-turn-at` is the end of the
-     flip-out beat, carried in from `lib/flipTimeline.ts` so the timeline stays
-     the only thing that says when. The card then travels and turns back up
-     already wearing the colour its new rank earns, instead of snapping to it
-     after the board re-sorts under a card that had finished moving.
+     The details fade out under the turn and back in when the cue clears, which
+     is the same commit the board re-sorts in — so what fades back in is the new
+     team's name and figures, in a slot that never moved and never changed
+     colour. A transition rather than keyframes: the two ends are the two
+     states, and nothing has to agree about when the middle is.
 
-     Duration is a single millisecond and the fill holds it: this is a step, not
-     a fade. A dark-green-to-pale-mint cross-fade passes through a muddy middle
-     that reads as the card failing to render. */
-  .tv-card-turn-quiet,
-  .tv-card-turn-solid {
-    animation-duration: 1ms;
-    animation-delay: var(--tv-turn-at);
-    animation-fill-mode: forwards;
-    animation-timing-function: step-end;
+     This replaces a card that travelled, and with it a mid-flight surface
+     switch that had to be scheduled at the exact instant the mark was
+     face-down. A slot's colour is a fact about the slot; nothing about it needs
+     to be animated at all. */
+  .tv-card-detail {
+    transition: opacity var(--t-card-fade) var(--ease-out);
   }
 
-  .tv-card-turn-quiet {
-    animation-name: tv-card-to-quiet;
-  }
-
-  .tv-card-turn-solid {
-    animation-name: tv-card-to-solid;
-  }
-
-  @keyframes tv-card-to-quiet {
-    to {
-      --card-fill: var(--tv-card-fill-quiet);
-      --card-edge: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
-      --card-sub-ink: var(--tv-card-sub-ink-quiet);
-      --card-hot-ink: var(--tv-card-hot-ink-quiet);
-      --card-fig-ink: var(--tv-card-fig-ink-quiet);
-        }
-  }
-
-  @keyframes tv-card-to-solid {
-    to {
-      --card-fill: var(--tv-card-fill);
-      --card-edge:
-        inset 0 var(--stroke-thin) 0 color-mix(in srgb, var(--white) 8%, transparent),
-        inset calc(-1 * var(--s-pod-face)) 0 var(--s-pod-face)
-          color-mix(in srgb, var(--midnight-charcoal) 22%, transparent);
-      --card-sub-ink: var(--tv-card-sub-ink);
-      --card-hot-ink: var(--bright-green);
-      --card-fig-ink: var(--tv-card-fig-ink);
-        }
+  .tv-card-away .tv-card-detail {
+    opacity: 0;
   }
 
   /* ── Ranks 4-40: type, not a UI element ──
@@ -1255,14 +1248,15 @@
      figure and a size between the two — one rank language across all forty
      cards instead of a numeral language at the top and a badge language below.
 
-     **On the cell, not on the card**, which is where the old chip sat too and
-     for the same reason: rank is a fact about the *board*. A number that flew
-     across the frame with a card would be claiming to belong to the venture
-     rather than to the position it is leaving. It sits inside the strip the
-     card reserves at its top — see `--h-card-rank` — so it never meets artwork.
+     **On the cell, not on the card**, which is where the old chip sat and for
+     the same reason: rank is a fact about the *board*. Now that the mark is what
+     travels during an overtake, this matters more than it did — a rank that
+     moved with the mark would be claiming to belong to the venture rather than
+     to the position it is leaving.
 
-     `tabular-nums` so `4` and `40` occupy the same box, and the strip's
-     separation therefore holds for both. */
+     It sits inside the strip the card reserves at its top, so it never meets
+     artwork. `tabular-nums` so `4` and `40` occupy the same box and the strip's
+     separation holds for both. */
   .tv-card-rank {
     position: absolute;
     top: var(--s-card-pad-y);
@@ -1274,10 +1268,10 @@
     color: var(--mint-300);
   }
 
-  /* Deep Forest on the pale cards. Set by the component from the cell's own
-     rank rather than by a descendant selector: the badge this replaces used
-     `.tv-card-quiet .tv-card-badge`, which is a descendant selector matching a
-     sibling, and never once applied. */
+  /* Deep Forest on the pale cards. Chosen by the component from the cell's own
+     rank rather than by a descendant selector — the rule this replaced was
+     `.tv-card-quiet .tv-card-badge`, a descendant selector matching a sibling,
+     which never once applied. */
   .tv-card-rank-quiet {
     color: var(--deep-forest-green);
   }
@@ -1360,16 +1354,28 @@
      either, and the metals would stop matching across a rotation nobody is
      watching closely enough to catch it.
 
-     It breaks *above* the card's top edge, which is where `/podium` puts it too:
-     the numeral sits clear of the pillar rather than straddling it. See the
-     note on `--h-card-headroom` for the gap the grid opens to receive it. */
+     **It straddles the card's top-left corner**: part of the glyph on the card,
+     the rest above it on the white page. It used to float entirely clear of the
+     card, centred, which read as a label hovering over the board rather than as
+     a mark belonging to a position.
+
+     `--k-card-num-on` is the share that sits *on* the card, measured on the cap
+     rather than the font size — `text-box: trim-both cap` has already trimmed
+     the box to the glyph, so this is the glyph's own height and not a line box
+     a fifth of an em taller.
+
+     **The mark is what it must not touch**, and the card's rank strip is what
+     guarantees that: the strip is 2vw and the on-card share of the cap is
+     0.45 x 47.5px = 21.4px, so the numeral's foot lands inside the strip with
+     the mark's top edge still 24px below it. The two share a horizontal band —
+     the mark is nearly as wide as the card — so it is the vertical rhythm doing
+     the work, exactly as it does for ranks 4-40. */
   .tv-card-numeral {
     position: absolute;
-    left: 0;
-    right: 0;
-    bottom: calc(100% + var(--s-1));
+    left: var(--s-card-inset);
+    bottom: calc(100% - var(--fs-card-num) * var(--k-pod-num-cap) * var(--k-card-num-on));
     display: grid;
-    place-items: center;
+    place-items: start;
     z-index: 2;
     pointer-events: none;
   }

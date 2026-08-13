@@ -8,6 +8,7 @@ import { WeeklyGrid } from '@/components/WeeklyGrid'
 import { WATCH_RANKS_WEEKLY } from '@/config'
 import { openWeek } from '@/lib/feed'
 import { competingTeams, rankByWeek } from '@/lib/ranking'
+import { useDevOvertakes } from '@/lib/devOvertake'
 import { useKick } from '@/lib/useKick'
 import { useWallData, type BoardSpec } from '@/lib/useWallData'
 
@@ -51,7 +52,13 @@ export default function WeeklyPage() {
   }, [kick, freeze, thaw])
 
   const week = snapshot === null ? null : openWeek(snapshot.cohort)
-  const teams = competingTeams(snapshot?.teams ?? [])
+  // In production this hook returns its argument — see lib/devOvertake.ts. In
+  // development it is what makes a triggered climb change the standings, so a
+  // flip settles onto a board that has actually re-sorted rather than onto the
+  // one it started from.
+  const { teams, commit: devCommit, reset: devReset } = useDevOvertakes(
+    competingTeams(snapshot?.teams ?? []),
+  )
 
   return (
     <main
@@ -78,14 +85,26 @@ export default function WeeklyPage() {
           padding: 'var(--s-board-top) var(--s-12) var(--s-board-bottom)',
         }}
       >
-        <WeeklyGrid teams={teams} kick={kick} onSettled={settled} />
+        <WeeklyGrid
+          teams={teams}
+          kick={kick}
+          // One commit: the standings move and the kick clears together, so the
+          // board is never seen reordering under a mark that has landed.
+          onSettled={() => {
+            devCommit()
+            settled()
+          }}
+        />
       </div>
 
       <DevFlipTrigger
         teams={teams}
         week={week}
         onQueued={() => setDevTicks((n) => n + 1)}
-        onReset={settled}
+        onReset={() => {
+          devReset()
+          settled()
+        }}
       />
     </main>
   )

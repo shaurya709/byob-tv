@@ -6,7 +6,7 @@ import { motion, type Easing } from 'motion/react'
 import { VentureDisc } from '@/components/VentureDisc'
 import { HOT_TODAY_MIN, SOLID_RANKS } from '@/config'
 import { formatRupees } from '@/lib/format'
-import { BEATS, TOTAL, TURN_AT, at, type FlipCue } from '@/lib/flipTimeline'
+import { BEATS, TOTAL, at, type FlipCue } from '@/lib/flipTimeline'
 import { nameOf } from '@/lib/team'
 import type { Team } from '@/lib/types'
 
@@ -76,27 +76,33 @@ import type { Team } from '@/lib/types'
 const METALS = ['var(--metal-gold)', 'var(--metal-silver)', 'var(--metal-bronze)'] as const
 
 /**
- * The whole card crosses to the other slot.
+ * **The mark crosses to the other slot. The card does not move at all.**
  *
- * **This is a pure translation now, and that is a consequence of the ramp
- * going.** The four rows used to be four different heights, so a flip that
- * crossed a row boundary had to resize on the way — which meant the mark
- * travelled on its own, separately from its base, with the base collapsing into
- * it to hide the fact that the two were different sizes at the two ends. Every
- * cell is the same size now, so the card simply moves: no scale, nothing to
- * snap at the settle, and one moving object instead of two.
+ * The whole card used to travel, and an overtake across rank 20 therefore had
+ * to change a card's fill in mid-flight — a box that changes colour while it
+ * slides reads as a rendering fault rather than as an overtake. Slots hold
+ * still and keep their colour; what moves between them is the mark, and what
+ * changes is whose details are printed under it.
  *
- * `x`/`y` hold at zero until the travel opens, so the turn happens in place, and
- * hold at the destination afterwards so the unturn happens there. Both end
- * exactly on the position the re-sorted board is about to give this card, which
- * is what makes the settle invisible.
+ * The resize rides the travel because the rows descend: a mark crossing a row
+ * boundary is 107px at one end and 88px at the other, and a snap at either end
+ * would read as the mark arriving twice.
+ *
+ * `x`/`y`/`scale` hold at their start until the travel opens, so the turn
+ * happens in place, and hold at the destination afterwards so the unturn
+ * happens there. All three end exactly on the seat the re-sorted board is about
+ * to give this mark, which is what makes the settle invisible.
  */
 const TRAVEL_EASE: Easing[] = ['linear', 'easeInOut', 'linear']
 
 function travelMotion(cue: FlipCue) {
   const window = at(BEATS.travel, cue.role === 'defender' ? cue.shift : 0)
   return {
-    animate: { x: [0, 0, cue.dx, cue.dx], y: [0, 0, cue.dy, cue.dy] },
+    animate: {
+      x: [0, 0, cue.dx, cue.dx],
+      y: [0, 0, cue.dy, cue.dy],
+      scale: [1, 1, cue.scale, cue.scale],
+    },
     transition: { duration: TOTAL, times: [0, ...window, 1], ease: TRAVEL_EASE },
   }
 }
@@ -145,28 +151,13 @@ export function VentureCard({
    */
   const hot = team.todayRevenue >= HOT_TODAY_MIN
 
-  /**
-   * A card crossing the line mid-flip, and which way.
-   *
-   * The surface travels with the card because the card is what moves; the badge
-   * stays behind on the cell and is styled by the cell's own rank. `undefined`
-   * for every card that is not crossing, which is all forty of them on all but
-   * the two or three flips a week that touch rank `SOLID_RANKS`.
-   */
-  const turning =
-    cue === undefined || cue.toRank > SOLID_RANKS === quiet
-      ? undefined
-      : cue.toRank > SOLID_RANKS
-        ? 'tv-card-turn-quiet'
-        : 'tv-card-turn-solid'
-
   const flips = cue !== undefined && cue.role !== 'slide'
   // `false`, not `undefined`, for a card with no cue: the reset to x/y 0 has to
   // land in the same commit as the settle's re-slot, or the board would be seen
   // reordering under a card that had already finished moving.
   const travel =
     cue === undefined
-      ? { animate: { x: 0, y: 0 }, transition: { duration: 0 } }
+      ? { animate: { x: 0, y: 0, scale: 1 }, transition: { duration: 0 } }
       : travelMotion(cue)
 
   /**
@@ -194,10 +185,14 @@ export function VentureCard({
       style={{
         height: '100%',
         position: 'relative',
-        // A card in a flip paints over its neighbours. Without this it crosses
-        // *under* the cards it is passing, which reads as the board swallowing
-        // it rather than as one card overtaking another.
-        ...(cue === undefined ? {} : { zIndex: 3 }),
+        // **No z-index here, deliberately.** Lifting the whole cell was the
+        // obvious fix for a travelling mark passing under its neighbours, and it
+        // does not work: both cells in an exchange are in a flip, so both were
+        // lifted to the same level and DOM order decided — the mark descending
+        // out of rank 20 went behind rank 21's card for 56 of 145 frames,
+        // measured. A cell that creates a stacking context also traps its own
+        // mark inside it, which is what made the problem unfixable from here.
+        // The marks are lifted instead; see the travelling wrapper below.
       }}
     >
       {/* Board apparatus, not the team's — see the header note. */}
@@ -222,23 +217,19 @@ export function VentureCard({
       )}
 
       <motion.div
-        {...travel}
-        // The travel is the longest-running property in the sequence, so its
-        // completion is the sequence's. Component-level, not transition-level:
-        // the old kick measured the per-transition `onComplete` never firing at
-        // all once the transition carried per-property overrides, which wedged
-        // the queue with nothing on screen progressing.
-        onAnimationComplete={attacker ? onSettled : undefined}
-        className={[quiet ? 'tv-card tv-card-quiet' : 'tv-card', turning].filter(Boolean).join(' ')}
+
+        className={[
+          quiet ? 'tv-card tv-card-quiet' : 'tv-card',
+          // Fades the details out while this card's mark is away, and back in
+          // when the cue clears — which is the same commit the board re-sorts
+          // in, so what fades back in is the *new* team's. A transition rather
+          // than keyframes: the two ends are the two states, and nothing has to
+          // agree about when the middle is.
+          cue === undefined ? undefined : 'tv-card-away',
+        ]
+          .filter(Boolean)
+          .join(' ')}
         style={{
-          // The turn's delay, in the timeline's own terms. A CSS animation
-          // rather than a timer: a card unmounts mid-flip every time the
-          // rotation moves on, and an animation dies with its element where a
-          // `setTimeout` would fire into a dead component and need tearing down
-          // at exactly the beat nothing else in this sequence needs it.
-          ...(turning === undefined
-            ? {}
-            : ({ '--tv-turn-at': `${TURN_AT + (cue?.shift ?? 0)}s` } as React.CSSProperties)),
           position: 'absolute',
           inset: 0,
           display: 'grid',
@@ -262,20 +253,44 @@ export function VentureCard({
         }}
       >
         <span aria-hidden="true" />
-        {/* **On the disc's direct parent, not on the cell.** `perspective`
-            applies only to an element's own children, so one level further up it
-            does nothing and the turn renders orthographically — a flat squash
-            rather than a mark tipping its face. Measured while it sat on the
-            cell: the disc's height was exactly cos(30°) of its width, which is
-            the signature of no perspective at all. */}
-        <div style={{ display: 'grid', placeItems: 'center', perspective: '900px' }}>
+        <motion.div
+          {...travel}
+          // The travel is the longest-running property in the sequence, so its
+          // completion is the sequence's. Component-level, not
+          // transition-level: the old kick measured the per-transition
+          // `onComplete` never firing at all once the transition carried
+          // per-property overrides, which wedged the queue with nothing on
+          // screen progressing.
+          onAnimationComplete={attacker ? onSettled : undefined}
+          style={{
+            display: 'grid',
+            placeItems: 'center',
+            // ── The marks live in a layer above every card ──
+            //
+            // `position` matters as much as the number: this wrapper was
+            // `static` and carried `zIndex: 4`, which does nothing at all — a
+            // static element takes no z-index. With the cells no longer creating
+            // stacking contexts, every one of these resolves against the same
+            // root, so a mark is above every card whatever the DOM order, and a
+            // travelling mark is above every resting mark.
+            position: 'relative',
+            zIndex: cue === undefined ? 2 : 5,
+            // **On the mark's direct parent, not on the cell.** `perspective`
+            // applies only to an element's own children, so one level further
+            // up it does nothing and the turn renders orthographically — a flat
+            // squash rather than a mark tipping its face. Measured while it sat
+            // on the cell: the disc's height was exactly cos(30°) of its width,
+            // which is the signature of no perspective at all.
+            perspective: '900px',
+          }}
+        >
           <VentureDisc
             team={team}
             idle={idle}
             delaySeconds={delaySeconds}
             {...(flips ? { flipShift: cue.shift } : {})}
           />
-        </div>
+        </motion.div>
 
         {/* **The name is back.** The mark identifies a venture to anyone who
             already knows it; the name is what the other thirty-nine teams read.
@@ -283,13 +298,13 @@ export function VentureCard({
             wall names every card it draws. Two lines are reserved for it: five
             of forty do not fit on one at this width, and the fix for that is
             the report's to propose, not this component's to pick. */}
-        <div className="tv-card-name">{nameOf(team)}</div>
+        <div className="tv-card-name tv-card-detail">{nameOf(team)}</div>
 
         {/* The figure the board exists to show. **Nothing at all on a team that
             has not traded** — not an em dash, not a zero. Pale is not what
             decides this; an empty week is. */}
         <div
-          className="tv-figure tv-card-week"
+          className="tv-figure tv-card-week tv-card-detail"
           style={{ font: 'var(--t-tv-card-week)', color: 'var(--card-fig-ink)' }}
         >
           {traded ? formatRupees(team.weekRevenue) : ''}
@@ -309,7 +324,14 @@ export function VentureCard({
             no way to tell the week from the day; a permanent caption over an
             empty line would be apparatus describing absence, on all forty cards
             every morning before the first sale. */}
-        <div className={hot ? 'tv-card-today tv-card-today-hot' : 'tv-card-today'}>
+        <div
+          className={[
+            'tv-card-today tv-card-detail',
+            hot ? 'tv-card-today-hot' : undefined,
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
           {team.todayRevenue > 0 ? (
             <>
               <span className="tv-card-today-tag">Today</span>

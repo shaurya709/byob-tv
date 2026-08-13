@@ -87,17 +87,31 @@ export function rowsOf(teams: readonly Team[]): Team[][] {
  * rectangle. That distinction is load-bearing: row 1's marks are permanently
  * mid-idle, so `getBoundingClientRect` on one returns a bobbing, rotating box
  * and the deltas computed from it would be different on every frame. The cell
- * never moves, and `offsetTop` / `offsetWidth` ignore transforms, so together
- * they describe where the mark *would* be at rest — which is where it has to
- * travel to.
+ * never moves, and `offsetTop` / `offsetLeft` / `offsetWidth` ignore transforms,
+ * so together they describe where the mark *would* be at rest — which is where
+ * it has to travel to.
  */
-type Slot = { x: number; y: number }
+type Slot = { x: number; y: number; d: number }
 
 function slotOf(grid: HTMLElement, rank: number): Slot | null {
   const cell = grid.querySelector<HTMLElement>(`[data-rank="${rank}"]`)
   if (cell === null || cell === undefined) return null
+  const disc = cell.querySelector<HTMLElement>('.tv-disc')
+  if (disc === null || disc === undefined) return null
+  // The cell's own rect is safe — cells never move, only what is inside them
+  // does — and the mark's offset chain up to the cell is transform-free.
   const box = cell.getBoundingClientRect()
-  return { x: box.left, y: box.top }
+  let ox = 0
+  let oy = 0
+  for (let e: HTMLElement | null = disc; e !== null && e !== cell; e = e.offsetParent as HTMLElement | null) {
+    ox += e.offsetLeft
+    oy += e.offsetTop
+  }
+  const d = disc.offsetWidth
+  // The mark's centre, which is what travels: the marks differ in size down the
+  // ramp, so corner-to-corner would land a big mark's edge on a small mark's
+  // seat and read as a miss.
+  return { x: box.left + ox + d / 2, y: box.top + oy + d / 2, d }
 }
 
 /**
@@ -106,19 +120,16 @@ function slotOf(grid: HTMLElement, rank: number): Slot | null {
  *
  * ── What moves ──
  *
- * The attacker climbs from `fromRank` to `toRank` and flips. The card it
- * displaces — the defender, holding `toRank` — flips too, a beat later, and
- * drops one place.
+ * **The marks, and nothing else.** The attacker's mark climbs from `fromRank`
+ * to `toRank` and turns over; the mark it displaces — the defender, holding
+ * `toRank` — turns a beat later and drops one place. Everything between them
+ * drops one place as well without turning: a climb of one is the pure exchange
+ * the design describes and has nothing in between, where a climb of seven moves
+ * six other marks that are not part of the contest.
  *
- * **Everything between them drops one place as well, without flipping.** A climb
- * of one rank is the pure exchange the design describes, and there is nothing in
- * between; a climb of seven moves six other cards, and they are not part of the
- * contest. They slide with their faces up, so the two that turn over stay the
- * only story on screen.
- *
- * A slide can still cross rows — rank 10 to rank 11 is the end of one row to the
- * start of the next — so every mover gets the same resize treatment. That is why
- * `scale` is on the shared cue rather than on the contestants' own.
+ * The cards hold still and keep their colour. They used to travel, and that is
+ * what made an overtake across rank 20 change a card's fill in mid-flight —
+ * which read as a fault. A slot's colour is a fact about the slot.
  */
 export function cuesFor(grid: HTMLElement, kick: OvertakeEvent): Map<number, FlipCue> {
   const cues = new Map<number, FlipCue>()
@@ -128,12 +139,7 @@ export function cuesFor(grid: HTMLElement, kick: OvertakeEvent): Map<number, Fli
     // A slot the board does not currently render — the climb reached past the
     // bottom of a short board. Nothing to animate, and the data still re-sorts.
     if (a === null || b === null) return
-    // **Cell corner to cell corner, and no scale.** Every cell is the same size
-    // since the height ramp went, so a card crossing a row boundary needs no
-    // resize on the way — which is what let the mark and its base become one
-    // travelling object instead of two that had to be reassembled at the far
-    // end. If a ramp ever comes back, this is the first thing that breaks.
-    cues.set(from, { role, dx: b.x - a.x, dy: b.y - a.y, shift, toRank: to })
+    cues.set(from, { role, dx: b.x - a.x, dy: b.y - a.y, shift, scale: b.d / a.d })
   }
 
   move(kick.fromRank, kick.toRank, 'attacker', 0)
