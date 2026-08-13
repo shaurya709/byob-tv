@@ -209,22 +209,19 @@
      renders. These track the two type tokens below — 0.72vw x 1.15 leading, and
      1.16vw at leading 1 — with a hair of slack for the clamp floors.
 
-     ── The name reserves TWO lines on every card, and five names need them ──
+     ── The name's two lines are today's one ──
 
-     Measured against the live feed at 1920x1080, 156px of card inside its
-     padding: 35 of 40 names fit on one line. Five do not — In Between Sips By
-     Kaappitalism (over by 131.1px, 84%), ATC (All Things Camphor) (75.6px),
-     The Pitlane Collective (50.6px), The Chips n Dips Story (46.5px) and
-     Namma Snacking Co. (26.6px). **None needs a third line.**
+     The name reserved 1.7vw, because five of forty did not fit on one line at
+     156px and a figure sitting a line lower on those five reads as a fault. It
+     is gone from the card — the mark identifies the venture — and today's figure
+     has the line back at 1.2vw, the same as the week's.
 
-     Reserved on all forty rather than only on those five, because the figure
-     sits under the name: letting it collapse puts five cards' figures a line
-     lower than their neighbours', which reads as a fault rather than as a long
-     name. The cost is one line of height, and it comes out of the *mark* — this
-     project's standing rule is that a tight card takes its space from the logo
-     and never from a figure. */
-  --h-card-name: 1.7vw;
+     That returns 0.5vw to the mark, which is where a tight card's space comes
+     from and goes back to, by this project's standing rule. It also retires the
+     overflow problem rather than solving it: no truncation, no marquee and no
+     short-name column is needed for a line that is not there. */
   --h-card-fig: 1.2vw;
+  --h-card-today: 1.2vw;
 
   /* The card's own width, spelled out because the mark needs it as a *length*
      and the grid only ever expresses it as a fraction. Ten columns and nine
@@ -236,13 +233,8 @@
   /* Type is constant across all forty cards — see the text block note above.
      Week revenue is the largest thing on the card: it is the figure the board
      exists to show. */
-  /* The venture name, in tracked uppercase. Small, because it is the third
-     thing the card says after the mark and the figure — but it is on the card
-     at all now, which it was not before. */
-  --t-tv-card-name: 700 clamp(9px, 0.72vw, 15px) / 1.15 var(--font-sans);
   /* Reduced 20% from clamp(15px, 1.45vw, 30px). Still the largest thing on the
-     card, and still the figure the board exists to show — it simply no longer
-     has a venture name above it competing for the same line. */
+     card, and still the figure the board exists to show. */
   --t-tv-card-week: 700 clamp(12px, 1.16vw, 24px) / 1 var(--font-sans);
   --t-tv-card-today: 600 clamp(11px, 1vw, 21px) / 1 var(--font-sans);
   --t-tv-card-today-hot: 700 clamp(11px, 1vw, 21px) / 1 var(--font-sans);
@@ -302,10 +294,29 @@
   --tv-card-fill: var(--deep-forest-green);
   --tv-card-fill-quiet: var(--soft-mint);
   --tv-card-stroke-quiet: var(--border-mint);
-  --tv-card-name-ink: var(--mint-300);
-  --tv-card-name-ink-quiet: var(--fg-muted);
+  --tv-card-sub-ink: var(--mint-300);
+  /* **Not `--fg-muted`, and the reason is a measurement.** The secondary ink
+     carries three small things on a pale card — today's figure, its TODAY tag
+     and the rank chip. `--fg-muted` on `--soft-mint` measures 3.31:1: enough for
+     the 19.2px figure, which AA counts as large text at weight 600, and short of
+     the 4.5:1 the 11.9px tag and the 11px chip need.
+
+     Deep Forest at 75% against the card's own fill measures **5.04:1** and stays
+     visibly lighter than the week's figure at 8.5:1, so the hierarchy the ink
+     was carrying survives the fix. A mix of two existing tokens; no new hue. */
+  --tv-card-sub-ink-quiet: color-mix(in srgb, var(--deep-forest-green) 75%, var(--soft-mint));
   --tv-card-fig-ink: var(--white);
   --tv-card-fig-ink-quiet: var(--deep-forest-green);
+  /* A strong day on a pale card.
+
+     **Not `--green-600` on its own.** That token is this wall's positive figure
+     and measures ~3.1:1 on white — but the pale card is not white, it is
+     `--soft-mint`, and against it green-600 measures **2.41:1**, under even the
+     3:1 that large text needs. Half-mixed into Deep Forest it measures 4.71:1
+     and is still visibly the green one beside the card's grey-green secondary
+     ink. The solid card keeps `--bright-green`, which was drawn for exactly that
+     surface and measures 6.14:1 on it. */
+  --tv-card-hot-ink-quiet: color-mix(in srgb, var(--green-600) 50%, var(--deep-forest-green));
   --tv-card-badge-fill: var(--deep-teal);
   --tv-card-badge-ink: var(--mint-300);
 
@@ -1016,8 +1027,8 @@
        from scripts/logo-legibility.py is checked against the rendered height. */
     --d-card-logo: min(
       calc(
-        var(--h-card) - 2 * var(--s-card-pad-y) - var(--h-card-name) -
-          var(--h-card-fig) - 2 * var(--s-card-row-gap)
+        var(--h-card) - 2 * var(--s-card-pad-y) - var(--h-card-fig) -
+          var(--h-card-today) - 2 * var(--s-card-row-gap)
       ),
       calc(var(--w-card) - 2 * var(--s-card-inset))
     );
@@ -1102,7 +1113,8 @@
       inset 0 var(--stroke-thin) 0 color-mix(in srgb, var(--white) 8%, transparent),
       inset calc(-1 * var(--s-pod-face)) 0 var(--s-pod-face)
         color-mix(in srgb, var(--midnight-charcoal) 22%, transparent);
-    --card-name-ink: var(--tv-card-name-ink);
+    --card-sub-ink: var(--tv-card-sub-ink);
+    --card-hot-ink: var(--bright-green);
     --card-fig-ink: var(--tv-card-fig-ink);
     --card-disc-fill: var(--white);
     --card-disc-edge: 0 3px 6px color-mix(in srgb, var(--midnight-charcoal) 20%, transparent);
@@ -1126,7 +1138,8 @@
   .tv-card-quiet {
     --card-fill: var(--tv-card-fill-quiet);
     --card-edge: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
-    --card-name-ink: var(--tv-card-name-ink-quiet);
+    --card-sub-ink: var(--tv-card-sub-ink-quiet);
+    --card-hot-ink: var(--tv-card-hot-ink-quiet);
     --card-fig-ink: var(--tv-card-fig-ink-quiet);
     --card-disc-fill: transparent;
     --card-disc-edge: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
@@ -1164,7 +1177,8 @@
     to {
       --card-fill: var(--tv-card-fill-quiet);
       --card-edge: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
-      --card-name-ink: var(--tv-card-name-ink-quiet);
+      --card-sub-ink: var(--tv-card-sub-ink-quiet);
+      --card-hot-ink: var(--tv-card-hot-ink-quiet);
       --card-fig-ink: var(--tv-card-fig-ink-quiet);
       --card-disc-fill: transparent;
       --card-disc-edge: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
@@ -1178,7 +1192,8 @@
         inset 0 var(--stroke-thin) 0 color-mix(in srgb, var(--white) 8%, transparent),
         inset calc(-1 * var(--s-pod-face)) 0 var(--s-pod-face)
           color-mix(in srgb, var(--midnight-charcoal) 22%, transparent);
-      --card-name-ink: var(--tv-card-name-ink);
+      --card-sub-ink: var(--tv-card-sub-ink);
+      --card-hot-ink: var(--bright-green);
       --card-fig-ink: var(--tv-card-fig-ink);
       --card-disc-fill: var(--white);
       --card-disc-edge: 0 3px 6px color-mix(in srgb, var(--midnight-charcoal) 20%, transparent);
@@ -1209,21 +1224,48 @@
      must not travel with a card that leaves the slot, which is the same reason
      it sits on the cell — so it takes the cell's rank, not the card's palette. */
   .tv-card-badge-quiet {
-    color: var(--tv-card-name-ink-quiet);
+    color: var(--tv-card-sub-ink-quiet);
     background: transparent;
     box-shadow: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
   }
 
-  .tv-card-name {
-    font: var(--t-tv-card-name);
-    letter-spacing: var(--track-overline);
-    text-transform: uppercase;
-    /* Inherited from the card, so it turns with the box rather than a beat
-       after it. See `.tv-card` for the palette. */
-    color: var(--card-name-ink, var(--tv-card-name-ink));
-    text-align: center;
+  /* ── Today's figure, under the week's ──
+
+     The board's one emphasis lives here: at or above `HOT_TODAY_MIN` the figure
+     takes `--card-hot-ink` and a heavier weight. **Two inks, because the card
+     has two surfaces.** `--bright-green` on the solid card, which is the surface
+     it was drawn for; `--green-600` on the pale one, because bright green
+     measures about 1.9:1 against white and would be invisible from a corridor
+     while looking deliberate on a laptop. Both are existing brand tokens.
+
+     Quiet by default: `--card-sub-ink` is the mint the venture name used, so an
+     ordinary day sits under the week's figure rather than beside it in weight.
+     The week is what the board ranks on and it stays the largest thing on the
+     card. */
+  .tv-card-today {
+    font: var(--t-tv-card-today);
+    color: var(--card-sub-ink, var(--tv-card-sub-ink));
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: var(--s-1);
+    font-variant-numeric: tabular-nums;
     width: 100%;
     min-width: 0;
+  }
+
+  .tv-card-today-hot {
+    font: var(--t-tv-card-today-hot);
+    color: var(--card-hot-ink, var(--green-600));
+  }
+
+  /* Apparatus, not a third number: smaller than what it labels, and it appears
+     only when there is a figure to label. */
+  .tv-card-today-tag {
+    font: var(--t-tv-card-label);
+    letter-spacing: var(--track-overline);
+    text-transform: uppercase;
+    color: var(--card-sub-ink, var(--tv-card-sub-ink));
   }
 
   /* ── The metal numeral over ranks 1–3 ──

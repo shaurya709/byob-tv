@@ -4,10 +4,9 @@ import { useEffect } from 'react'
 import { motion, type Easing } from 'motion/react'
 
 import { VentureDisc } from '@/components/VentureDisc'
-import { SOLID_RANKS } from '@/config'
+import { HOT_TODAY_MIN, SOLID_RANKS } from '@/config'
 import { formatRupees } from '@/lib/format'
 import { BEATS, TOTAL, TURN_AT, at, type FlipCue } from '@/lib/flipTimeline'
-import { nameOf } from '@/lib/team'
 import type { Team } from '@/lib/types'
 
 /**
@@ -25,8 +24,6 @@ import type { Team } from '@/lib/types'
  *   were half-swallowed by SORTD and Blunnt. The badge is on the card's own
  *   surface now, where nothing of the venture's can cover it.
  * - **Nothing bound a mark to its figure.** The card does.
- * - **There was no venture name at all.** It was removed when the base was too
- *   small to hold one; the card is not.
  * - **Every card was as loud as every other.** The bottom half of the board is
  *   the pale outlined kind now — see `quiet` below. The rule was revenue and is
  *   rank; the figure is what still follows revenue.
@@ -45,21 +42,28 @@ import type { Team } from '@/lib/types'
  */
 
 /**
- * ── ONE FIGURE, AND TODAY IS THE ONE THAT WENT ──
+ * ── THE NAME WENT AND TODAY CAME BACK, ONTO THE SAME LINE ──
  *
- * The card used to carry two: the week's revenue and, under it, "TODAY ₹x" —
- * which turned green above `HOT_TODAY_MIN` and was the wall's single emphasis.
- * The rebuilt anatomy is rank, mark, name, figure, and that is four things on a
- * card that is now also carrying a venture name it did not carry before.
+ * The anatomy is rank, mark, week, today. It was rank, mark, name, week for one
+ * revision, and the swap is deliberate rather than a reversal that lost track of
+ * itself:
  *
- * **This is a real loss and it is worth naming rather than burying.** With today
- * gone the board says who is ahead this week but no longer says who is moving
- * right now, and a wall watched at 4pm on a busy Friday used to answer that.
+ * - **The mark already identifies the venture at this size.** A 116px disc of a
+ *   team's own artwork and its name underneath are the same fact printed twice,
+ *   and the second printing cost the only line the card had spare.
+ * - **Today was the only thing on the board that said who is moving *now*.**
+ *   Without it the wall is a weekly summary on a screen; a passer-by at 4pm on a
+ *   busy Friday has no way to see the afternoon in it.
  *
- * It is one line to restore: a second `.tv-figure` under the week's, in
- * `--t-tv-card-today`, coloured `--green-600` when `todayRevenue >=
- * HOT_TODAY_MIN`. `--h-card-fig` in app/mesa-tv.css is what reserves the room,
- * and `--h-card` would need about 1.2vw back to pay for the line.
+ * It also settles the overflow question the name never answered: five of forty
+ * names did not fit on one line at 156px, and no truncation, marquee or short
+ * display-name column is needed for a line that is no longer there.
+ *
+ * **The cost, stated rather than buried:** a team with no artwork is now a
+ * coloured initial with no name anywhere on the card. Two teams are in that
+ * state today. The disc's `alt` still carries the venture name, so the board is
+ * not lying to anything that reads it — but at six metres those two cards say
+ * only a letter, and that is the price of the line.
  */
 
 /**
@@ -132,6 +136,13 @@ export function VentureCard({
    */
   const quiet = rank > SOLID_RANKS
   const traded = team.weekRevenue > 0
+
+  /**
+   * The board's one emphasis: a day at or above `HOT_TODAY_MIN` reads as a
+   * strong day. It is a display decision and nothing fires on crossing it, so a
+   * team moving above and below the line through an afternoon is free to.
+   */
+  const hot = team.todayRevenue >= HOT_TODAY_MIN
 
   /**
    * A card crossing the line mid-flip, and which way.
@@ -257,13 +268,6 @@ export function VentureCard({
           />
         </div>
 
-        {/* **The name is back.** It was dropped when the base was too small to
-            hold one; the card is not. `nameOf` gives an unnamed team its team id
-            rather than a blank — the wall names every card it draws. */}
-        <div className="tv-card-name" style={{ minHeight: 'var(--h-card-name)' }}>
-          {nameOf(team)}
-        </div>
-
         {/* The figure the board exists to show. **Nothing at all on a team that
             has not traded** — not an em dash, not a zero. Pale is not what
             decides this; an empty week is. */}
@@ -279,6 +283,34 @@ export function VentureCard({
           }}
         >
           {traded ? formatRupees(team.weekRevenue) : ''}
+        </div>
+
+        {/* ── Today, back on the card ──
+
+            The line the venture name occupied is today's again. The name went
+            because the mark already identifies the venture at this size — forty
+            logos and forty names is the same fact printed twice — and what the
+            board lost when today went was the only thing on it that said who is
+            moving *right now*. A wall glanced at on a busy Friday answers that
+            question or it is a weekly summary that happens to be on a screen.
+
+            **The tag rides the figure and appears only with it.** Two bare rupee
+            amounts on a card with no room for column headings leave a passer-by
+            no way to tell the week from the day; a permanent caption over an
+            empty line would be apparatus describing absence, on all forty cards
+            every morning before the first sale. */}
+        <div
+          className={hot ? 'tv-card-today tv-card-today-hot' : 'tv-card-today'}
+          style={{ minHeight: 'var(--h-card-today)' }}
+        >
+          {team.todayRevenue > 0 ? (
+            <>
+              <span className="tv-card-today-tag">Today</span>
+              {formatRupees(team.todayRevenue)}
+            </>
+          ) : (
+            ''
+          )}
         </div>
       </motion.div>
     </div>

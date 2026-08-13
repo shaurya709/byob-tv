@@ -9,7 +9,7 @@ import { Podium, podiumTeams } from '@/components/Podium'
 import { VentureCard } from '@/components/VentureCard'
 import { pagesOf } from '@/components/VentureName'
 import { ROW_LENGTH, WeeklyGrid, rowsOf } from '@/components/WeeklyGrid'
-import { SOLID_RANKS } from '@/config'
+import { HOT_TODAY_MIN, SOLID_RANKS } from '@/config'
 import type { CountdownState } from '@/lib/countdown'
 import { STAGGER, TURN_AT } from '@/lib/flipTimeline'
 import { formatRupees, ordinal } from '@/lib/format'
@@ -323,43 +323,62 @@ describe('VentureCard', () => {
   })
 
   /**
-   * **One figure, and today is the one that went.** The rebuilt card is rank,
-   * mark, name, figure — and the venture name it now carries is the line that
-   * today's figure used to occupy. This asserts the removal deliberately rather
-   * than leaving it to be noticed: a card that quietly started printing two
-   * numbers again would be a regression, not a bonus.
+   * **Both figures, and the week is the larger.** The card carries the week's
+   * revenue and, under it, today's — the anatomy is rank, mark, week, today.
+   * The venture name that briefly sat between them is gone: the mark identifies
+   * the venture, and today was the only thing on the board saying who is moving
+   * now.
    */
-  it('prints the week figure and no longer prints today', () => {
+  it('prints the week figure and today underneath it', () => {
     const text = render(
       <VentureCard team={team({ weekRevenue: 12_000, todayRevenue: 3_000 })} rank={7} />,
     )
     expect(text).toContain(formatRupees(12_000))
-    expect(text).not.toContain(formatRupees(3_000))
+    expect(text).toContain(formatRupees(3_000))
   })
 
-  /**
-   * The name is back. It was dropped when the base was too small to hold one;
-   * the solid card is not.
-   */
-  it('prints the venture name', () => {
+  it('prints no venture name on the card', () => {
     const text = render(
       <VentureCard team={team({ teamId: 'SLE-C418', ventureName: 'Aurora Bakes' })} rank={9} />,
     )
-    expect(text).toContain('Aurora Bakes')
-    expect(text).toContain('9')
+    expect(text).not.toContain('Aurora Bakes')
   })
 
   /**
-   * An unnamed team carries its ID rather than a gap — `AGENTS.md` is explicit
-   * that such a team competes like any other, and the wall names every card it
-   * draws. Shared with `/podium` through `lib/team.ts` so the two boards cannot
-   * disagree about what to call it.
+   * The name left the card's *text*, not the card. An unnamed team competes like
+   * any other — `AGENTS.md` is explicit — and with no printed name the mark's
+   * alternative text is the only thing naming either kind of team to anything
+   * that reads rather than looks. It falls back to the team ID, as `/podium`
+   * does, through the same `lib/team.ts`.
    */
-  it('falls back to the team id for a team with no venture name', () => {
-    const text = render(
-      <VentureCard team={team({ teamId: 'SLE-C422', ventureName: '' })} rank={31} />,
+  it('names the venture in the mark, falling back to the team id', () => {
+    expect(markup(<VentureCard team={team({ ventureName: 'Aurora Bakes' })} rank={9} />)).toContain(
+      'Aurora Bakes',
     )
-    expect(text).toContain('SLE-C422')
+    expect(
+      markup(<VentureCard team={team({ teamId: 'SLE-C422', ventureName: '' })} rank={31} />),
+    ).toContain('SLE-C422')
+  })
+
+  /**
+   * ── The board's one emphasis ──
+   *
+   * A day at or above `HOT_TODAY_MIN` is a strong day and says so; below it the
+   * figure is quiet. And the tag rides the figure rather than standing over an
+   * empty line: before the first sale of the morning all forty cards would
+   * otherwise be captioned `TODAY` with nothing under it.
+   */
+  it('emphasises a strong day and leaves an ordinary one quiet', () => {
+    const hot = markup(<VentureCard team={team({ todayRevenue: HOT_TODAY_MIN })} rank={4} />)
+    const mild = markup(<VentureCard team={team({ todayRevenue: HOT_TODAY_MIN - 1 })} rank={4} />)
+    expect(hot).toContain('tv-card-today-hot')
+    expect(mild).not.toContain('tv-card-today-hot')
+  })
+
+  it('prints no today tag on a card with no day yet', () => {
+    const html = markup(<VentureCard team={team({ weekRevenue: 9_000, todayRevenue: 0 })} rank={4} />)
+    expect(html).toContain('tv-card-today')
+    expect(html).not.toContain('tv-card-today-tag')
   })
 
   /**
@@ -371,7 +390,7 @@ describe('VentureCard', () => {
     const text = render(<VentureCard team={team({ weekRevenue: 0, todayRevenue: 0 })} rank={38} />)
     expect(text).not.toContain('₹0')
     expect(text).not.toContain('—')
-    expect(text.trim()).toBe('38Aurora')
+    expect(text.trim()).toBe('38')
   })
 
   /**
