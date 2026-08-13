@@ -50,6 +50,16 @@
      priority is that every screen renders identically: if one laptop has New
      York installed and another doesn't, two TVs side by side would set the same
      headline in two different serifs, and nobody would think to check. */
+  /* **Impact is a system face, not a bundled one.** Every other font on this
+     wall is self-hosted from app/fonts, so it renders identically wherever the
+     wall is driven from. This one is whatever the machine happens to have, and
+     the fallback chain is what stops that being a silent substitution:
+     Haettenschweiler is Impact's Windows twin, Archivo Black is the bundled
+     face the heading used before, and it is the one that will actually render
+     if the wall's laptop has neither. Checked on the machine measuring this:
+     see the QC note for which one is in use. */
+  --font-impact: Impact, 'Haettenschweiler', 'Arial Narrow Bold',
+    var(--font-display-black), sans-serif;
   --font-serif: var(--font-mesa-serif), 'New York', ui-serif, Georgia, serif;
   --font-sans: var(--font-mesa-body), ui-sans-serif, system-ui, -apple-system, 'Segoe UI',
     Helvetica, Arial, sans-serif;
@@ -394,8 +404,8 @@
      what does the filling. 0.55em takes the heading to about 765px — a
      masthead rather than a caption — while leaving ~135px of clear band before
      the countdown, which is the constraint that stops it going wider. */
-  --t-tv-heading: 400 clamp(26px, 2.9vw, 60px) / 1 var(--font-display-black);
-  --track-tv-heading: 0.55em;
+  --t-tv-heading: 400 clamp(26px, 2.9vw, 60px) / 1 var(--font-impact);
+  --track-tv-heading: 0.76em;
   /* How far right of centre the heading sits: 5% of its own ink width. */
   --s-band-title-shift: 1.92vw;
   /* ── The Mesa lockup, sized to the band rather than to the heading ──
@@ -424,7 +434,7 @@
      the wall crosses those thresholds at three in the morning with nobody
      watching. This replaces a 52x40 calendar drawing whose binding rings, at
      44px on a 1920 frame, read as speckle rather than as a calendar. */
-  --t-tv-strip-label: 700 clamp(10px, 0.85vw, 18px) / 1 var(--font-sans);
+  --t-tv-strip-label: 800 clamp(12px, 1.05vw, 22px) / 1 var(--font-sans);
   --h-tv-cal: clamp(26px, 2.3vw, 48px);
   --w-tv-cal-stroke: 5;
   --t-tv-cal-figure: 800 clamp(11px, 1vw, 21px) / 1 var(--font-sans);
