@@ -377,7 +377,14 @@
      the header band, so the forty rows underneath never move. Its glyphs stand
      roughly two row-texts tall; sizing it to two full row *boxes* (4.6vw) was
      measured to overflow the 3.4vw band and push rank 20 off the frame. */
-  --t-tv-heading: 700 clamp(22px, 2.4vw, 50px) / 1 var(--font-serif);
+  /* **Bebas Neue, weight 400.** The face has one weight, and asking for a
+     heavier one makes the browser synthesise it by smearing the outlines —
+     which on a condensed face closes the counters and turns the heading into a
+     block at six metres. Sized up from the serif's 2.4vw for the same reason
+     `/podium`'s names were: Bebas is condensed and its cap is a large share of
+     its em, so matched by font-size it reads smaller and narrower than the face
+     it replaced. */
+  --t-tv-heading: 400 clamp(26px, 2.9vw, 60px) / 1 var(--font-condensed);
   --track-tv-heading: 0.04em;
   /* The Mesa lockup, sized to the heading's own glyph height so the two read
      as one rank of furniture across the band. Same clamp as --t-tv-heading. */
@@ -1263,11 +1270,37 @@
      face-down. A slot's colour is a fact about the slot; nothing about it needs
      to be animated at all. */
   .tv-card-detail {
-    transition: opacity var(--t-card-fade) var(--ease-out);
+    /* **An animation, not a transition, and the difference is measurable.** A
+       transition needs an element that persists across the change, and a card
+       that changes row does not: React moves it into a different row container,
+       which unmounts and remounts it. Measured at the settle — opacity went 0 to
+       1 with **zero frames in between**, a pop rather than a fade, on exactly
+       the cards an overtake moves. An animation runs on mount, so a remounted
+       card fades in like any other.
+
+       It also restarts when `tv-card-away` is removed, because that rule sets
+       `animation: none` and putting a name back is what re-triggers one — so a
+       card that stayed in its row fades in on the same curve as one that did
+       not. */
+    animation: tv-detail-in var(--t-card-fade) var(--ease-out) both;
   }
 
   .tv-card-away .tv-card-detail {
+    /* Out under the turn. The transition carries this half: the element is
+       still mounted while its mark is away, so there is something to
+       transition from. */
+    animation: none;
     opacity: 0;
+    transition: opacity var(--t-card-fade) var(--ease-out);
+  }
+
+  @keyframes tv-detail-in {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   /* ── Ranks 4-40: type, not a UI element ──
