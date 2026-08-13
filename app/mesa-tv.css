@@ -377,15 +377,25 @@
      the header band, so the forty rows underneath never move. Its glyphs stand
      roughly two row-texts tall; sizing it to two full row *boxes* (4.6vw) was
      measured to overflow the 3.4vw band and push rank 20 off the frame. */
-  /* **Bebas Neue, weight 400.** The face has one weight, and asking for a
-     heavier one makes the browser synthesise it by smearing the outlines —
-     which on a condensed face closes the counters and turns the heading into a
-     block at six metres. Sized up from the serif's 2.4vw for the same reason
-     `/podium`'s names were: Bebas is condensed and its cap is a large share of
-     its em, so matched by font-size it reads smaller and narrower than the face
-     it replaced. */
-  --t-tv-heading: 400 clamp(26px, 2.9vw, 60px) / 1 var(--font-condensed);
-  --track-tv-heading: 0.04em;
+  /* ── The slide heading: `/podium`'s own BYOB face, tracked to fill the band ──
+
+     **Archivo Black, and the choice is about width.** The band left 1297px
+     between the lockup and the countdown and the heading was using 246 of it,
+     which read as a small label adrift in a large dark bar. Measured at this cap
+     height, the three faces on this wall fill that span very differently:
+     Bebas 222px, the serif 324px, Archivo Black 430px untracked. Bebas is a
+     *condensed* face — the worst of the three for a job that is entirely about
+     horizontal space — and it is also the face `/podium` sets its stacked BYOB
+     letters in, so taking the black one puts the two boards' mastheads in the
+     same voice.
+
+     **The growth is horizontal only.** The cap height does not move: 2.9vw
+     buys the same glyph height it did as Bebas, and `--track-tv-heading` is
+     what does the filling. 0.55em takes the heading to about 765px — a
+     masthead rather than a caption — while leaving ~135px of clear band before
+     the countdown, which is the constraint that stops it going wider. */
+  --t-tv-heading: 400 clamp(26px, 2.9vw, 60px) / 1 var(--font-display-black);
+  --track-tv-heading: 0.55em;
   /* The Mesa lockup, sized to the heading's own glyph height so the two read
      as one rank of furniture across the band. Same clamp as --t-tv-heading. */
   --h-tv-logo: clamp(22px, 2.4vw, 50px);
@@ -1539,7 +1549,13 @@
      padding is applied inside it, so the lockup still lines up with column 1. */
   .tv-band {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    /* **The heading centres in the space that is free, not on the frame.**
+       Equal outer tracks put it on the frame's centreline, which is the correct
+       answer to "centred" and the wrong one to "fill the band": the lockup is
+       180px wide and the countdown group is 350, so a frame-centred heading
+       left 412px of empty band on one side and 118px on the other. Centring it
+       in the middle track balances them at 280px each. */
+    grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: var(--s-8);
     height: var(--h-band);
@@ -1562,11 +1578,16 @@
   }
 
   .tv-band-title {
+    justify-self: center;
     font: var(--t-tv-heading);
     letter-spacing: var(--track-tv-heading);
     text-transform: uppercase;
     color: var(--white);
-    margin: 0;
+    /* Tracking is applied *after* the last glyph as well, so a heavily tracked
+       line carries half a space of dead width on its right and sits that far
+       left of true centre. Pulling the box back by the same amount is what puts
+       the ink back on the frame's centreline. */
+    margin: 0 calc(-1 * var(--track-tv-heading)) 0 0;
   }
 
   /* Provenance, and it recedes: the smallest tracked thing on the frame, in the
