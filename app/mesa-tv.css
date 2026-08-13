@@ -396,9 +396,23 @@
      the countdown, which is the constraint that stops it going wider. */
   --t-tv-heading: 400 clamp(26px, 2.9vw, 60px) / 1 var(--font-display-black);
   --track-tv-heading: 0.55em;
-  /* The Mesa lockup, sized to the heading's own glyph height so the two read
-     as one rank of furniture across the band. Same clamp as --t-tv-heading. */
-  --h-tv-logo: clamp(22px, 2.4vw, 50px);
+  /* How far right of centre the heading sits: 5% of its own ink width. */
+  --s-band-title-shift: 1.92vw;
+  /* ── The Mesa lockup, sized to the band rather than to the heading ──
+
+     It used to take the heading's own glyph height, on the argument that the
+     two should read as one rank of furniture. On a thin strip that was true; in
+     a filled band it left the lockup at 46.1px in an 82.5px bar with 18.2px of
+     dead space above and below it, while the countdown group beside it stood
+     76px tall. The brand mark was the smallest thing in its own masthead.
+
+     **The band's own edges are the limit now**, because below it is the white
+     page and a lockup that crosses that line stops being on the band at all.
+     3.5vw is 67.2px at 1920, which leaves 7.6px of clear band above and below —
+     tighter than the countdown group's 3.3px, so the countdown is still what
+     sets the band's height. Measured at 1600x900 too, where the fixed-px trap
+     usually bites: 56px in a 68.8px band, 6.4px clear. */
+  --h-tv-logo: clamp(30px, 3.5vw, 90px);
 
   /* The Mesa Flea dial. The label sits above it, so the stack has to clear the
      3.4vw header band: label + gap + ring ≤ the band, which is what caps the
@@ -1579,6 +1593,12 @@
 
   .tv-band-title {
     justify-self: center;
+    /* Nudged right of the free span's centre. `position` rather than a margin:
+       a margin on a centred item moves it by *half* what you write, which is
+       the kind of arithmetic that quietly drifts the next time someone tunes
+       it. This moves the ink by exactly what the token says. */
+    position: relative;
+    left: var(--s-band-title-shift);
     font: var(--t-tv-heading);
     letter-spacing: var(--track-tv-heading);
     text-transform: uppercase;
