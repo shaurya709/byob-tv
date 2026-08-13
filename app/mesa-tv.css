@@ -218,7 +218,16 @@
      hold their size while every `vw` above shrinks, so the ramp has less room
      at 1600 than the arithmetic at 1920 suggests. `measure-fit.mjs` is what
      catches it. */
-  --s-card-gap: var(--s-3);
+  /* **2% of card breadth came out of here, not out of the frame padding.** The
+     cards fill the row, so their width is whatever the padding and the nine
+     gaps leave: 12px gaps gave 171.6px cards, 8px gives 175.2px, which is +2.1%.
+     Taking it from the frame padding instead would have widened the board past
+     the band's own inset and pulled column 1 out of line with the lockup
+     directly above it.
+
+     It is also the *row* gap, so the three vertical gaps shrink by 4px each —
+     12px the board does not need, which lands in the bottom clearance. */
+  --s-card-gap: var(--s-2);
   --s-card-pad: var(--s-2);
 
   /* How much room the mark leaves around itself inside the card. */
