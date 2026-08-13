@@ -286,7 +286,23 @@ function PodiumCard({
 
           <motion.div
             initial={false}
-            animate={arriving === undefined ? {} : { opacity: [1, 1, 0, 0] }}
+            // **`{ opacity: 1 }`, never `{}`.** An empty `animate` does not mean
+            // "back to normal", it means "animate nothing" — so Motion left the
+            // last value it committed, which is the 0 this card fades to when a
+            // venture arrives. The details were still in the DOM and still
+            // correct; they were simply invisible, and they never came back.
+            //
+            // It compounded. Every overtake blanked one more card, so after
+            // three the whole podium was three logos with no name and no figure
+            // under any of them — on a wall nobody is watching closely enough to
+            // notice a number going missing. Measured with the dev triggers:
+            // 4→1 blanked rank 1, then 4→3 blanked rank 3, then 5→2 blanked
+            // rank 2, and nothing ever restored them.
+            //
+            // The reset has to be a *value*, so it lands in the same commit that
+            // drops `arriving`. `components/VentureCard.tsx` carries the same
+            // warning about `false` versus `undefined` for the same reason.
+            animate={arriving === undefined ? { opacity: 1 } : { opacity: [1, 1, 0, 0] }}
             transition={{
               duration: TOTAL,
               times: [0, ...at(BEATS.arrive), 1],
