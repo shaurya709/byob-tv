@@ -8,8 +8,8 @@ import { FleaDial } from '@/components/FleaDial'
 import { Podium, podiumTeams } from '@/components/Podium'
 import { VentureCard } from '@/components/VentureCard'
 import { pagesOf } from '@/components/VentureName'
-import { ROW_LENGTH, WeeklyGrid, rowsOf } from '@/components/WeeklyGrid'
-import { HOT_TODAY_MIN, SOLID_RANKS } from '@/config'
+import { ROW_LENGTH, WeeklyGrid, rowsOf, todayMeanOf } from '@/components/WeeklyGrid'
+import { SOLID_RANKS } from '@/config'
 import type { CountdownState } from '@/lib/countdown'
 import { formatRupees, ordinal } from '@/lib/format'
 import { competingTeams, rankByWeek, rankTeams } from '@/lib/ranking'
@@ -364,18 +364,40 @@ describe('VentureCard', () => {
   })
 
   /**
-   * ── The board's one emphasis ──
+   * ── Today, against the board's average ──
    *
-   * A day at or above `HOT_TODAY_MIN` is a strong day and says so; below it the
-   * figure is quiet. And the tag rides the figure rather than standing over an
-   * empty line: before the first sale of the morning all forty cards would
-   * otherwise be captioned `TODAY` with nothing under it.
+   * Above the mean reads one way, below it the other, and a day of zero takes
+   * neither — it is an absent day, not a bad one. The comparison used to be a
+   * fixed `HOT_TODAY_MIN`, which stops meaning anything once the whole cohort
+   * clears it.
    */
-  it('emphasises a strong day and leaves an ordinary one quiet', () => {
-    const hot = markup(<VentureCard team={team({ todayRevenue: HOT_TODAY_MIN })} rank={4} />)
-    const mild = markup(<VentureCard team={team({ todayRevenue: HOT_TODAY_MIN - 1 })} rank={4} />)
-    expect(hot).toContain('tv-card-today-hot')
-    expect(mild).not.toContain('tv-card-today-hot')
+  it('colours a day by the board mean, and leaves zero uncoloured', () => {
+    const above = markup(<VentureCard team={team({ todayRevenue: 900 })} rank={4} todayMean={800} />)
+    const below = markup(<VentureCard team={team({ todayRevenue: 700 })} rank={4} todayMean={800} />)
+    const none = markup(<VentureCard team={team({ todayRevenue: 0 })} rank={4} todayMean={800} />)
+    expect(above).toContain('tv-card-today-above')
+    expect(below).toContain('tv-card-today-below')
+    expect(none).not.toContain('tv-card-today-above')
+    expect(none).not.toContain('tv-card-today-below')
+  })
+
+  it('leaves every card uncoloured before anyone has traded', () => {
+    const html = markup(<VentureCard team={team({ todayRevenue: 0 })} rank={4} todayMean={null} />)
+    expect(html).not.toContain('tv-card-today-above')
+    expect(html).not.toContain('tv-card-today-below')
+  })
+
+  it('averages only the teams that have traded', () => {
+    // Twelve teams at zero would halve a mean that included them, and turn
+    // nearly every trading team green.
+    const teamsWith = [
+      team({ teamId: 'SLE-C401', todayRevenue: 1_000 }),
+      team({ teamId: 'SLE-C402', todayRevenue: 2_000 }),
+      team({ teamId: 'SLE-C403', todayRevenue: 0 }),
+      team({ teamId: 'SLE-C404', todayRevenue: 0 }),
+    ]
+    expect(todayMeanOf(teamsWith)).toBe(1_500)
+    expect(todayMeanOf([team({ todayRevenue: 0 })])).toBeNull()
   })
 
   it('prints no today tag on a card with no day yet', () => {

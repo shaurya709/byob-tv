@@ -401,6 +401,14 @@
      ink. The solid card keeps `--bright-green`, which was drawn for exactly that
      surface and measures 6.14:1 on it. */
   --tv-card-hot-ink-quiet: color-mix(in srgb, var(--green-600) 50%, var(--deep-forest-green));
+  /* A below-average day, on the pale card. **Tangerine, because this palette has
+     no red**: the wall's hues are charcoal, mint, green, tangerine, forest and
+     teal, and the standing rule is existing tokens only — the metals are the one
+     exemption and they exist to encode first, second and third. Tangerine is the
+     warm signal already on this wall and it reads as the opposite of green
+     without inventing a hue. `--tangerine-600` on its own measures 2.9:1 against
+     soft mint, so the pale card deepens it the same way it deepens green. */
+  --tv-card-cold-ink-quiet: color-mix(in srgb, var(--tangerine-600) 55%, var(--deep-forest-green));
   --tv-card-badge-fill: var(--deep-teal);
   --tv-card-badge-ink: var(--mint-300);
 
@@ -1270,6 +1278,7 @@
         color-mix(in srgb, var(--midnight-charcoal) 22%, transparent);
     --card-sub-ink: var(--tv-card-sub-ink);
     --card-hot-ink: var(--bright-green);
+    --card-cold-ink: var(--tangerine-glow);
     --card-fig-ink: var(--tv-card-fig-ink);
 
     background: var(--card-fill);
@@ -1316,6 +1325,7 @@
     --card-edge: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
     --card-sub-ink: var(--tv-card-sub-ink-quiet);
     --card-hot-ink: var(--tv-card-hot-ink-quiet);
+    --card-cold-ink: var(--tv-card-cold-ink-quiet);
     --card-fig-ink: var(--tv-card-fig-ink-quiet);
   }
 
@@ -1456,9 +1466,19 @@
     overflow: hidden;
   }
 
-  .tv-card-today-hot {
+  /* ── Above and below the board's average day ──
+
+     Both take the heavier weight, because the emphasis is "this is worth
+     reading" either way; the colour says which direction. A day of zero gets
+     neither class and stays in the card's secondary ink — absent, not bad. */
+  .tv-card-today-above {
     font: var(--t-tv-card-today-hot);
     color: var(--card-hot-ink, var(--green-600));
+  }
+
+  .tv-card-today-below {
+    font: var(--t-tv-card-today-hot);
+    color: var(--card-cold-ink, var(--tangerine-600));
   }
 
   /* Apparatus, not a third number: smaller than what it labels, and present only

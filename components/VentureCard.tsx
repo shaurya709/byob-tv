@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { motion, type Easing } from 'motion/react'
 
 import { VentureDisc } from '@/components/VentureDisc'
-import { HOT_TODAY_MIN, SOLID_RANKS } from '@/config'
+import { SOLID_RANKS } from '@/config'
 import { formatRupees } from '@/lib/format'
 import { BEATS, TOTAL, at, type FlipCue } from '@/lib/flipTimeline'
 import { nameOf } from '@/lib/team'
@@ -114,9 +114,13 @@ export function VentureCard({
   delaySeconds,
   cue,
   onSettled,
+  todayMean,
 }: {
   team: Team
   rank: number
+  /** The board's average day, for colouring this card's. Null before anyone has
+      traded; absent when a card is rendered outside the grid. */
+  todayMean?: number | null
   /** An idle timeline class. Only row 1 gets one; the other thirty hold still. */
   idle?: string
   /** Phase offset, so ten marks on one row never fall into step. */
@@ -144,11 +148,27 @@ export function VentureCard({
   const quiet = rank > SOLID_RANKS
 
   /**
-   * The board's one emphasis: a day at or above `HOT_TODAY_MIN` reads as a
-   * strong day. It is a display decision and nothing fires on crossing it, so a
-   * team moving above and below the line through an afternoon is free to.
+   * ── Today, against the board rather than against a constant ──
+   *
+   * A day above the board's average reads warm-positive, a day below it reads
+   * warm-negative, and no day at all reads as neither. The comparison used to be
+   * `HOT_TODAY_MIN`, a fixed ₹5,000: a fine rule in week 1 and a meaningless one
+   * by week 8, when the whole cohort clears it by lunchtime and forty cards go
+   * green together. The mean moves with the cohort, so "a good day" keeps
+   * meaning *a good day here, today*.
+   *
+   * **Zero takes no colour at all.** It is not a bad day, it is an absent one,
+   * and colouring it would be the board editorialising about a team that has
+   * simply not opened yet. `todayMean` is null before anyone has traded, which
+   * leaves every card in the same neutral state rather than painting the whole
+   * board one colour at 9am.
    */
-  const hot = team.todayRevenue >= HOT_TODAY_MIN
+  const day: 'none' | 'above' | 'below' =
+    team.todayRevenue <= 0 || todayMean === null || todayMean === undefined
+      ? 'none'
+      : team.todayRevenue >= todayMean
+        ? 'above'
+        : 'below'
 
   const flips = cue !== undefined && cue.role !== 'slide'
   // `false`, not `undefined`, for a card with no cue: the reset to x/y 0 has to
@@ -339,7 +359,8 @@ export function VentureCard({
         <div
           className={[
             'tv-card-today tv-card-detail',
-            hot ? 'tv-card-today-hot' : undefined,
+            day === 'above' ? 'tv-card-today-above' : undefined,
+            day === 'below' ? 'tv-card-today-below' : undefined,
           ]
             .filter(Boolean)
             .join(' ')}
