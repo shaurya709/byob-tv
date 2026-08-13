@@ -176,9 +176,18 @@
      figure have a legibility floor that does not care where a team is ranked;
      what shrinks is the mark, which degrades gracefully.
 
-     Tuned by measurement at 1920x1080, which is the wall. Row 1 is 5% shorter
-     than the ramp's first tuning — its mark was the only one over 110px and it
-     did not need to be — so the marks are 101 / 95 / 78 / 63px. The last 1.2vw of
+     Tuned by measurement at 1920x1080, which is the wall.
+
+     **The steps matter as much as the spread.** An earlier tuning ran 247 / 237
+     / 222 / 199, and the first step was 10px on a 247px row — 4%, which the eye
+     does not read as a step at all, so the top of the board looked like two
+     rows of one size followed by a ramp. The heights are evened up now: the
+     marks come out 114 / 94 / 74 / 58, stepping about 20px each.
+
+     Row 4 is the one that cannot give: its mark is at the ~50px legibility
+     floor at 1600x900 already, so a steeper ramp has to come out of rows 2 and
+     3, which is where this took it. The total is unchanged, so the clearances
+     below are unchanged too. The last 1.2vw of
      it came from the metal numerals: they straddle the card's top corner now
      rather than floating clear above it, so the headroom row 1 opens for them
      only has to receive the 55% that clears the card.
@@ -200,9 +209,9 @@
      gaps, the board's padding, the headroom's two spacers — that make 1600x900
      the tightest viewport rather than the smallest. Re-run
      `scripts/measure-fit.mjs` after touching any of the four. */
-  --h-row-1: 12.87vw;
-  --h-row-2: 12.33vw;
-  --h-row-3: 11.57vw;
+  --h-row-1: 13.3vw;
+  --h-row-2: 12.25vw;
+  --h-row-3: 11.2vw;
   --h-row-4: 10.38vw;
 
   /* The grid's own spacing. Fixed px, and therefore the `--s-*` trap: these
