@@ -71,32 +71,23 @@ export function FleaStrip({ at }: { at: Date | null }) {
   // instant, and nothing ever again once the event is over.
   if (at === null || state === null || state.mode === 'hidden') return null
 
+  // The label is handed to the dial rather than stacked above the pair: on the
+  // group it centred over the ring, which captioned the wrong half.
   return (
-    <span
-      style={{
-        display: 'inline-flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 'var(--s-1)',
-      }}
-    >
-      {/* The label stays as text, captioned above the dial: a bare number says
-          something is coming, but not what. Full-strength ink, not muted — it is
-          the name of the event, not apparatus. `--fg1` is a light-surface token
-          and this now sits on a Deep Forest band, so the band redefines it; the
-          component keeps asking for "the strongest ink" and the surface answers.
-       */}
-      <span
-        style={{
-          font: 'var(--t-tv-strip-label)',
-          letterSpacing: 'var(--track-overline)',
-          textTransform: 'uppercase',
-          color: 'var(--fg1)',
-        }}
-      >
-        Mesa Flea
-      </span>
-      <FleaDial state={state} />
-    </span>
+    <FleaDial
+      state={state}
+      label={
+        <span
+          style={{
+            font: 'var(--t-tv-strip-label)',
+            letterSpacing: 'var(--track-overline)',
+            textTransform: 'uppercase',
+            color: 'var(--fg1)',
+          }}
+        >
+          Mesa Flea
+        </span>
+      }
+    />
   )
 }

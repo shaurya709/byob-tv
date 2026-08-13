@@ -35,7 +35,7 @@ function labelOf(state: CountdownState): string {
   return `Time until Mesa Flea: ${figureOf(state)}`
 }
 
-export function FleaDial({ state }: { state: CountdownState }) {
+export function FleaDial({ state, label }: { state: CountdownState; label?: React.ReactNode }) {
   // Tangerine from the final day onward: urgency arrives as a colour change on
   // a shape that never moves, rather than as a new shape.
   //
@@ -89,17 +89,25 @@ export function FleaDial({ state }: { state: CountdownState }) {
           transform="rotate(-90 23 23)"
         />
       </svg>
-      <span
-        className="tv-figure"
-        style={{
-          font: 'var(--t-tv-cal-figure)',
-          // The figure is the loud half of this pair on the weekly band, so it
-          // takes the warm accent whether or not the clock is urgent; urgency
-          // is then carried by the arc and by the mode change beneath it.
-          color: 'var(--tangerine-glow)',
-        }}
-      >
-        {figureOf(state)}
+      {/* **The label belongs to the figure, not to the pair.** Stacked on the
+          group as a whole it centred over the dial, which read as captioning the
+          ring rather than the count. In this column it sits directly above the
+          number, left edges aligned, whatever the mode changes the number's
+          width to. */}
+      <span style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+        {label}
+        <span
+          className="tv-figure"
+          style={{
+            font: 'var(--t-tv-cal-figure)',
+            // The figure is the loud half of this pair on the weekly band, so
+            // it takes the warm accent whether or not the clock is urgent;
+            // urgency is then carried by the arc and by the mode change.
+            color: 'var(--tangerine-glow)',
+          }}
+        >
+          {figureOf(state)}
+        </span>
       </span>
     </span>
   )
