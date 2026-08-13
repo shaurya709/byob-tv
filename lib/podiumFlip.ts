@@ -50,8 +50,18 @@ export const BEATS = {
   open: [1.5, 1.95] as Beat,
   /** The promoted venture appears on the pillar — after the seat is empty. */
   arrive: [1.55, 2.05] as Beat,
-  /** Two rows of the list trading places. The only beat a 4–10 overtake uses. */
-  slide: [0.1, 1.0] as Beat,
+  /**
+   * Two rows of the list trading places. The only beat a 4–10 overtake uses.
+   *
+   * **Widened from [0.1, 1.0], which was never the problem on its own.** The
+   * keyframes were ordered wrongly against it — see the note in `Strip` — so the
+   * row crossed in 100ms, sat motionless for 900ms and then drifted back. With
+   * the keyframes fixed this window is what it always claimed to be: the span
+   * the row is actually travelling in. 1.5s of travel, then 0.5s at rest in its
+   * new place before the settle re-slots it, which is what makes the settle
+   * invisible rather than a snap.
+   */
+  slide: [0.2, 1.7] as Beat,
 } as const
 
 /** A beat as a pair of fractions of the whole, for Motion's `times`. */

@@ -531,11 +531,30 @@ function Strip({
             zIndex: swap === 0 ? undefined : 2,
           }}
           initial={false}
+          // ── THE KEYFRAMES WERE IN THE WRONG ORDER, AND IT FROZE ──
+          //
+          // They used to read `[0, far, far, 0]` against times
+          // `[0, slideStart, slideEnd, 1]`, which says: jump the whole row in
+          // 100ms, **hold there motionless for 900ms**, then drift back to where
+          // it started over 1200ms. Measured on the running board — the two rows
+          // sat at an identical transform across three samples 300ms apart. The
+          // move also undid itself, because the far position was a waypoint
+          // rather than the destination.
+          //
+          // A travel holds at the start, moves through its window, and holds at
+          // the destination — `[0, 0, far, far]`. That is what
+          // `components/VentureCard.tsx` does on /weekly, and it is what this
+          // should always have been. The extra midpoint keyframe is what carries
+          // the lane and the dip, which only exist during the crossing.
           animate={
             swap === 0
-              ? {}
+              ? // **A value, not `{}`.** An empty `animate` leaves the last
+                // committed transform in place — the same fault that stranded
+                // the podium cards' details at opacity 0. A row whose swap has
+                // ended must be told it is home.
+                { x: 0, y: 0, opacity: 1 }
               : {
-                  y: [0, `${swap * 100}%`, `${swap * 100}%`, 0],
+                  y: [0, 0, `${swap * 50}%`, `${swap * 100}%`, `${swap * 100}%`],
                   // **They pass side by side, not through each other.** Two rows
                   // swapping along one axis occupy the same space at the
                   // midpoint, and the first version had one venture's name
@@ -544,20 +563,41 @@ function Strip({
                   // gives them separate lanes for the crossing and none at the
                   // ends. The one going up takes the left lane, which is the
                   // same direction the eye already reads the rank from.
-                  x: [0, swap < 0 ? '-13%' : '13%', swap < 0 ? '-13%' : '13%', 0],
+                  x: [0, 0, swap < 0 ? '-13%' : '13%', 0, 0],
                   // The lane alone was not enough — two full-width rows still
                   // overlapped enough for one venture's name to print over
                   // another's. Dipping through the crossing is what makes the
                   // pass legible: at the midpoint both are ghosts, and at either
                   // end both are solid rows in their own place.
-                  opacity: [1, 0.45, 0.45, 1],
+                  opacity: [1, 1, 0.45, 1, 1],
                 }
           }
-          transition={{
-            duration: TOTAL,
-            times: [0, ...at(BEATS.slide), 1],
-            ease: ['easeInOut', 'linear', 'linear'],
-          }}
+          transition={
+            swap === 0
+              ? // **`duration: 0`, and this is the half of the reset that
+                // matters.** The row ends its slide a whole row-height from
+                // where it started, and the settle re-slots it into exactly that
+                // place — so the transform has to drop to zero in the *same*
+                // commit. Given a duration it instead eases 68px back to zero
+                // over two seconds, on top of a row that has already moved:
+                // measured, the two rows crossed correctly and then visibly slid
+                // back apart. The move undoing itself is what this whole fix
+                // exists to stop.
+                { duration: 0 }
+              : {
+                  duration: TOTAL,
+                  // Five stops: rest, the crossing opens, the midpoint the lane
+                  // and the dip live at, the crossing closes, rest again.
+                  times: [
+                    0,
+                    at(BEATS.slide)[0],
+                    (at(BEATS.slide)[0] + at(BEATS.slide)[1]) / 2,
+                    at(BEATS.slide)[1],
+                    1,
+                  ],
+                  ease: ['linear', 'easeInOut', 'easeInOut', 'linear'],
+                }
+          }
         >
           <div className="tv-pod-stack">
             {rank(index)}
