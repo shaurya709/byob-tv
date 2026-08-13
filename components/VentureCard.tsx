@@ -233,6 +233,10 @@ export function VentureCard({
           .filter(Boolean)
           .join(' ')}
         style={{
+          // The metal the foot below is cut from, on the card so both the foot
+          // and its sweep can read it. Ranks 4-40 never set it and never render
+          // a foot.
+          ...(rank <= 3 ? ({ '--pod-metal': METALS[rank - 1] } as React.CSSProperties) : {}),
           position: 'absolute',
           inset: 0,
           display: 'grid',
@@ -349,6 +353,14 @@ export function VentureCard({
             ''
           )}
         </div>
+        {/* ── The metal foot, ranks 1-3 ──
+
+            `/podium`'s plinth at card scale: the same gradient cut from the same
+            `--pod-metal`, and the same travelling sweep, so one board's gold is
+            the other's. It sits in the bottom padding the 3% lift opened on
+            these three cards, which is why it needs no room from the rhythm and
+            the mark does not pay for it. */}
+        {rank <= 3 ? <span className="tv-card-foot" aria-hidden="true" /> : null}
       </motion.div>
     </div>
   )
