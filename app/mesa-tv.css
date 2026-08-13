@@ -173,11 +173,13 @@
      rather than floating clear above it, so the headroom row 1 opens for them
      only has to receive the 55% that clears the card.
 
-     **Row 4 is 63px shorter than row 3, and that is not a typo.** Its ten teams
-     have not traded this week, so both figure lines collapse and the row would
-     otherwise hand all of it to the mark — which measured 82.5px against row
-     3's 64.3px, a ramp running backwards at the bottom of the board. The height
-     has to fall by more than the lines it drops.
+     **Row 4 carries the same five lines as row 1**, and its height reflects
+     that. It was 63px shorter on the argument that its ten teams had not traded
+     and its figure lines could collapse — which inverted the ramp when they did
+     collapse (row 4's mark measured 82.5px against row 3's 64.3px) and starved
+     the mark when they came back (48.0px, exactly the floor, with the card
+     overflowing its row). The lines are reserved on every row now and row 4 is
+     tall enough to hold them.
 
      ── The rule adjustments must keep: the four sum to <= 42vw ──
 
@@ -188,10 +190,10 @@
      gaps, the board's padding, the headroom's two spacers — that make 1600x900
      the tightest viewport rather than the smallest. Re-run
      `scripts/measure-fit.mjs` after touching any of the four. */
-  --h-row-1: 12.64vw;
-  --h-row-2: 12.3vw;
-  --h-row-3: 11.4vw;
-  --h-row-4: 8vw;
+  --h-row-1: 12.4vw;
+  --h-row-2: 11.88vw;
+  --h-row-3: 11.15vw;
+  --h-row-4: 10vw;
 
   /* The grid's own spacing. Fixed px, and therefore the `--s-*` trap: these
      hold their size while every `vw` above shrinks, so the ramp has less room
@@ -256,8 +258,8 @@
   --t-card-fade: 260ms;
   --h-card-rank: 2vw;
   --h-card-name: 1.9vw;
-  --h-card-fig-line: 1.4vw;
-  --h-card-today-line: 1.25vw;
+  --h-card-fig: 1.4vw;
+  --h-card-today: 1.25vw;
 
   /* The card's own width, spelled out because the mark needs it as a *length*
      and the grid only ever expresses it as a fraction. Ten columns and nine

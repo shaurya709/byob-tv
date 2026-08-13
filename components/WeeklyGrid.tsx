@@ -233,19 +233,21 @@ export function WeeklyGrid({
               // cards, its ranks and all forty figures. Measured, not reasoned
               // about — and the reason these two names differ.
               '--h-row': ROW_HEIGHTS[i],
-              // A figure line is reserved only where the row has one to print.
-              // Row 4 is ten teams who have not traded this week, so both lines
-              // collapse and that row's mark takes the height back — which is
-              // what lets row 4 be shortest by a clear margin while its mark
-              // stays legible. Per *row*, never per card: a row is a rhythm
-              // unit, and letting one card's disc sit higher than its
-              // neighbours' would read as a fault rather than as silence.
-              '--h-card-fig': row.some((t) => t.weekRevenue > 0)
-                ? 'var(--h-card-fig-line)'
-                : '0px',
-              '--h-card-today': row.some((t) => t.todayRevenue > 0)
-                ? 'var(--h-card-today-line)'
-                : '0px',
+              // **Both figure lines are reserved on every row, always.** They
+              // used to collapse on a row where nobody had traded, which gave
+              // row 4 its height back and was measurably wrong twice over. It
+              // inverted the ramp — row 4's mark came out at 82.5px against row
+              // 3's 64.3px, a board whose marks grew towards the bottom — and it
+              // was unstable in the one direction that matters: a team at rank
+              // 31 logging its first sale reinstates two lines, and the mark
+              // took the whole reinstatement. Measured with revenue in row 4:
+              // 48.0px, exactly the legibility floor, with the card overflowing
+              // its row to hold the figures.
+              //
+              // A row is a rhythm unit and its rhythm should not depend on
+              // whether anyone in it sold anything today. The empty lines on a
+              // quiet row are the cost, and they are what keep the marks in
+              // every row on one baseline.
             } as React.CSSProperties
           }
         >
