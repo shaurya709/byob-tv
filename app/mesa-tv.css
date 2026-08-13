@@ -352,7 +352,7 @@
      padding to zero, so lifting further would push the card's contents out
      through its own top edge and into the rank strip. Past 15.3px the rhythm
      has to give up a line, which is a bigger decision than a foot. */
-  --h-card-foot: 0.63vw;
+  --h-card-foot: 0.725vw;
   --h-card-headroom: calc(
     var(--fs-card-num) * var(--k-pod-num-cap) * (1 - var(--k-card-num-on)) + var(--s-1)
   );
