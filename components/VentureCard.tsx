@@ -225,6 +225,10 @@ export function VentureCard({
           // than keyframes: the two ends are the two states, and nothing has to
           // agree about when the middle is.
           cue === undefined ? undefined : 'tv-card-away',
+          // The three cards carrying a metal numeral sit 3% higher inside
+          // themselves, so the mark closes some of the gap the numeral opens
+          // above it. The card box does not move; only what is in it does.
+          rank <= 3 ? 'tv-card-lifted' : undefined,
         ]
           .filter(Boolean)
           .join(' ')}
@@ -247,7 +251,6 @@ export function VentureCard({
             'var(--h-card-rank) auto var(--h-card-name) var(--h-card-fig) var(--h-card-today)',
           justifyItems: 'center',
           alignContent: 'start',
-          padding: 'var(--s-card-pad-y) var(--s-card-inset)',
           minWidth: 0,
         }}
       >

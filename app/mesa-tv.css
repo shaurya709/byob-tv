@@ -1206,6 +1206,29 @@
     background: var(--card-fill);
     border-radius: var(--radius-sm);
     box-shadow: var(--card-edge);
+    /* Declared here rather than inline on the element so the lift below can
+       override it — an inline style beats a class rule, and the lift is a rule. */
+    padding: var(--s-card-pad-y) var(--s-card-inset);
+  }
+
+  /* ── Ranks 1-3 sit 3% higher inside their cards ──
+
+     The metal numeral straddles the card's top corner, and the three cards it
+     lands on are the only ones whose contents have a glyph above them; lifting
+     them closes the gap the numeral opens without moving the card itself.
+
+     **The padding is re-split, not reduced.** The top gives up exactly what the
+     bottom takes, so the two paddings still sum to `2 x --s-card-pad-y` — which
+     is what `--d-card-logo` subtracts. Take it off the top alone and every mark
+     in row 1 would silently grow by the lift and stop matching row 1's own
+     ramp position.
+
+     3% of the row rather than of the card, because they are the same number here
+     and `--h-row` is the value that is actually declared. */
+  .tv-card-lifted {
+    --s-card-lift: calc(var(--h-row) * 0.03);
+    padding-top: calc(var(--s-card-pad-y) - var(--s-card-lift));
+    padding-bottom: calc(var(--s-card-pad-y) + var(--s-card-lift));
   }
 
   /* The bottom half of the board. Same card, turned down.
