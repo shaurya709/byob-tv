@@ -3,137 +3,94 @@
 import { useEffect } from 'react'
 import { motion, type Easing } from 'motion/react'
 
-import { HOT_TODAY_MIN } from '@/config'
 import { VentureDisc } from '@/components/VentureDisc'
 import { formatRupees } from '@/lib/format'
 import { BEATS, TOTAL, at, type FlipCue } from '@/lib/flipTimeline'
+import { nameOf } from '@/lib/team'
 import type { Team } from '@/lib/types'
 
 /**
- * One team's card: a base carrying the team's details, with the venture's mark
- * floating as a disc above it.
+ * One team's card: a solid Deep Forest object carrying rank, mark, venture name
+ * and figure — the same anatomy a podium pillar has, at grid scale.
  *
- * ── There is no logo panel any more ──
+ * ── What this replaced, and why ──
  *
- * The mark used to sit inside a Deep Forest Green section filling the card's top
- * half. The disc replaced it: the card is now the base, and the mark hovers over
- * it on the page's own white.
+ * The board used to be forty marks floating over forty near-invisible bases, and
+ * it read as a sticker sheet. Four things caused that and all four are fixed
+ * here rather than softened:
  *
- * That removal also settled a defect the panel had created. Two of
- * `VentureLogo`'s six identity tints are Deep Forest Green and Deep Teal — the
- * panel's own colour and its neighbour — so four teams without artwork had discs
- * that could not be seen against it, and they needed a mint hairline to have any
- * edge at all. On white every tint reads, and the hairline is gone with the
- * panel that made it necessary.
+ * - **The rank was painted on the artwork.** It needed a triple white
+ *   drop-shadow to survive forty unknown logos and still lost — ranks 12 and 13
+ *   were half-swallowed by SORTD and Blunnt. The badge is on the card's own
+ *   surface now, where nothing of the venture's can cover it.
+ * - **Nothing bound a mark to its figure.** The card does.
+ * - **There was no venture name at all.** It was removed when the base was too
+ *   small to hold one; the card is not.
+ * - **Twenty zero-revenue teams were as loud as the earners.** They are quiet
+ *   cards now — see `quiet` below.
  *
- * ── The base is a fixed height; the disc absorbs the ramp ──
+ * ── One treatment per card, never both ──
  *
- * Row heights descend from row 1 to row 4 and *all* of that variance lands on
- * the mark. The name and both figures are the same size on rank 1 and rank 40,
- * so forty cards read as one system and only the marks change scale.
+ * Ranks 4–40 get the badge. Ranks 1–3 get `/podium`'s metal numeral instead,
+ * breaking above the card's top edge, in the podium's own class so the two
+ * boards say gold with one implementation rather than two that drift.
  *
- * ── Only one thing is ever emphasised ──
+ * ── Rank sits on the cell, not on the card ──
  *
- * A strong day, today ≥ ₹5,000. Everything else — the rank badge included, rank
- * 1 the same as rank 40 — is one uniform treatment. With forty cards on a wall,
- * a second emphasis would mean nothing is emphasised.
+ * Both treatments are outside the travelling element, deliberately. Rank is a
+ * fact about the *board*: a number that flew across the frame with a card would
+ * be claiming to belong to the venture rather than to the position.
  */
 
 /**
- * `--green-600`, not `--bright-green`, for a strong day.
+ * ── ONE FIGURE, AND TODAY IS THE ONE THAT WENT ──
  *
- * On this wall's white surface `#6ED190` measures about 1.9:1 — invisible from a
- * corridor — because the token was drawn for dark marketing surfaces.
- * `--green-600` is the same hue one step deeper and is an existing brand token.
+ * The card used to carry two: the week's revenue and, under it, "TODAY ₹x" —
+ * which turned green above `HOT_TODAY_MIN` and was the wall's single emphasis.
+ * The rebuilt anatomy is rank, mark, name, figure, and that is four things on a
+ * card that is now also carrying a venture name it did not carry before.
+ *
+ * **This is a real loss and it is worth naming rather than burying.** With today
+ * gone the board says who is ahead this week but no longer says who is moving
+ * right now, and a wall watched at 4pm on a busy Friday used to answer that.
+ *
+ * It is one line to restore: a second `.tv-figure` under the week's, in
+ * `--t-tv-card-today`, coloured `--green-600` when `todayRevenue >=
+ * HOT_TODAY_MIN`. `--h-card-fig` in app/mesa-tv.css is what reserves the room,
+ * and `--h-card` would need about 1.2vw back to pay for the line.
  */
-const HOT = 'var(--green-600)'
 
 /**
- * Above and below the cohort's average today.
- *
- * **There is no red in the Mesa palette.** The warm end stops at tangerine, and
- * both `AGENTS.md` and this file's own header forbid inventing a hue. So "below
- * average" is `--tangerine-600`, which is the brand's existing alert colour and
- * the same one the podium's figures use. If a true red is wanted it is a new
- * brand token, not a local literal.
+ * The three metals, by rank. **The podium's tokens, not copies of them** — the
+ * two boards are in one rotation and a wall that says gold two ways is a wall
+ * with a bug in it. Bronze is the settled `--metal-bronze`; the redder value it
+ * replaced read as orange against `--tangerine-600`.
  */
-const UP = 'var(--green-600)'
-const DOWN = 'var(--tangerine-600)'
+const METALS = ['var(--metal-gold)', 'var(--metal-silver)', 'var(--metal-bronze)'] as const
 
 /**
- * The disc's whole journey: it crosses to the other card's slot and, if that slot
- * belongs to a row of a different height, arrives already the size that row draws
- * it at. The resize rides the travel rather than snapping at either end.
+ * The whole card crosses to the other slot.
  *
- * `x`/`y` hold at zero until the travel opens, so the flip happens in place, and
- * hold at the destination afterwards so the unflip happens there. Both end
- * exactly on the position the re-sorted board will give this card, which is what
- * makes the settle invisible.
+ * **This is a pure translation now, and that is a consequence of the ramp
+ * going.** The four rows used to be four different heights, so a flip that
+ * crossed a row boundary had to resize on the way — which meant the mark
+ * travelled on its own, separately from its base, with the base collapsing into
+ * it to hide the fact that the two were different sizes at the two ends. Every
+ * cell is the same size now, so the card simply moves: no scale, nothing to
+ * snap at the settle, and one moving object instead of two.
+ *
+ * `x`/`y` hold at zero until the travel opens, so the turn happens in place, and
+ * hold at the destination afterwards so the unturn happens there. Both end
+ * exactly on the position the re-sorted board is about to give this card, which
+ * is what makes the settle invisible.
  */
 const TRAVEL_EASE: Easing[] = ['linear', 'easeInOut', 'linear']
-const BASE_EASE_LONG: Easing[] = ['linear', 'easeIn', 'linear', 'linear', 'easeOut']
 
 function travelMotion(cue: FlipCue) {
   const window = at(BEATS.travel, cue.role === 'defender' ? cue.shift : 0)
   return {
-    animate: {
-      x: [0, 0, cue.dx, cue.dx],
-      y: [0, 0, cue.dy, cue.dy],
-      scale: [1, 1, cue.scale, cue.scale],
-    },
-    transition: {
-      duration: TOTAL,
-      times: [0, ...window, 1],
-      ease: TRAVEL_EASE,
-    },
-  }
-}
-
-/**
- * The base is drawn *up into the disc* and gone, then slides back down out of it.
- *
- * Not a fade where it stands. It scales toward the mark above it as it goes, so
- * the disc reads as having picked the card's contents up — which is what makes
- * the face-down disc feel like it is carrying the team rather than having
- * outlived it. `transformOrigin: top` is what aims the collapse at the disc.
- *
- * It finishes before the turn does, so nothing is still legible while the card is
- * edge-on, and it returns only after the card has landed and turned face-up.
- */
-function baseMotion(cue: FlipCue) {
-  const out = at(BEATS.baseOut, cue.shift)
-  const travel = at(BEATS.travel, cue.role === 'defender' ? cue.shift : 0)
-  const back = at(BEATS.baseIn, 0)
-  return {
-    animate: {
-      opacity: [1, 1, 0, 0, 0, 1],
-      scaleY: [1, 1, 0.35, 0.35, 0.35, 1],
-      // **The base crosses too, while nobody can see it.** It is invisible for
-      // the whole travel window, so this move is never watched — but without it
-      // the base reappears in the slot the card came from while its own mark is
-      // standing in the new one. Measured: rank 5 showed Snapper's mark above
-      // CHAKHANA's figures, a card arriving in two pieces.
-      x: [0, 0, 0, cue.dx, cue.dx, cue.dx],
-      y: [0, 0, -8, cue.baseDy - 8, cue.baseDy, cue.baseDy],
-    },
-    transition: {
-      duration: TOTAL,
-      times: [0, out[0], out[1], travel[1], back[0], back[1]],
-      ease: BASE_EASE_LONG,
-    },
-  }
-}
-
-/**
- * A card merely making room. It never turns over, so both halves simply travel,
- * in full view, on the same window the contestants cross on — and the base has
- * to go with the mark or the card tears in half exactly as a contestant's would.
- */
-function slideBaseMotion(cue: FlipCue) {
-  const travel = at(BEATS.travel, cue.shift)
-  return {
-    animate: { x: [0, 0, cue.dx, cue.dx], y: [0, 0, cue.baseDy, cue.baseDy] },
-    transition: { duration: TOTAL, times: [0, ...travel, 1], ease: TRAVEL_EASE },
+    animate: { x: [0, 0, cue.dx, cue.dx], y: [0, 0, cue.dy, cue.dy] },
+    transition: { duration: TOTAL, times: [0, ...window, 1], ease: TRAVEL_EASE },
   }
 }
 
@@ -144,7 +101,6 @@ export function VentureCard({
   delaySeconds,
   cue,
   onSettled,
-  todayTone,
 }: {
   team: Team
   rank: number
@@ -156,33 +112,24 @@ export function VentureCard({
   cue?: FlipCue
   /** Called once, by the attacker's card, when the last beat finishes. */
   onSettled?: () => void
-  /**
-   * Optional: colour today's figure against the cohort rather than against a
-   * fixed threshold. `undefined` keeps `HOT_TODAY_MIN`, which is what the wall
-   * ships with — this is opt-in, and only `/preview` opts in today.
-   */
-  todayTone?: 'up' | 'down'
 }) {
-  const hot = team.todayRevenue >= HOT_TODAY_MIN
   /**
-   * Two ways to read the same figure, and only one is ever on.
+   * **A team with no revenue this week, not a team with no revenue today.**
    *
-   * The wall's rule is a fixed threshold: a strong day is ₹5,000, full stop, and
-   * a team knows what it has to beat. `todayTone` replaces it with a relative
-   * one — above or below the cohort's own average today — which says something
-   * different: not "was this a good day" but "was this a better day than the
-   * room". Both are defensible; running both at once would be two emphases,
-   * which is one more than this board allows.
+   * The board ranks on the week, so the week is what "has this team traded"
+   * means here. In week 4 that is twenty of forty cards, which is exactly why
+   * the quiet treatment exists: twenty em dashes in twenty boxes as loud as the
+   * earners' taught the eye to skip the column that matters.
    */
-  const toneColour =
-    todayTone === undefined ? undefined : todayTone === 'up' ? UP : DOWN
+  const quiet = team.weekRevenue <= 0
   const flips = cue !== undefined && cue.role !== 'slide'
   // `false`, not `undefined`, for a card with no cue: the reset to x/y 0 has to
   // land in the same commit as the settle's re-slot, or the board would be seen
   // reordering under a card that had already finished moving.
-  const travel = cue === undefined ? { animate: { x: 0, y: 0, scale: 1 }, transition: { duration: 0 } } : travelMotion(cue)
-  const base =
-    cue === undefined ? {} : flips ? baseMotion(cue) : slideBaseMotion(cue)
+  const travel =
+    cue === undefined
+      ? { animate: { x: 0, y: 0 }, transition: { duration: 0 } }
+      : travelMotion(cue)
 
   /**
    * The deadlock guard. `onSettled` is the only thing standing between the queue
@@ -201,48 +148,36 @@ export function VentureCard({
   return (
     <div
       // Named so `scripts/measure-fit.mjs` can find the grid's true top edge.
-      // The cell is what starts at the row's top; `.tv-card` is now only the
-      // base at its bottom, and measuring that reported 207px of header
-      // clearance on a grid whose real top was 24px below it.
       className="tv-card-cell"
       // The brain reads cell geometry by rank when a flip starts. Untransformed
       // layout only — `getBoundingClientRect` on a cell is safe because cells
-      // never move; it is the disc inside them that does.
+      // never move; it is the card inside them that does.
       data-rank={rank}
       style={{
         height: '100%',
         position: 'relative',
-        // A card in a flip paints over its neighbours. Without this the disc
-        // crosses *under* the cards it is passing, which reads as the board
-        // swallowing it rather than as one card overtaking another.
+        // A card in a flip paints over its neighbours. Without this it crosses
+        // *under* the cards it is passing, which reads as the board swallowing
+        // it rather than as one card overtaking another.
         ...(cue === undefined ? {} : { zIndex: 3 }),
       }}
     >
-      {/* Board apparatus, not the team's — see the note on `.tv-rank-anchor`.
+      {/* Board apparatus, not the team's — see the header note. */}
+      {rank <= 3 ? (
+        <span
+          className="tv-card-numeral"
+          style={{ '--pod-metal': METALS[rank - 1] } as React.CSSProperties}
+        >
+          {/* `/podium`'s class, carrying the face, the cap trim, the metal and
+              the lustre. This board contributes only the size. */}
+          <span className="tv-pod-numeral" role="img" aria-label={`Rank ${rank}`}>
+            {rank}
+          </span>
+        </span>
+      ) : (
+        <span className="tv-card-badge">{rank}</span>
+      )}
 
-          The top three carry the supplied display numerals; everyone else gets
-          the same number in type. That split is the point: three cards on this
-          board are the story, and giving all forty the display treatment would
-          say nothing at all. */}
-      <div className="tv-rank-anchor">
-        {rank <= 3 ? (
-          <span
-            className="tv-rank-glyph"
-            role="img"
-            aria-label={`Rank ${rank}`}
-            style={{
-              maskImage: `url(/ranks/${rank}.png)`,
-              WebkitMaskImage: `url(/ranks/${rank}.png)`,
-            }}
-          />
-        ) : (
-          <span className="tv-rank-plain">{rank}</span>
-        )}
-      </div>
-
-      {/* The disc, centred over the base and lifted clear of it. Its bottom sits
-          `--s-card-lift` above the base's top edge — small, because the shadow
-          is what says "floating" and distance on its own just reads as a gap. */}
       <motion.div
         {...travel}
         // The travel is the longest-running property in the sequence, so its
@@ -251,113 +186,55 @@ export function VentureCard({
         // all once the transition carried per-property overrides, which wedged
         // the queue with nothing on screen progressing.
         onAnimationComplete={attacker ? onSettled : undefined}
-        className="tv-disc-travel"
+        className={quiet ? 'tv-card tv-card-quiet' : 'tv-card'}
         style={{
           position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: `calc(var(--h-card-text) + var(--s-card-lift))`,
-          display: 'grid',
-          placeItems: 'center',
-          // **On the disc's direct parent, not on the cell.** `perspective`
-          // applies only to an element's own children, so one level further up
-          // it does nothing and the look-down renders orthographically — a flat
-          // squash rather than a mark tipping its face forward. Measured while
-          // it sat on the cell: the disc's height was exactly cos(30°) of its
-          // width, which is the signature of no perspective at all. `/podium`
-          // carries the same note for the same reason.
-          perspective: '900px',
-        }}
-      >
-        <VentureDisc
-          team={team}
-          idle={idle}
-          delaySeconds={delaySeconds}
-          {...(flips ? { flipShift: cue.shift } : {})}
-        />
-      </motion.div>
-
-      {/* The base. This is the card now — the fill, the border and the radius
-          are all here rather than around the whole cell. */}
-      <motion.div
-        className="tv-card"
-        {...base}
-        style={{
-          transformOrigin: 'top center',
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          height: 'var(--h-card-text)',
+          inset: 0,
           display: 'grid',
           gridTemplateRows: 'auto auto auto',
-          alignContent: 'center',
           justifyItems: 'center',
-          gap: 'calc(var(--s-1) / 2)',
+          alignContent: 'center',
+          gap: 'var(--s-card-row-gap)',
+          padding: 'var(--s-card-pad-y) var(--s-card-inset)',
           minWidth: 0,
-          paddingInline: 'var(--s-card-inset)',
         }}
       >
-        {/* **No venture name.** It was removed deliberately: at this card size the
-            name was the widest thing in the base and forced a marquee on every
-            long one, and the mark above it already says whose card this is far
-            faster than a word does at six metres. `VentureName` and its paging
-            survive for whatever needs them next; nothing on this board does.
-
-            The one thing lost with it is the fallback identity for a team with
-            no artwork *and* no name — those cards now read only as a tinted
-            initial. `SLE-C422` and `SLE-C435` were exactly that case and both
-            have logos now, so the board currently has none. */}
-        {/* The figure the board exists to show, and the largest thing on the
-            card. Blank, never ₹0: in week 4 only sixteen of forty teams have
-            sold anything this week, and forty identical zeroes would teach the
-            eye to skip the column that matters. */}
-        <div className="tv-figure" style={{ font: 'var(--t-tv-card-week)', color: 'var(--fg1)' }}>
-          {team.weekRevenue > 0 ? formatRupees(team.weekRevenue) : '—'}
+        {/* **On the disc's direct parent, not on the cell.** `perspective`
+            applies only to an element's own children, so one level further up it
+            does nothing and the turn renders orthographically — a flat squash
+            rather than a mark tipping its face. Measured while it sat on the
+            cell: the disc's height was exactly cos(30°) of its width, which is
+            the signature of no perspective at all. */}
+        <div style={{ display: 'grid', placeItems: 'center', perspective: '900px' }}>
+          <VentureDisc
+            team={team}
+            idle={idle}
+            delaySeconds={delaySeconds}
+            {...(flips ? { flipShift: cue.shift } : {})}
+          />
         </div>
 
-        {/* Today, carrying the wall's one emphasis.
+        {/* **The name is back.** It was dropped when the base was too small to
+            hold one; the card is not. `nameOf` gives an unnamed team its team id
+            rather than a blank — the wall names every card it draws. */}
+        <div className="tv-card-name" style={{ minHeight: 'var(--h-card-name)' }}>
+          {nameOf(team)}
+        </div>
 
-            **Labelled, because the card has no column headings.** The list this
-            replaced put "This week" and "Today" above the two figure columns; a
-            card has nowhere to put them, so two bare rupee amounts on one card
-            would give a passer-by no way to know which is which.
-
-            It appears only when there is a figure. A permanent "TODAY" caption
-            over an empty line is apparatus describing absence, and on a quiet
-            morning it would be describing it on all forty cards. */}
+        {/* The figure the board exists to show. **Nothing at all on a quiet
+            card** — not an em dash, not a zero. The card is already saying it. */}
         <div
           className="tv-figure"
           style={{
-            font:
-              toneColour !== undefined || hot
-                ? 'var(--t-tv-card-today-hot)'
-                : 'var(--t-tv-card-today)',
-            color: toneColour ?? (hot ? HOT : 'var(--fg-muted)'),
-            // Reserved whether or not there is a figure, so the week revenue
-            // sits on one line across all forty cards instead of dropping half a
-            // line on the teams that have not traded today.
-            minHeight: '1em',
-            display: 'flex',
-            alignItems: 'baseline',
-            gap: 'calc(var(--s-1) * 0.75)',
+            font: 'var(--t-tv-card-week)',
+            color: 'var(--tv-card-fig-ink)',
+            // Reserved whether or not there is a figure, so a quiet card's disc
+            // sits on the same line as its neighbours' rather than dropping the
+            // whole card half a line.
+            minHeight: 'var(--h-card-fig)',
           }}
         >
-          {team.todayRevenue > 0 && (
-            <>
-              <span
-                style={{
-                  font: 'var(--t-tv-card-label)',
-                  letterSpacing: 'var(--track-overline)',
-                  textTransform: 'uppercase',
-                  color: 'var(--fg-muted)',
-                }}
-              >
-                Today
-              </span>
-              {formatRupees(team.todayRevenue)}
-            </>
-          )}
+          {quiet ? '' : formatRupees(team.weekRevenue)}
         </div>
       </motion.div>
     </div>

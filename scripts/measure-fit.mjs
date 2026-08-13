@@ -71,10 +71,23 @@ for (const [width, height] of SIZES) {
     // acres of room while the mover panel sat at the real top edge. The number
     // has to mean the same thing on both slides: air above the topmost thing.
     //
+    // **`.tv-card-numeral` is the fifth correction, and it is the same mistake
+    // a fifth time.** /weekly's ranks 1-3 now carry the podium's metal numeral,
+    // breaking above their cards exactly as the podium's break above their
+    // pillars — so `.tv-card-cell` stopped being the top of that slide the
+    // moment they landed. Measured with it missing: 63.5px of clearance
+    // reported on a board whose real topmost ink was 12px under the header.
+    //
+    // The rule that keeps falling over is one line long: **the outermost ink is
+    // not always the outermost box.** Anything that overflows its own container
+    // upward belongs in this list, and nothing else does.
+    //
     // The mark stays out — it bobs, so its top depends on which animation frame
     // the measurement caught.
     const tops = [
-      ...document.querySelectorAll('.tv-pod-numeral, .tv-pod-slot, .tv-pod-mover, .tv-card-cell'),
+      ...document.querySelectorAll(
+        '.tv-pod-numeral, .tv-pod-slot, .tv-pod-mover, .tv-card-numeral, .tv-card-cell',
+      ),
     ].map((el) => el.getBoundingClientRect().top)
     const cards = [...document.querySelectorAll('.tv-pod-slot')].map((el) =>
       el.getBoundingClientRect(),

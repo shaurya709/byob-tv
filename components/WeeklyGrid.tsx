@@ -54,14 +54,24 @@ export const ROWS = 4
 const LOOK_TIMELINES = ['tv-look-1', 'tv-look-2', 'tv-look-3'] as const
 const PHASE_STEP_S = 2.3
 
-/** The four row heights, in the order they are laid out. The values are in
-    `app/mesa-tv.css` and are a visual judgement; this list only says that there
-    are four of them and which is which. */
+/**
+ * Four rows, one height.
+ *
+ * **The ramp is gone.** The four rows used to descend 13.6 -> 8.5vw so that rank
+ * could be read off a card's size; every card now carries a rank badge or a
+ * metal numeral, so the height was saying more faintly what the badge says
+ * outright. The mark is also capped by the *card's width* well before row 1's
+ * height ran out, so the extra 98px in row 1 had stopped becoming logo and
+ * become dead green. See the note on `--h-card` in app/mesa-tv.css.
+ *
+ * The array survives because it is what says there are four rows, and because
+ * `rowsOf` slices on its length.
+ */
 const ROW_HEIGHTS = [
-  'var(--h-card-1)',
-  'var(--h-card-2)',
-  'var(--h-card-3)',
-  'var(--h-card-4)',
+  'var(--h-card)',
+  'var(--h-card)',
+  'var(--h-card)',
+  'var(--h-card)',
 ] as const
 
 /** Ranks 1–40 in four rows of ten. Short boards simply produce shorter rows. */
@@ -81,21 +91,13 @@ export function rowsOf(teams: readonly Team[]): Team[][] {
  * they describe where the mark *would* be at rest — which is where it has to
  * travel to.
  */
-type Slot = { cx: number; cy: number; d: number; baseY: number }
+type Slot = { x: number; y: number }
 
 function slotOf(grid: HTMLElement, rank: number): Slot | null {
   const cell = grid.querySelector<HTMLElement>(`[data-rank="${rank}"]`)
-  const travel = cell?.querySelector<HTMLElement>('.tv-disc-travel')
-  if (cell === null || cell === undefined || travel === null || travel === undefined) return null
+  if (cell === null || cell === undefined) return null
   const box = cell.getBoundingClientRect()
-  return {
-    cx: box.left + box.width / 2,
-    cy: box.top + travel.offsetTop + travel.offsetHeight / 2,
-    d: travel.offsetHeight,
-    // Bases are pinned to the cell's bottom edge and are the same height in
-    // every row, so the bottom edge is the whole story for them.
-    baseY: box.bottom,
-  }
+  return { x: box.left, y: box.top }
 }
 
 /**
@@ -125,15 +127,13 @@ export function cuesFor(grid: HTMLElement, kick: OvertakeEvent): Map<number, Fli
     const b = slotOf(grid, to)
     // A slot the board does not currently render — the climb reached past the
     // bottom of a short board. Nothing to animate, and the data still re-sorts.
-    if (a === null || b === null || a.d === 0) return
-    cues.set(from, {
-      role,
-      dx: b.cx - a.cx,
-      dy: b.cy - a.cy,
-      baseDy: b.baseY - a.baseY,
-      scale: b.d / a.d,
-      shift,
-    })
+    if (a === null || b === null) return
+    // **Cell corner to cell corner, and no scale.** Every cell is the same size
+    // since the height ramp went, so a card crossing a row boundary needs no
+    // resize on the way — which is what let the mark and its base become one
+    // travelling object instead of two that had to be reassembled at the far
+    // end. If a ramp ever comes back, this is the first thing that breaks.
+    cues.set(from, { role, dx: b.x - a.x, dy: b.y - a.y, shift })
   }
 
   move(kick.fromRank, kick.toRank, 'attacker', 0)
@@ -148,15 +148,12 @@ export function WeeklyGrid({
   teams,
   kick = null,
   onSettled,
-  todayToneOf,
 }: {
   teams: readonly Team[]
   /** The flip in progress, so the cards involved know what to do. */
   kick?: OvertakeEvent | null
   /** Called once, by the attacker's card, when the last beat finishes. */
   onSettled?: () => void
-  /** Optional per-team tone for today's figure. See `VentureCard`. */
-  todayToneOf?: (team: Team) => 'up' | 'down' | undefined
 }) {
   const rows = rowsOf(teams)
   const gridRef = useRef<HTMLDivElement>(null)
@@ -189,21 +186,34 @@ export function WeeklyGrid({
         gridTemplateRows: ROW_HEIGHTS.join(' '),
         gap: 'var(--s-card-gap)',
         height: '100%',
-        alignContent: 'center',
+        // **Headroom for the metal numerals over ranks 1-3, which break above
+        // their cards' top edge and are painted outside row 1 entirely.**
+        //
+        // Padding rather than a taller row: the numerals overflow the cell, so
+        // giving row 1 more height would only add air *inside* three cards and
+        // leave the glyphs exactly as clipped as before. `--h-card-headroom` is
+        // the numeral's cap height, not its font size — see the token.
+        //
+        // `start`, not `center`: centring splits the leftover height half above
+        // and half below, so half of any gap opened here would be spent under
+        // row 4 where nothing needs it.
+        paddingTop: 'var(--h-card-headroom)',
+        alignContent: 'start',
       }}
     >
       {rows.map((row, i) => (
         <div
-          key={ROW_HEIGHTS[i]}
-          // `.tv-card-row` turns the height below into `--d-card-logo`. That
-          // derivation has to happen *here*, on the element that actually has a
-          // `--h-card`, not in `:root` — see the note on the class.
+          key={i}
+          // **The row no longer publishes a `--h-card` of its own, and must not
+          // start again.** It used to, because each row had a different height;
+          // with one shared height the declaration became `--h-card:
+          // var(--h-card)` on the row, which is a self-reference. CSS resolves a
+          // cyclic custom property to *guaranteed-invalid*, so `--d-card-logo`
+          // fell apart, `VentureDisc` computed `width: 0px`, and forty marks
+          // vanished from a board that still rendered its cards, its badges and
+          // all forty figures. Measured, not reasoned about.
           className="tv-card-row"
           style={{
-            // The row publishes its own height to the cards inside it, which is
-            // what lets `--d-card-logo` resolve per row without any card
-            // knowing its rank. One declaration, four values, no branching.
-            ['--h-card' as string]: ROW_HEIGHTS[i],
             display: 'grid',
             gridTemplateColumns: `repeat(${ROW_LENGTH}, minmax(0, 1fr))`,
             gap: 'var(--s-card-gap)',
@@ -220,7 +230,6 @@ export function WeeklyGrid({
                 rank={rank}
                 cue={cue}
                 onSettled={cue?.role === 'attacker' ? onSettled : undefined}
-                todayTone={todayToneOf?.(team)}
                 {...(i === 0
                   ? {
                       idle: LOOK_TIMELINES[j % LOOK_TIMELINES.length],

@@ -29,7 +29,7 @@ export function MoverPanel({ ranked }: { ranked: readonly Team[] }) {
   return (
     <aside className="tv-pod-mover">
       <span className="tv-pod-mover-label">
-        {mover?.kind === 'climb' ? 'Biggest climber this week' : 'Biggest earner this week'}
+        {mover?.kind === 'climb' ? 'Biggest climber this week' : 'Highest earner this week'}
       </span>
 
       {mover === null ? (

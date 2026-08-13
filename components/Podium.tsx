@@ -8,6 +8,7 @@ import { PodiumTravel, type TravelPath } from '@/components/PodiumTravel'
 import { VentureLogo } from '@/components/VentureLogo'
 import { formatRupees } from '@/lib/format'
 import { BEATS, TOTAL, at, entersPodium } from '@/lib/podiumFlip'
+import { nameOf } from '@/lib/team'
 import type { OvertakeEvent, Team } from '@/lib/types'
 
 /**
@@ -132,13 +133,6 @@ function revenueOf(team: Team | undefined): string {
  */
 function idleOf(place: number): string {
   return IDLE_TIMELINES[(place - 1) % IDLE_TIMELINES.length]
-}
-
-/** A venture's name, or its ID. Placeholder names are already blanked at the
-    parse layer (`lib/feed.ts`), so an unnamed team arrives here with an empty
-    string and carries its team ID rather than a gap. */
-function nameOf(team: Team): string {
-  return team.ventureName || team.teamId
 }
 
 /**

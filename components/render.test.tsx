@@ -9,7 +9,6 @@ import { Podium, podiumTeams } from '@/components/Podium'
 import { VentureCard } from '@/components/VentureCard'
 import { pagesOf } from '@/components/VentureName'
 import { ROW_LENGTH, WeeklyGrid, rowsOf } from '@/components/WeeklyGrid'
-import { HOT_TODAY_MIN } from '@/config'
 import type { CountdownState } from '@/lib/countdown'
 import { formatRupees, ordinal } from '@/lib/format'
 import { competingTeams, rankByWeek, rankTeams } from '@/lib/ranking'
@@ -302,41 +301,57 @@ describe('VentureCard', () => {
     expect(text).not.toContain(formatRupees(0))
   })
 
-  it('shows today once there is something to show', () => {
-    const text = render(<VentureCard team={team({ todayRevenue: HOT_TODAY_MIN })} rank={7} />)
-    expect(text).toContain(formatRupees(HOT_TODAY_MIN))
-  })
-
   /**
-   * Both figures survived the redesign. The card was nearly reduced to one
-   * number; week and today are separate facts and the wall shows both.
+   * **One figure, and today is the one that went.** The rebuilt card is rank,
+   * mark, name, figure — and the venture name it now carries is the line that
+   * today's figure used to occupy. This asserts the removal deliberately rather
+   * than leaving it to be noticed: a card that quietly started printing two
+   * numbers again would be a regression, not a bonus.
    */
-  it('carries both revenue figures, not just the week', () => {
+  it('prints the week figure and no longer prints today', () => {
     const text = render(
-      <VentureCard team={team({ weekRevenue: 12_000, todayRevenue: 3_000 })} rank={2} />,
+      <VentureCard team={team({ weekRevenue: 12_000, todayRevenue: 3_000 })} rank={7} />,
     )
     expect(text).toContain(formatRupees(12_000))
-    expect(text).toContain(formatRupees(3_000))
+    expect(text).not.toContain(formatRupees(3_000))
   })
 
   /**
-   * The card carries no venture name — removed deliberately, because at this
-   * size it was the widest thing in the base and forced a marquee on every long
-   * one, and the mark above it says whose card this is faster than a word does
-   * at six metres. The figure and the rank are the only text.
+   * The name is back. It was dropped when the base was too small to hold one;
+   * the solid card is not.
    */
-  it('prints no venture name, and no team id in its place', () => {
+  it('prints the venture name', () => {
     const text = render(
       <VentureCard team={team({ teamId: 'SLE-C418', ventureName: 'Aurora Bakes' })} rank={9} />,
     )
-    expect(text).not.toContain('Aurora Bakes')
-    expect(text).not.toContain('SLE-C418')
+    expect(text).toContain('Aurora Bakes')
     expect(text).toContain('9')
   })
 
-  it('never shows a bare zero for a team that has not traded at all', () => {
+  /**
+   * An unnamed team carries its ID rather than a gap — `AGENTS.md` is explicit
+   * that such a team competes like any other, and the wall names every card it
+   * draws. Shared with `/podium` through `lib/team.ts` so the two boards cannot
+   * disagree about what to call it.
+   */
+  it('falls back to the team id for a team with no venture name', () => {
+    const text = render(
+      <VentureCard team={team({ teamId: 'SLE-C422', ventureName: '' })} rank={31} />,
+    )
+    expect(text).toContain('SLE-C422')
+  })
+
+  /**
+   * **The em dash is gone, and nothing replaced it.** Twenty of forty teams have
+   * no revenue in week 4, and twenty dashes in twenty boxes as loud as the
+   * earners' taught the eye to skip the column that matters. Absence is carried
+   * by the card being quiet — `.tv-card-quiet` — not by a character.
+   */
+  it('prints no figure at all for a team with no revenue this week', () => {
     const text = render(<VentureCard team={team({ weekRevenue: 0, todayRevenue: 0 })} rank={38} />)
     expect(text).not.toContain('₹0')
+    expect(text).not.toContain('—')
+    expect(text.trim()).toBe('38Aurora')
   })
 })
 

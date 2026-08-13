@@ -81,25 +81,20 @@ export function at(beat: Beat, shift = 0): [number, number] {
 export type FlipCue = {
   /** Contestants flip; a card merely making room slides and keeps its face. */
   role: 'attacker' | 'defender' | 'slide'
-  /** Where this card's *mark* is going, relative to where it sits now, in pixels. */
+  /**
+   * Where this card is going, relative to where it sits now, in pixels.
+   *
+   * **One delta for the whole card, which it did not used to be.** The mark and
+   * the base travelled separately and by *different* vertical amounts, because
+   * the mark was centred in the space above the base while the base was pinned
+   * to the cell's bottom edge — so between rows of different heights the two
+   * moved by different distances, and a cue that ignored the difference landed a
+   * card in two pieces with one venture's mark over another's figures. The four
+   * rows are one height now and the card is one object, so one delta covers it,
+   * and there is no resize on the way either.
+   */
   dx: number
   dy: number
-  /**
-   * Where this card's *base* is going. Same `dx`, but a different `dy`.
-   *
-   * The mark is centred in the space above the base and the base is pinned to
-   * the cell's bottom edge, so between rows of different heights the two move by
-   * different amounts. Travelling the base by the mark's delta leaves it
-   * hanging; not travelling it at all leaves it behind entirely — measured, the
-   * card arrived split, with one venture's mark sitting over another's figures.
-   */
-  baseDy: number
-  /**
-   * Destination diameter ÷ current diameter. `1` inside a row; otherwise the
-   * ratio between two rows' marks, applied across the travel so the card
-   * arrives already the size its new row draws it at.
-   */
-  scale: number
   /** Seconds this card's sequence is offset by. Only the defender's is non-zero. */
   shift: number
 }
