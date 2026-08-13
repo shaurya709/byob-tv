@@ -280,7 +280,23 @@ function PodiumCard({
 
           <motion.div
             initial={false}
-            animate={arriving === undefined ? {} : { opacity: [1, 1, 0, 0] }}
+            // **`{ opacity: 1 }`, never `{}`.** An empty `animate` does not mean
+            // "back to normal", it means "animate nothing" — so Motion left the
+            // last value it committed, which is the 0 this card fades to when a
+            // venture arrives. The details were still in the DOM and still
+            // correct; they were simply invisible, and they never came back.
+            //
+            // It compounded. Every overtake blanked one more card, so after
+            // three the whole podium was three logos with no name and no figure
+            // under any of them — on a wall nobody is watching closely enough to
+            // notice a number going missing. Measured with the dev triggers:
+            // 4→1 blanked rank 1, then 4→3 blanked rank 3, then 5→2 blanked
+            // rank 2, and nothing ever restored them.
+            //
+            // The reset has to be a *value*, so it lands in the same commit that
+            // drops `arriving`. `components/VentureCard.tsx` carries the same
+            // warning about `false` versus `undefined` for the same reason.
+            animate={arriving === undefined ? { opacity: 1 } : { opacity: [1, 1, 0, 0] }}
             transition={{
               duration: TOTAL,
               times: [0, ...at(BEATS.arrive), 1],
@@ -354,6 +370,61 @@ function Strip({
   incoming?: Team
 }) {
   const teams = ranked.slice(fromRank - 1)
+
+  /**
+   * ── HOW FAR A ROW TRAVELS, IN PIXELS, MEASURED WHILE THE ROWS ARE AT REST ──
+   *
+   * **`y: '100%'` was wrong and looked nearly right, which is the worst kind.**
+   * A percentage `y` resolves against the element's *own height* — 68.1px — while
+   * the distance to the next row is its height plus the gap, 118.7px. Two rows
+   * swapping each moved 68px toward the other, crossed, and stopped 50.6px short
+   * of the seat they were heading for: rows at 387.5 and 506.2 finished at 455.6
+   * and 438, overlapping in the middle of the gap.
+   *
+   * **Every row's resting position, re-read on every idle render — not one pitch
+   * cached at mount.** A single mount-time measurement is a number that can go
+   * stale without ever announcing it: a web font landing after first paint, or a
+   * board that first rendered while the feed was still empty, both change the
+   * row height afterwards, and the cached figure then sends the rows a distance
+   * that no longer exists. Worse, if it were ever measured before the rows were
+   * laid out it would be zero, and the swap would degrade to two rows shuffling
+   * sideways in their own seats — a plausible-looking animation that has stopped
+   * doing the one thing it is for.
+   *
+   * `if (kick !== null) return` is what makes this safe to run on every render:
+   * the rows only ever carry a transform during a kick, so the recorded numbers
+   * are always untransformed layout. Same discipline as `cuesFor` on /weekly —
+   * measure at rest, then animate from pure numbers and touch no DOM.
+   *
+   * Positions rather than a pitch, so nothing assumes the gaps are equal.
+   * `alignContent: space-between` distributes leftover height into them, so the
+   * real spacing is not `--s-pod-row-gap` and no arithmetic over the tokens
+   * would agree with the board.
+   */
+  const stripRef = useRef<HTMLDivElement>(null)
+  const restingTops = useRef<number[]>([])
+  useLayoutEffect(() => {
+    if (kick !== null) return
+    const strip = stripRef.current
+    if (strip === null) return
+    // **`offsetTop`, not `getBoundingClientRect`.** The rect is the *transformed*
+    // box, so it is only the resting position if nothing is mid-move — and the
+    // render where `kick` drops back to null is exactly the render where a row
+    // may still be carrying the transform Motion is about to clear. Ordering
+    // between Motion's own layout effects and this one is not something to bet a
+    // wall on. `offsetTop` ignores transforms outright, which is the same reason
+    // `slotOf` in components/WeeklyGrid.tsx reads it.
+    //
+    // The cost is that it is rounded to whole pixels, so a 118.7px pitch is
+    // recorded as 119 — 0.3px of error at the far end of a move whose last act
+    // is the settle re-slotting the row exactly. Sub-pixel and invisible, and
+    // the alternative was a measurement that is occasionally, silently, wrong by
+    // a whole row.
+    restingTops.current = ([...strip.children] as HTMLElement[]).map(
+      (row) => row.offsetTop,
+    )
+  })
+
   // An empty strip carries no heading. Apparatus describing absence is the same
   // filler as a "no data" message, in a smaller typeface.
   if (teams.length === 0) return null
@@ -468,6 +539,7 @@ function Strip({
 
   return (
     <div
+      ref={stripRef}
       style={{
         display: 'grid',
         // **`auto` rows with the slack in the gaps, not `1fr`.** With equal
@@ -487,8 +559,8 @@ function Strip({
         const rowRank = fromRank + index
         // **A slide, and nothing more.** Two bars trading places inside the list
         // is information rather than an event; the podium keeps the wall's one
-        // interrupt. `swapWith` is the rank this row is exchanging with, and the
-        // distance is measured in whole rows because every row is the same height.
+        // interrupt. This is the rank the row is exchanging with; the distance
+        // it implies is measured below, in pixels, off the resting layout.
         const swap =
           kick !== null && !entersPodium(kick.toRank)
             ? rowRank === kick.fromRank
@@ -497,6 +569,35 @@ function Strip({
                 ? kick.fromRank - rowRank
                 : 0
             : 0
+        /**
+         * The exact distance to the seat this row is taking, from the resting
+         * layout — and **zero unless both ends of the move are really there.**
+         *
+         * `toRank` is capped at `WATCH_RANKS_PODIUM`, but `fromRank` is not:
+         * `lib/overtake.ts` bounds only the destination, so a team climbing from
+         * 25th to 8th emits `fromRank: 25`. The row holding 8th is then told to
+         * travel to index 21 of a seven-row list. Read with a `?? 0` fallback
+         * that resolved to `0 - 743.7`, which is not "no movement" — it is the
+         * defender's bar leaving through the top of the frame.
+         */
+        const target = index + swap
+        const here = restingTops.current[index]
+        const there = restingTops.current[target]
+        const travel =
+          swap !== 0 && here !== undefined && there !== undefined ? there - here : 0
+
+        /**
+         * **Everything keys off `travel`, not off `swap`.**
+         *
+         * A row that has a swap but no measurable distance must hold completely
+         * still. Keyed off `swap` it would instead run the lane offset and the
+         * opacity dip with no vertical movement at all — two bars shuffling
+         * sideways in their own seats and returning, which looks like a
+         * deliberate animation and communicates nothing. That is precisely the
+         * shape this board showed when the distance came back zero, and it is
+         * not a state worth being able to reach.
+         */
+        const moving = travel !== 0
         return (
         <motion.div
           key={team.teamId}
@@ -506,14 +607,33 @@ function Strip({
             justifyContent: 'center',
             // A moving row is drawn over the still ones for the length of the
             // move, so it is never half-hidden behind a bar it is passing.
-            zIndex: swap === 0 ? undefined : 2,
+            zIndex: moving ? 2 : undefined,
           }}
           initial={false}
+          // ── THE KEYFRAMES WERE IN THE WRONG ORDER, AND IT FROZE ──
+          //
+          // They used to read `[0, far, far, 0]` against times
+          // `[0, slideStart, slideEnd, 1]`, which says: jump the whole row in
+          // 100ms, **hold there motionless for 900ms**, then drift back to where
+          // it started over 1200ms. Measured on the running board — the two rows
+          // sat at an identical transform across three samples 300ms apart. The
+          // move also undid itself, because the far position was a waypoint
+          // rather than the destination.
+          //
+          // A travel holds at the start, moves through its window, and holds at
+          // the destination — `[0, 0, far, far]`. That is what
+          // `components/VentureCard.tsx` does on /weekly, and it is what this
+          // should always have been. The extra midpoint keyframe is what carries
+          // the lane and the dip, which only exist during the crossing.
           animate={
-            swap === 0
-              ? {}
+            !moving
+              ? // **A value, not `{}`.** An empty `animate` leaves the last
+                // committed transform in place — the same fault that stranded
+                // the podium cards' details at opacity 0. A row whose swap has
+                // ended must be told it is home.
+                { x: 0, y: 0, opacity: 1 }
               : {
-                  y: [0, `${swap * 100}%`, `${swap * 100}%`, 0],
+                  y: [0, 0, travel / 2, travel, travel],
                   // **They pass side by side, not through each other.** Two rows
                   // swapping along one axis occupy the same space at the
                   // midpoint, and the first version had one venture's name
@@ -522,20 +642,41 @@ function Strip({
                   // gives them separate lanes for the crossing and none at the
                   // ends. The one going up takes the left lane, which is the
                   // same direction the eye already reads the rank from.
-                  x: [0, swap < 0 ? '-13%' : '13%', swap < 0 ? '-13%' : '13%', 0],
+                  x: [0, 0, swap < 0 ? '-13%' : '13%', 0, 0],
                   // The lane alone was not enough — two full-width rows still
                   // overlapped enough for one venture's name to print over
                   // another's. Dipping through the crossing is what makes the
                   // pass legible: at the midpoint both are ghosts, and at either
                   // end both are solid rows in their own place.
-                  opacity: [1, 0.45, 0.45, 1],
+                  opacity: [1, 1, 0.45, 1, 1],
                 }
           }
-          transition={{
-            duration: TOTAL,
-            times: [0, ...at(BEATS.slide), 1],
-            ease: ['easeInOut', 'linear', 'linear'],
-          }}
+          transition={
+            !moving
+              ? // **`duration: 0`, and this is the half of the reset that
+                // matters.** The row ends its slide a whole row-height from
+                // where it started, and the settle re-slots it into exactly that
+                // place — so the transform has to drop to zero in the *same*
+                // commit. Given a duration it instead eases 68px back to zero
+                // over two seconds, on top of a row that has already moved:
+                // measured, the two rows crossed correctly and then visibly slid
+                // back apart. The move undoing itself is what this whole fix
+                // exists to stop.
+                { duration: 0 }
+              : {
+                  duration: TOTAL,
+                  // Five stops: rest, the crossing opens, the midpoint the lane
+                  // and the dip live at, the crossing closes, rest again.
+                  times: [
+                    0,
+                    at(BEATS.slide)[0],
+                    (at(BEATS.slide)[0] + at(BEATS.slide)[1]) / 2,
+                    at(BEATS.slide)[1],
+                    1,
+                  ],
+                  ease: ['linear', 'easeInOut', 'easeInOut', 'linear'],
+                }
+          }
         >
           <div className="tv-pod-stack">
             {rank(index)}
