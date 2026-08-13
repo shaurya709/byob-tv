@@ -385,35 +385,35 @@ describe('VentureCard', () => {
   })
 
   /**
-   * **The em dash is gone, and nothing replaced it.** A dash in a box as loud as
-   * the earners' taught the eye to skip the column that matters. Absence is
-   * carried by there being no figure, and by nothing else.
+   * **A zero week is a figure, not a blank.** The card printed nothing at all
+   * for a team that had not traded, on the argument that absence is carried by
+   * the card being quiet. On the board it read as ten cards that had failed to
+   * load rather than ten teams on nothing — every other card in the column has a
+   * number where those had a gap. The em dash stays gone; a zero is not a dash.
    */
-  it('prints no figure at all for a team with no revenue this week', () => {
+  it('prints a zero week as a figure', () => {
     const text = render(<VentureCard team={team({ weekRevenue: 0, todayRevenue: 0 })} rank={38} />)
-    expect(text).not.toContain('₹0')
+    expect(text).toContain(formatRupees(0))
     expect(text).not.toContain('—')
-    expect(text.trim()).toBe('38Aurora')
   })
 
   /**
    * ── The two rules are separate, and this is the pair that proves it ──
    *
    * The surface follows **rank**: past `SOLID_RANKS` a card is the pale kind.
-   * The figure follows **revenue**: a team that traded has a number wherever it
-   * sits. Collapsing the two — which is what the first build did, by keying both
-   * off `weekRevenue` — either blanks ten teams who earned or puts thirty solid
-   * cards on a forty-card board.
+   * The figure is printed on every card whatever it says. Keying the surface off
+   * `weekRevenue`, which is what the first build did, put thirty solid cards on
+   * a forty-card board.
    */
   it('keeps the figure on a pale card when the team traded', () => {
     const text = render(<VentureCard team={team({ weekRevenue: 6_440 })} rank={25} />)
     expect(text).toContain(formatRupees(6_440))
   })
 
-  it('prints no figure on a solid card when the team has not traded', () => {
+  it('prints the zero on a solid card too', () => {
     // A Monday: someone holds rank 3 on a week that has barely started.
     const text = render(<VentureCard team={team({ weekRevenue: 0, todayRevenue: 0 })} rank={3} />)
-    expect(text).not.toContain('₹0')
+    expect(text).toContain(formatRupees(0))
   })
 
   it('takes the surface from the rank and not from the revenue', () => {

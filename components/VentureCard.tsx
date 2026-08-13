@@ -142,7 +142,6 @@ export function VentureCard({
    * rank 1 — shows nothing rather than `₹0`.
    */
   const quiet = rank > SOLID_RANKS
-  const traded = team.weekRevenue > 0
 
   /**
    * The board's one emphasis: a day at or above `HOT_TODAY_MIN` reads as a
@@ -300,14 +299,20 @@ export function VentureCard({
             the report's to propose, not this component's to pick. */}
         <div className="tv-card-name tv-card-detail">{nameOf(team)}</div>
 
-        {/* The figure the board exists to show. **Nothing at all on a team that
-            has not traded** — not an em dash, not a zero. Pale is not what
-            decides this; an empty week is. */}
+        {/* The figure the board exists to show, **on every card, including a
+            week of zero**.
+
+            It used to print nothing at all for a team that had not traded, on
+            the argument that absence is carried by the card being quiet rather
+            than by a character in a box. The board disagreed in practice: ten
+            cards with a name and a blank where every other card has a number
+            read as ten cards that failed to load, not as ten teams on nothing.
+            A zero is a fact about a team's week and it says so. */}
         <div
           className="tv-figure tv-card-week tv-card-detail"
           style={{ font: 'var(--t-tv-card-week)', color: 'var(--card-fig-ink)' }}
         >
-          {traded ? formatRupees(team.weekRevenue) : ''}
+          {formatRupees(team.weekRevenue)}
         </div>
 
         {/* ── Today, back on the card ──

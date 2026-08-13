@@ -190,10 +190,10 @@
      gaps, the board's padding, the headroom's two spacers — that make 1600x900
      the tightest viewport rather than the smallest. Re-run
      `scripts/measure-fit.mjs` after touching any of the four. */
-  --h-row-1: 12.4vw;
-  --h-row-2: 11.88vw;
-  --h-row-3: 11.15vw;
-  --h-row-4: 10vw;
+  --h-row-1: 12.87vw;
+  --h-row-2: 12.33vw;
+  --h-row-3: 11.57vw;
+  --h-row-4: 10.38vw;
 
   /* The grid's own spacing. Fixed px, and therefore the `--s-*` trap: these
      hold their size while every `vw` above shrinks, so the ramp has less room
@@ -215,7 +215,7 @@
      The top one is the whole distance between the band and row 1's numerals, so
      it is the single value that moves all four rows up or down together — 5% of
      a row height is 12px, and this is where those 12px come from. */
-  --s-board-top: var(--s-2);
+  --s-board-top: var(--s-1);
   --s-board-bottom: var(--s-6);
 
   /* ── The card's fixed rhythm: a strip, then three text lines ──
@@ -316,7 +316,7 @@
      it. See `.tv-card-numeral` for what the other 55% does. */
   --k-card-num-on: 0.45;
   --h-card-headroom: calc(
-    var(--fs-card-num) * var(--k-pod-num-cap) * (1 - var(--k-card-num-on)) + var(--s-3)
+    var(--fs-card-num) * var(--k-pod-num-cap) * (1 - var(--k-card-num-on)) + var(--s-1)
   );
 
   /* ── The card ──
@@ -415,7 +415,7 @@
 
      The stamp goes the other way. It is the smallest tracked thing on the frame
      — provenance, present, never competing. */
-  --h-band: 4.8vw;
+  --h-band: 4.3vw;
   --h-band-dial: clamp(30px, 2.9vw, 60px);
   --t-tv-band-count: 800 clamp(18px, 1.85vw, 39px) / 1 var(--font-sans);
   --t-tv-band-stamp: 500 clamp(9px, 0.66vw, 14px) / 1 var(--font-mono);
