@@ -80,9 +80,12 @@ export function FleaStrip({ at }: { at: Date | null }) {
         gap: 'var(--s-1)',
       }}
     >
-      {/* The label stays as text, captioned above the page: a bare number in a
-          calendar says something is coming, but not what. Full-strength ink,
-          not muted — it is the name of the event, not apparatus. */}
+      {/* The label stays as text, captioned above the dial: a bare number says
+          something is coming, but not what. Full-strength ink, not muted — it is
+          the name of the event, not apparatus. `--fg1` is a light-surface token
+          and this now sits on a Deep Forest band, so the band redefines it; the
+          component keeps asking for "the strongest ink" and the surface answers.
+       */}
       <span
         style={{
           font: 'var(--t-tv-strip-label)',

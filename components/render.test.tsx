@@ -337,11 +337,15 @@ describe('VentureCard', () => {
     expect(text).toContain(formatRupees(3_000))
   })
 
-  it('prints no venture name on the card', () => {
+  /**
+   * The name is on the card again. The mark identifies a venture to anyone who
+   * already knows it; the name is what the other thirty-nine teams read.
+   */
+  it('prints the venture name', () => {
     const text = render(
       <VentureCard team={team({ teamId: 'SLE-C418', ventureName: 'Aurora Bakes' })} rank={9} />,
     )
-    expect(text).not.toContain('Aurora Bakes')
+    expect(text).toContain('Aurora Bakes')
   })
 
   /**
@@ -390,7 +394,7 @@ describe('VentureCard', () => {
     const text = render(<VentureCard team={team({ weekRevenue: 0, todayRevenue: 0 })} rank={38} />)
     expect(text).not.toContain('₹0')
     expect(text).not.toContain('—')
-    expect(text.trim()).toBe('38')
+    expect(text.trim()).toBe('38Aurora')
   })
 
   /**
@@ -420,19 +424,33 @@ describe('VentureCard', () => {
   })
 
   /**
-   * The chip goes quiet with the card it sits on. This is asserted because the
-   * rule that used to do it — `.tv-card-quiet .tv-card-badge` — was a descendant
+   * The rank's ink follows the card it sits on. Asserted because the rule that
+   * used to do this — `.tv-card-quiet .tv-card-badge` — was a descendant
    * selector matching a *sibling*, so it never applied and every pale card wore
-   * a solid dark chip. A dead CSS rule reports nothing; this does.
+   * a dark chip. A dead CSS rule reports nothing; this does.
    */
-  it('gives a pale card an outlined rank chip', () => {
+  it('inks a pale card\'s rank for the pale surface', () => {
     const earner = team({ weekRevenue: 6_440 })
     expect(markup(<VentureCard team={earner} rank={SOLID_RANKS + 1} />)).toContain(
-      'tv-card-badge-quiet',
+      'tv-card-rank-quiet',
     )
     expect(markup(<VentureCard team={earner} rank={SOLID_RANKS} />)).not.toContain(
-      'tv-card-badge-quiet',
+      'tv-card-rank-quiet',
     )
+  })
+
+  /**
+   * ── The rank never lands on artwork ──
+   *
+   * The card reserves a strip at its top and the mark starts below it, so the
+   * separation is a constant of the rhythm rather than a per-rank nudge. This
+   * asserts the *structure* that guarantees it — the rendered geometry is
+   * measured in a browser at 1920x1080, where a jsdom box has no size.
+   */
+  it('reserves the rank strip on every card, including the metal ranks', () => {
+    for (const rank of [1, 4, 40]) {
+      expect(markup(<VentureCard team={team({})} rank={rank} />)).toContain('var(--h-card-rank)')
+    }
   })
 
   /**

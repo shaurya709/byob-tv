@@ -153,33 +153,41 @@
      measures 54.4px at 1600x900 against the ~50px legibility threshold. **That
      is the number that stops the ramp getting steeper** — not the fit, which
      still has room. Steepening further means taking it from rows 2 and 3. */
-  /* ── Round 3: the ramp is gone, and rank says its own name instead ──
+  /* ── Round 4: the ramp is back, and it is the row that carries it ──
 
-     The four heights above encoded rank *as size*, because nothing else on the
-     card did — the numeral was painted over the artwork and there was no card
-     to put a badge on. Both of those are now false: every card carries a rank
-     badge or a metal numeral, so the height ramp was saying a second time, more
-     faintly, what the badge already says outright.
+     Round 3 removed it on the argument that the badge said rank outright, so
+     height was saying it a second time more faintly. Both halves of that turned
+     out to be wrong. The badge was a 10px chip nobody reads at six metres, and
+     four identical rows give the board no direction at all — rank 1 and rank 31
+     were the same object in different places.
 
-     It was also the wrong shape for the new anatomy. The old card was a mark
-     floating over a small base, so a taller row simply meant a bigger mark. The
-     card now *contains* its mark, and the mark is capped by the card's width
-     (155.6px at 1920) long before row 1's height ran out — so the extra 98px in
-     row 1 stopped becoming logo and became dead green.
+     **The four heights are the ramp, and the disc absorbs it.** Every text line
+     on the card is the same size in row 4 as in row 1, because a name and a
+     figure have a legibility floor that does not care where a team is ranked;
+     what shrinks is the mark, which degrades gracefully.
 
-     One height for all four rows. Every cell is now identical, which is also
-     what makes every flip a pure translation: no cross-row resize, and nothing
-     to snap at the settle. See `cuesFor` in components/WeeklyGrid.tsx. */
-  /* **10.3vw, and 1600x900 is what set it — not 1920.** The row gaps, the
-     frame padding and the headroom's own two spacers are all `--s-*`, fixed px:
-     they hold their size while every `vw` here shrinks, so a height that exactly
-     fills 1920 is *over* budget at 1600. Measured at 10.7vw: 13.4px of clearance
-     under row 4 at 1920 and **-10.8px at 1600x900** — the grid pushed into the
-     frame's bottom padding on a board that looked perfect at wall resolution,
-     and with `overflow` still reporting 0 because nothing scrolls. The same trap
-     the ramp fell into twice before. Re-run scripts/measure-fit.mjs and the
-     bottom-clearance check after touching this. */
-  --h-card: 10.3vw;   /* 197.8px @1920 — disc 105.7px, over twice the ~50px floor */
+     Tuned by measurement at 1920x1080, which is the wall. The marks they yield:
+     116 / 98 / 82 / 70px, a 1.66x spread from row 1 to row 4.
+
+     **Row 4 is 63px shorter than row 3, and that is not a typo.** Its ten teams
+     have not traded this week, so both figure lines collapse and the row would
+     otherwise hand all of it to the mark — which measured 82.5px against row
+     3's 64.3px, a ramp running backwards at the bottom of the board. The height
+     has to fall by more than the lines it drops.
+
+     ── The rule adjustments must keep: the four sum to <= 42vw ──
+
+     The budget is tighter than the 44.3vw the pre-rebuild ramp used, and two
+     things took the difference: the masthead is a 4.8vw band rather than a
+     3.4vw strip, and row 1 now reserves headroom above itself for the metal
+     numerals. What remains is 42vw, and it is `--s-*` fixed px — the three row
+     gaps, the board's padding, the headroom's two spacers — that make 1600x900
+     the tightest viewport rather than the smallest. Re-run
+     `scripts/measure-fit.mjs` after touching any of the four. */
+  --h-row-1: 12.9vw;
+  --h-row-2: 11.95vw;
+  --h-row-3: 11.1vw;
+  --h-row-4: 7.85vw;
 
   /* The grid's own spacing. Fixed px, and therefore the `--s-*` trap: these
      hold their size while every `vw` above shrinks, so the ramp has less room
@@ -191,37 +199,48 @@
   /* How much room the mark leaves around itself inside the card. */
   --s-card-inset: var(--s-2);
 
-  /* The card's own padding, and the gap between its three stacked parts. */
-  --s-card-pad-y: 0.6vw;
-  --s-card-row-gap: 0.35vw;
+  /* The card's own padding. **There is no grid gap between the card's parts**:
+     each reserved line below includes its own separation, so a line that
+     collapses to zero takes its gap with it instead of leaving one behind. */
+  --s-card-pad-y: 0.4vw;
 
-  /* The two text lines the card reserves under its mark.
+  /* The board's margin under the band, and above the frame's bottom edge. */
+  --s-board-top: var(--s-5);
+  --s-board-bottom: var(--s-6);
 
-     **Reserved on every card, including the quiet ones that print no figure.**
-     A row is a mix of earners and non-earners, and letting the figure's line
-     collapse would raise the quiet cards' discs above their neighbours' — which
-     reads as a layout fault rather than as silence. The card goes quiet by
-     colour; it does not go quiet by moving.
+  /* ── The card's fixed rhythm: a strip, then three text lines ──
+
+     Every one of these includes the space that separates it from its
+     neighbour, so the card needs no grid gap. That is what lets a line
+     collapse cleanly: `--h-card-today` set to zero on a row where nobody has
+     traded today takes its separation with it, where a grid gap would have
+     stayed behind and left the mark 24px it could not use.
+
+     ── The rank strip is the fix for numerals touching artwork ──
+
+     **This is designed out, not tuned out.** The disc is nearly as wide as the
+     card and vertically centred, so there is no free corner to move a numeral
+     into: any horizontal offset still lands on artwork, and a two-digit rank
+     lands on more of it than a one-digit rank. The strip is height the mark is
+     not allowed to enter. The separation is therefore a constant of the card's
+     rhythm rather than a per-rank nudge, and it holds for `4` and for `40`
+     alike, at every row height, because the disc is sized from what the strip
+     leaves rather than the other way round.
 
      Stated in `vw` rather than `em`: written as `em` they would resolve against
-     whatever font-size the *row* happens to carry, not against the type they are
-     reserving for, which is a silent 16px-per-line error on a page that still
-     renders. These track the two type tokens below — 0.72vw x 1.15 leading, and
-     1.16vw at leading 1 — with a hair of slack for the clamp floors.
+     whatever font-size the *row* happens to carry rather than against the type
+     they reserve for, which is a silent 16px-per-line error on a page that
+     still renders.
 
-     ── The name's two lines are today's one ──
-
-     The name reserved 1.7vw, because five of forty did not fit on one line at
-     156px and a figure sitting a line lower on those five reads as a fault. It
-     is gone from the card — the mark identifies the venture — and today's figure
-     has the line back at 1.2vw, the same as the week's.
-
-     That returns 0.5vw to the mark, which is where a tight card's space comes
-     from and goes back to, by this project's standing rule. It also retires the
-     overflow problem rather than solving it: no truncation, no marquee and no
-     short-name column is needed for a line that is not there. */
-  --h-card-fig: 1.2vw;
-  --h-card-today: 1.2vw;
+     The name reserves **two lines**. Five of forty do not fit on one at this
+     card width, and a card whose figure sits a line lower than its neighbours'
+     reads as a fault rather than as a long name. Which five, and by how much,
+     is measured in the report — the fix for it is not this file's to choose. */
+  --d-card-logo-floor: 48px;
+  --h-card-rank: 2vw;
+  --h-card-name: 1.9vw;
+  --h-card-fig-line: 1.4vw;
+  --h-card-today-line: 1.25vw;
 
   /* The card's own width, spelled out because the mark needs it as a *length*
      and the grid only ever expresses it as a fraction. Ten columns and nine
@@ -233,6 +252,10 @@
   /* Type is constant across all forty cards — see the text block note above.
      Week revenue is the largest thing on the card: it is the figure the board
      exists to show. */
+  /* The venture name, in tracked uppercase, sized to survive the corridor
+     rather than to fit the longest name — the fit question is answered in the
+     report and by the sheet, not by shrinking type until everything fits. */
+  --t-tv-card-name: 700 clamp(9px, 0.72vw, 15px) / 1.15 var(--font-sans);
   /* Reduced 20% from clamp(15px, 1.45vw, 30px). Still the largest thing on the
      card, and still the figure the board exists to show. */
   --t-tv-card-week: 700 clamp(12px, 1.16vw, 24px) / 1 var(--font-sans);
@@ -242,23 +265,24 @@
   /* The "TODAY" tag that rides the figure. Smaller than what it labels, so it
      reads as apparatus rather than as a third number. */
   --t-tv-card-label: 700 clamp(8px, 0.62vw, 13px) / 1 var(--font-sans);
-  --t-tv-card-rank: 600 clamp(10px, 0.85vw, 18px) / 1 var(--font-sans);
 
   /* ── Rank, in two treatments and never both on one card ──
 
-     **The badge is on the card, never on the artwork.** That is the whole point
-     of it. The old numeral was painted over the mark and needed a triple white
-     drop-shadow to survive forty unknown logos — and still lost: ranks 12 and 13
-     were half-swallowed by SORTD and Blunnt, with 18, 29, 35 and 36 behind them.
-     A filled chip in the card's own corner cannot be swallowed by anything,
-     because nothing of the venture's is under it.
+     **Never on the artwork, in either treatment.** The original numeral was
+     painted over the mark and needed a triple white drop-shadow to survive
+     forty unknown logos — and still lost: ranks 12 and 13 were half-swallowed
+     by SORTD and Blunnt, with 18, 29, 35 and 36 behind them. The chip that
+     replaced it could not be swallowed, but it was a 10px control from a
+     dashboard and nobody read it from a corridor.
 
-     Ranks 1–3 get no badge. They get the podium's numeral instead — the same
-     class, the same metal, the same lustre — breaking above the card's top edge.
-     Three cards on this board are the story; thirty-seven metal numerals would
-     say nothing at all. */
-  --t-tv-card-rank: 700 clamp(9px, 0.78vw, 16px) / 1 var(--font-sans);
-  --s-card-badge: 0.28vw 0.5vw;
+     Ranks 4-40 are **type**: the same serif the metals are set in, at the
+     revenue figure's weight and a size between the metals and the venture name.
+     1.45vw is 27.8px at 1920 — a little over the week figure's 22.3px and well
+     under the metals' 63.4px. Ranks 1-3 keep the podium's numeral, breaking
+     above the card's top edge in gold, silver and bronze. One language, two
+     scales; three cards on this board are the story, and thirty-seven metal
+     numerals would say nothing at all. */
+  --t-tv-card-rank: 700 clamp(14px, 1.45vw, 30px) / 1 var(--font-serif);
 
   /* The metal numeral over ranks 1–3. Sized against the card rather than the
      viewport, so it stays "oversized" at every width the wall is driven at.
@@ -351,6 +375,28 @@
   --h-tv-cal: clamp(26px, 2.3vw, 48px);
   --w-tv-cal-stroke: 5;
   --t-tv-cal-figure: 800 clamp(11px, 1vw, 21px) / 1 var(--font-sans);
+
+  /* ── `/weekly`'s band, and what it makes loud ──
+
+     The band is deeper than the strip it replaces because it is a material
+     rather than a gap: 4.8vw carries a lockup, a heading and a countdown on one
+     line with air above and below all three, where 3.4vw carried them only by
+     letting the heading fill it edge to edge. Every 0.1vw here is 2px the grid
+     does not get, and the grid is where the ramp lives.
+
+     **The countdown is the board's second-loudest element**, after rank 1's
+     numeral and ahead of every figure on the grid. It is the only thing on this
+     wall that changes what a team does today. Sized here rather than at the
+     root: `--h-tv-cal` and `--t-tv-cal-figure` are read by `FleaDial`, which
+     `/podium` does not use, but the root is shared and a value left there would
+     be a value the other board could inherit by accident.
+
+     The stamp goes the other way. It is the smallest tracked thing on the frame
+     — provenance, present, never competing. */
+  --h-band: 4.8vw;
+  --h-band-dial: clamp(30px, 2.9vw, 60px);
+  --t-tv-band-count: 800 clamp(18px, 1.85vw, 39px) / 1 var(--font-sans);
+  --t-tv-band-stamp: 500 clamp(9px, 0.66vw, 14px) / 1 var(--font-mono);
 
   /* The thinnest line the wall draws. **Not a podium token**, though it lived in
      the podium block until the pillars were removed and nearly took it with
@@ -1017,20 +1063,31 @@
      rather than assuming — and the ~50px legibility floor is checked against the
      mark's rendered height, which is what actually shrinks. */
   .tv-card-row {
-    /* The disc takes whatever the card has left after its padding and its two
-       text lines, capped by the card's width.
+    /* The mark takes whatever the row has left after its fixed rhythm, capped
+       by the card's width.
 
-       `min()`, because which axis binds is not obvious and has changed before.
-       At the current height the card is **height**-bound — 105.7px against a
-       155.6px width cap. Either bound can win as the card is tuned, so the
-       expression says so rather than assuming, and the ~50px legibility floor
-       from scripts/logo-legibility.py is checked against the rendered height. */
-    --d-card-logo: min(
-      calc(
-        var(--h-card) - 2 * var(--s-card-pad-y) - var(--h-card-fig) -
-          var(--h-card-today) - 2 * var(--s-card-row-gap)
-      ),
-      calc(var(--w-card) - 2 * var(--s-card-inset))
+       `min()`, because which axis binds is not obvious and has changed before:
+       at one point row 1 was width-bound at 155.6px while rows 2-4 were
+       height-bound, and a bare height subtraction pushed row 1's mark past the
+       card's sides. Either can win as the ramp is tuned, so the expression says
+       so rather than assuming.
+
+       `max()` against the legibility floor, because the two figure lines
+       collapse on rows where nobody has traded and can come *back* — a team at
+       rank 31 logging its first sale reinstates the line its row had given to
+       the mark. Without the floor the mark would take the whole reinstatement
+       and drop under the ~50px at which `scripts/logo-legibility.py` says a
+       logo stops being a logo. With it, the card grows a few pixels into the
+       row gap instead, which the next poll's re-sort clears. */
+    --d-card-logo: max(
+      var(--d-card-logo-floor),
+      min(
+        calc(
+          var(--h-row) - 2 * var(--s-card-pad-y) - var(--h-card-rank) -
+            var(--h-card-name) - var(--h-card-fig) - var(--h-card-today)
+        ),
+        calc(var(--w-card) - 2 * var(--s-card-inset))
+      )
     );
   }
 
@@ -1068,18 +1125,16 @@
     backface-visibility: hidden;
     display: grid;
     place-items: center;
-    /* Inherited from the card, so the mount changes with the box in one step
-       when a card crosses the line mid-flip. On a pale card it resolves to an
-       outline rather than a fill — a solid white disc in a pale mint box would
-       be the brightest thing on a card whose whole job is to be the quietest.
-       The fallbacks are what a disc outside a card would use; nothing on this
-       board renders one, and a bare `var()` with no fallback would leave the
-       mount transparent if anything ever did. */
-    background: var(--card-disc-fill, var(--white));
-    box-shadow: var(
-      --card-disc-edge,
-      0 3px 6px color-mix(in srgb, var(--midnight-charcoal) 20%, transparent)
-    );
+    /* **Opaque white under every mark, unconditionally.** The pale card used to
+       outline its mount instead of filling it, on the argument that a white disc
+       in a mint box is the brightest thing on a card whose job is to be quiet.
+       True, and it cost more than it bought: six of the forty logos are drawn
+       dark on transparency — Pitlane, Sortd, Olfiq, Kaappitalism, Blunnt,
+       Stackin — and with no fill under them they were black artwork on a dark
+       card, which is not a quiet mark but an absent one. The card is quiet by
+       its fill and its ink; the mount is what makes the artwork exist. */
+    background: var(--white);
+    box-shadow: 0 3px 6px color-mix(in srgb, var(--midnight-charcoal) 20%, transparent);
   }
 
   /* Mesa's own mark on the logomark green — the same green the removed logo
@@ -1116,8 +1171,6 @@
     --card-sub-ink: var(--tv-card-sub-ink);
     --card-hot-ink: var(--bright-green);
     --card-fig-ink: var(--tv-card-fig-ink);
-    --card-disc-fill: var(--white);
-    --card-disc-edge: 0 3px 6px color-mix(in srgb, var(--midnight-charcoal) 20%, transparent);
 
     background: var(--card-fill);
     border-radius: var(--radius-sm);
@@ -1141,8 +1194,6 @@
     --card-sub-ink: var(--tv-card-sub-ink-quiet);
     --card-hot-ink: var(--tv-card-hot-ink-quiet);
     --card-fig-ink: var(--tv-card-fig-ink-quiet);
-    --card-disc-fill: transparent;
-    --card-disc-edge: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
   }
 
   /* ── Crossing the line during an overtake ──
@@ -1180,9 +1231,7 @@
       --card-sub-ink: var(--tv-card-sub-ink-quiet);
       --card-hot-ink: var(--tv-card-hot-ink-quiet);
       --card-fig-ink: var(--tv-card-fig-ink-quiet);
-      --card-disc-fill: transparent;
-      --card-disc-edge: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
-    }
+        }
   }
 
   @keyframes tv-card-to-solid {
@@ -1195,63 +1244,97 @@
       --card-sub-ink: var(--tv-card-sub-ink);
       --card-hot-ink: var(--bright-green);
       --card-fig-ink: var(--tv-card-fig-ink);
-      --card-disc-fill: var(--white);
-      --card-disc-edge: 0 3px 6px color-mix(in srgb, var(--midnight-charcoal) 20%, transparent);
-    }
+        }
   }
 
-  /* The rank chip, ranks 4–40. Top-left, on the card's own surface. */
-  .tv-card-badge {
+  /* ── Ranks 4-40: type, not a UI element ──
+
+     It was a filled chip with 10px type in it, which is a control from a
+     dashboard and unreadable from the middle of a corridor. It is the same
+     serif the metals over ranks 1-3 are set in, at the weight of the revenue
+     figure and a size between the two — one rank language across all forty
+     cards instead of a numeral language at the top and a badge language below.
+
+     **On the cell, not on the card**, which is where the old chip sat too and
+     for the same reason: rank is a fact about the *board*. A number that flew
+     across the frame with a card would be claiming to belong to the venture
+     rather than to the position it is leaving. It sits inside the strip the
+     card reserves at its top — see `--h-card-rank` — so it never meets artwork.
+
+     `tabular-nums` so `4` and `40` occupy the same box, and the strip's
+     separation therefore holds for both. */
+  .tv-card-rank {
     position: absolute;
-    top: var(--s-card-inset);
+    top: var(--s-card-pad-y);
     left: var(--s-card-inset);
     z-index: 2;
     font: var(--t-tv-card-rank);
     font-variant-numeric: tabular-nums;
-    color: var(--tv-card-badge-ink);
-    background: var(--tv-card-badge-fill);
-    padding: var(--s-card-badge);
-    border-radius: var(--radius-xs);
+    line-height: 1;
+    color: var(--mint-300);
   }
 
-  /* On a pale card the chip goes quiet with it — an outline on the mint rather
-     than a second dark object sitting in a pale box.
-
-     **Set by the component, not by a descendant selector.** The badge is a child
-     of the cell and the card is its sibling, so the `.tv-card-quiet
-     .tv-card-badge` rule this replaces never matched anything and every pale
-     card has been wearing a solid dark chip since the rebuild. The badge also
-     must not travel with a card that leaves the slot, which is the same reason
-     it sits on the cell — so it takes the cell's rank, not the card's palette. */
-  .tv-card-badge-quiet {
-    color: var(--tv-card-sub-ink-quiet);
-    background: transparent;
-    box-shadow: inset 0 0 0 var(--stroke-thin) var(--tv-card-stroke-quiet);
+  /* Deep Forest on the pale cards. Set by the component from the cell's own
+     rank rather than by a descendant selector: the badge this replaces used
+     `.tv-card-quiet .tv-card-badge`, which is a descendant selector matching a
+     sibling, and never once applied. */
+  .tv-card-rank-quiet {
+    color: var(--deep-forest-green);
   }
 
-  /* ── Today's figure, under the week's ──
+  /* ── The three text lines under the mark ──
 
-     The board's one emphasis lives here: at or above `HOT_TODAY_MIN` the figure
-     takes `--card-hot-ink` and a heavier weight. **Two inks, because the card
-     has two surfaces.** `--bright-green` on the solid card, which is the surface
-     it was drawn for; `--green-600` on the pale one, because bright green
-     measures about 1.9:1 against white and would be invisible from a corridor
-     while looking deliberate on a laptop. Both are existing brand tokens.
+     Each is exactly as tall as the card's rhythm reserves for it and centres its
+     own content, so the separation between lines lives *inside* the boxes rather
+     than in a grid gap. That is what lets a line collapse to zero on a row where
+     nobody traded and take its spacing with it.
 
-     Quiet by default: `--card-sub-ink` is the mint the venture name used, so an
-     ordinary day sits under the week's figure rather than beside it in weight.
-     The week is what the board ranks on and it stays the largest thing on the
-     card. */
+     `overflow: hidden` on the name is not a truncation rule. The box is two
+     lines tall and no name needs three, so nothing is cut; it is there so that a
+     name which one day did need three could not push the figure out of the card
+     without anyone noticing. */
+  .tv-card-name {
+    font: var(--t-tv-card-name);
+    letter-spacing: var(--track-overline);
+    text-transform: uppercase;
+    color: var(--card-sub-ink, var(--tv-card-sub-ink));
+    text-align: center;
+    height: var(--h-card-name);
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .tv-card-week {
+    height: var(--h-card-fig);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Today's figure ──
+
+     The board's one emphasis: at or above `HOT_TODAY_MIN` the figure takes
+     `--card-hot-ink` and a heavier weight. **Two inks, because the card has two
+     surfaces** — `--bright-green` on the solid card, which is what it was drawn
+     for, and a deepened mix on the pale one, where bright green measures 2.41:1
+     against soft mint. Quiet by default, so an ordinary day sits under the
+     week's figure rather than beside it in weight. */
   .tv-card-today {
+    height: var(--h-card-today);
     font: var(--t-tv-card-today);
     color: var(--card-sub-ink, var(--tv-card-sub-ink));
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: center;
     gap: var(--s-1);
     font-variant-numeric: tabular-nums;
     width: 100%;
     min-width: 0;
+    overflow: hidden;
   }
 
   .tv-card-today-hot {
@@ -1259,8 +1342,8 @@
     color: var(--card-hot-ink, var(--green-600));
   }
 
-  /* Apparatus, not a third number: smaller than what it labels, and it appears
-     only when there is a figure to label. */
+  /* Apparatus, not a third number: smaller than what it labels, and present only
+     when there is a figure to label. */
   .tv-card-today-tag {
     font: var(--t-tv-card-label);
     letter-spacing: var(--track-overline);
@@ -1374,6 +1457,57 @@
      Three zones, separated by space and one tangerine rule — identity, stake,
      provenance. A second rule was drawn and removed: at 240px wide, two rules
      turn a spine into a form. */
+  /* ── `/weekly`'s masthead: the spine, turned through ninety degrees ──
+
+     Same fill, same near-white contents, same local `--fg-muted` override — the
+     two boards rotate minutes apart and a wall that builds its chrome two ways
+     is a wall with a bug in it. What differs is the axis and what the band is
+     asked to carry: the spine has a column's height for four stacked letters,
+     this has a frame's width for three groups on one line.
+
+     Full-bleed. The band is a *material*, and a material that stops 48px short
+     of the frame edge reads as a card that happens to be dark. The board's own
+     padding is applied inside it, so the lockup still lines up with column 1. */
+  .tv-band {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: var(--s-8);
+    height: var(--h-band);
+    padding: 0 var(--s-12);
+    background: var(--deep-forest-green);
+    color: var(--white);
+
+    /* The surface decides what its own tokens mean, exactly as the spine does.
+       `--fg-muted` is a light-surface value — charcoal grey on Deep Forest is
+       very nearly invisible — and the as-of stamp reaches for it through
+       `.tv-ticker`. Redefining it here is what actually gets there. */
+    --fg-muted: var(--mint-300);
+    /* And the same for the strongest ink, which the Flea label asks for. */
+    --fg1: var(--white);
+
+    /* The countdown's own scale, set by the surface that wanted it loud rather
+       than at the root where it would follow `/podium` around. */
+    --h-tv-cal: var(--h-band-dial);
+    --t-tv-cal-figure: var(--t-tv-band-count);
+  }
+
+  .tv-band-title {
+    font: var(--t-tv-heading);
+    letter-spacing: var(--track-tv-heading);
+    text-transform: uppercase;
+    color: var(--white);
+    margin: 0;
+  }
+
+  /* Provenance, and it recedes: the smallest tracked thing on the frame, in the
+     mint the band redefines `--fg-muted` to. */
+  .tv-band .tv-ticker {
+    font: var(--t-tv-band-stamp);
+    letter-spacing: var(--track-overline);
+    text-transform: uppercase;
+  }
+
   .tv-pod-spine {
     width: var(--w-pod-spine);
     height: 100%;

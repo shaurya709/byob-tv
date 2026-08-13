@@ -38,8 +38,15 @@ function labelOf(state: CountdownState): string {
 export function FleaDial({ state }: { state: CountdownState }) {
   // Tangerine from the final day onward: urgency arrives as a colour change on
   // a shape that never moves, rather than as a new shape.
+  //
+  // **Tangerine Glow, not Tangerine 600.** The 600 is the on-white value and
+  // this dial now sits on a Deep Forest band, where it goes muddy at six metres
+  // while looking perfectly deliberate on a laptop 60cm away. Glow is the
+  // on-dark one. The track goes with it: `--soft-mint` behind a lit arc reads
+  // as a second ring on white and as nothing at all on green, so the unfilled
+  // part of the dial is now the band's own fill, one step lighter.
   const urgent = state.mode === 'timer' || state.mode === 'live'
-  const arc = urgent ? 'var(--tangerine-600)' : 'var(--deep-forest-green)'
+  const arc = urgent ? 'var(--tangerine-glow)' : 'var(--mint-300)'
 
   return (
     <span
@@ -65,7 +72,7 @@ export function FleaDial({ state }: { state: CountdownState }) {
           cy="23"
           r={R}
           fill="none"
-          stroke="var(--soft-mint)"
+          stroke="color-mix(in srgb, var(--white) 22%, transparent)"
           strokeWidth="var(--w-tv-cal-stroke)"
         />
         <circle
@@ -86,7 +93,10 @@ export function FleaDial({ state }: { state: CountdownState }) {
         className="tv-figure"
         style={{
           font: 'var(--t-tv-cal-figure)',
-          color: urgent ? 'var(--tangerine-600)' : 'var(--fg1)',
+          // The figure is the loud half of this pair on the weekly band, so it
+          // takes the warm accent whether or not the clock is urgent; urgency
+          // is then carried by the arc and by the mode change beneath it.
+          color: 'var(--tangerine-glow)',
         }}
       >
         {figureOf(state)}

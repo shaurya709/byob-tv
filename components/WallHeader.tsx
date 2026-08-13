@@ -6,64 +6,55 @@ import { fleaInstant } from '@/lib/feed'
 import type { Snapshot } from '@/lib/types'
 
 /**
- * The thin strip across the top of both slides: Mesa in the corner, the
- * heading centred, provenance on the right.
+ * The band across the top of `/weekly`: Mesa in the corner, the heading, the
+ * countdown, and provenance.
  *
- * The `label` slot is the slide's heading — `/weekly` puts "BYOB Week 4"
- * there, set as a real heading in Deep Teal, centred on the frame itself. A
- * three-column grid with equal outer tracks is what centres it: the logo and
- * the provenance group sit in the flanks, so the heading's centre is the
- * slide's centre whatever either side happens to weigh. Nothing goes in the
- * slot by default: on `/podium` the board is self-evident, and a heading added
- * because the corner looked bare is exactly the filler this wall does not
- * carry.
+ * ── Deep Forest, and the same material `/podium` uses ──
  *
- * The right-hand group is the wall's whole apparatus: how long until the Flea,
- * and when the numbers underneath were last refreshed. Both are ambient — the
- * smallest type on the frame — and both disappear rather than showing a
- * placeholder when the sheet has not supplied them.
+ * It was three things floating on white at three scales with nothing binding
+ * them and nothing separating them from the board — so the grid began wherever
+ * the tallest of the three happened to stop. `/podium` solved the same problem
+ * with a filled masthead; this is that masthead turned through ninety degrees.
+ * Same fill, same near-white lockup, same trick of redefining `--fg-muted`
+ * locally so the components inside keep asking for "muted" and the *surface*
+ * decides what muted means on it.
+ *
+ * ── The countdown is the second-loudest thing on the board ──
+ *
+ * After rank 1's numeral and before everything else, which is a deliberate
+ * inversion: it used to be smaller than the timestamp beside it. The Flea date
+ * is the only element on this wall that changes what a team does today — a
+ * board of standings tells forty teams where they are, and the countdown tells
+ * them how long they have to move. `--h-tv-cal` and `--t-tv-cal-figure` are
+ * redefined on the band rather than at the root, so `FleaDial` is unchanged and
+ * the sizing lives with the surface that wanted it.
+ *
+ * Tangerine Glow, not Tangerine 600: the 600 was picked to survive a white
+ * ground, and this ground is Deep Forest. On it the darker value goes muddy at
+ * six metres while looking correct on a laptop.
+ *
+ * The as-of stamp goes the other way — down to a small tracked caption in muted
+ * mint. It is provenance, and provenance recedes.
  */
 export function WallHeader({ snapshot, label }: { snapshot: Snapshot | null; label?: string }) {
   return (
-    <header
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr auto 1fr',
-        alignItems: 'center',
-        gap: 'var(--s-8)',
-        height: 'var(--h-header)',
-      }}
-    >
+    <header className="tv-band">
       <Image
-        src="/brand/logo-pg-green.png"
+        src="/brand/logo-pg-white.png"
         alt="Mesa School of Business"
-        width={148}
-        height={52}
-        // The heading's own glyph height, so mark and heading carry equal rank.
+        width={448}
+        height={128}
+        // Near-white on the band, where the green lockup would disappear.
         style={{ height: 'var(--h-tv-logo)', width: 'auto', justifySelf: 'start' }}
         unoptimized
       />
 
-      {/* An empty middle cell when there is no heading, so the provenance group
+      {/* An empty middle cell when there is no heading, so the right-hand group
           still lands in the third column rather than drifting to the centre. */}
-      {label === undefined ? (
-        <span />
-      ) : (
-        <h1
-          style={{
-            font: 'var(--t-tv-heading)',
-            letterSpacing: 'var(--track-tv-heading)',
-            textTransform: 'uppercase',
-            color: 'var(--deep-teal)',
-            margin: 0,
-          }}
-        >
-          {label}
-        </h1>
-      )}
+      {label === undefined ? <span /> : <h1 className="tv-band-title">{label}</h1>}
 
-      {/* Centred, not baseline: the calendar stack is a block with no text
-          baseline of its own, and baseline alignment would hang it low. */}
+      {/* Centred, not baseline: the dial is a block with no text baseline of its
+          own, and baseline alignment would hang it low. */}
       <div
         style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-5)', justifySelf: 'end' }}
       >

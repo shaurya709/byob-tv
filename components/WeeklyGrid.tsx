@@ -55,23 +55,23 @@ const LOOK_TIMELINES = ['tv-look-1', 'tv-look-2', 'tv-look-3'] as const
 const PHASE_STEP_S = 2.3
 
 /**
- * Four rows, one height.
+ * Four rows, four heights, descending.
  *
- * **The ramp is gone.** The four rows used to descend 13.6 -> 8.5vw so that rank
- * could be read off a card's size; every card now carries a rank badge or a
- * metal numeral, so the height was saying more faintly what the badge says
- * outright. The mark is also capped by the *card's width* well before row 1's
- * height ran out, so the extra 98px in row 1 had stopped becoming logo and
- * become dead green. See the note on `--h-card` in app/mesa-tv.css.
+ * The board had one height for all four and therefore no direction: rank 1 and
+ * rank 31 were the same object in different places. The ramp is back and the
+ * *disc* absorbs it — every text line is the same size in row 4 as in row 1,
+ * because a name and a figure have a legibility floor that does not care about
+ * rank. The four values and the budget they must stay inside are documented in
+ * app/mesa-tv.css.
  *
- * The array survives because it is what says there are four rows, and because
- * `rowsOf` slices on its length.
+ * This array is also what says there are four rows: `rowsOf` slices on its
+ * length.
  */
 const ROW_HEIGHTS = [
-  'var(--h-card)',
-  'var(--h-card)',
-  'var(--h-card)',
-  'var(--h-card)',
+  'var(--h-row-1)',
+  'var(--h-row-2)',
+  'var(--h-row-3)',
+  'var(--h-row-4)',
 ] as const
 
 /** Ranks 1–40 in four rows of ten. Short boards simply produce shorter rows. */
@@ -213,12 +213,35 @@ export function WeeklyGrid({
           // vanished from a board that still rendered its cards, its badges and
           // all forty figures. Measured, not reasoned about.
           className="tv-card-row"
-          style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${ROW_LENGTH}, minmax(0, 1fr))`,
-            gap: 'var(--s-card-gap)',
-            minHeight: 0,
-          }}
+          style={
+            {
+              display: 'grid',
+              gridTemplateColumns: `repeat(${ROW_LENGTH}, minmax(0, 1fr))`,
+              gap: 'var(--s-card-gap)',
+              minHeight: 0,
+              // **The row publishes its own height under a different name.** It
+              // used to declare `--h-card: var(--h-card)`, which is a cyclic
+              // custom property: CSS resolves one to guaranteed-invalid, so
+              // `--d-card-logo` fell apart, every disc computed `width: 0px`,
+              // and forty marks vanished from a board that still rendered its
+              // cards, its ranks and all forty figures. Measured, not reasoned
+              // about — and the reason these two names differ.
+              '--h-row': ROW_HEIGHTS[i],
+              // A figure line is reserved only where the row has one to print.
+              // Row 4 is ten teams who have not traded this week, so both lines
+              // collapse and that row's mark takes the height back — which is
+              // what lets row 4 be shortest by a clear margin while its mark
+              // stays legible. Per *row*, never per card: a row is a rhythm
+              // unit, and letting one card's disc sit higher than its
+              // neighbours' would read as a fault rather than as silence.
+              '--h-card-fig': row.some((t) => t.weekRevenue > 0)
+                ? 'var(--h-card-fig-line)'
+                : '0px',
+              '--h-card-today': row.some((t) => t.todayRevenue > 0)
+                ? 'var(--h-card-today-line)'
+                : '0px',
+            } as React.CSSProperties
+          }
         >
           {row.map((team, j) => {
             const rank = i * ROW_LENGTH + j + 1

@@ -7,6 +7,7 @@ import { VentureDisc } from '@/components/VentureDisc'
 import { HOT_TODAY_MIN, SOLID_RANKS } from '@/config'
 import { formatRupees } from '@/lib/format'
 import { BEATS, TOTAL, TURN_AT, at, type FlipCue } from '@/lib/flipTimeline'
+import { nameOf } from '@/lib/team'
 import type { Team } from '@/lib/types'
 
 /**
@@ -212,16 +213,12 @@ export function VentureCard({
           </span>
         </span>
       ) : (
-        // **The quiet chip is selected here, not in CSS.** The badge is a child
-        // of the cell rather than of the card — rank belongs to the board — so
-        // the `.tv-card-quiet .tv-card-badge` rule that used to carry this was a
-        // descendant selector with no descendant, and never once matched: every
-        // pale card on the board has been wearing a solid dark chip. The cell's
-        // own rank is the right authority anyway, since the badge does not
-        // travel with the card that leaves it.
-        <span className={quiet ? 'tv-card-badge tv-card-badge-quiet' : 'tv-card-badge'}>
-          {rank}
-        </span>
+        // Ranks 4-40, as type. The ink is chosen here rather than by a CSS
+        // descendant selector because this is a child of the *cell* and the card
+        // is its sibling — the rule this replaced was `.tv-card-quiet
+        // .tv-card-badge`, a descendant selector with no descendant, which never
+        // once matched and left every pale card wearing a dark chip.
+        <span className={quiet ? 'tv-card-rank tv-card-rank-quiet' : 'tv-card-rank'}>{rank}</span>
       )}
 
       <motion.div
@@ -245,14 +242,26 @@ export function VentureCard({
           position: 'absolute',
           inset: 0,
           display: 'grid',
-          gridTemplateRows: 'auto auto auto',
+          // **The rank's strip is the first row, and it is empty.** The numeral
+          // that fills it belongs to the cell, not to this card — see the note
+          // on the rank above — so what the card contributes is the *height*
+          // the mark is not allowed to enter. Reserved on ranks 1-3 as well,
+          // whose numeral is outside the card entirely: without it their discs
+          // would sit a strip higher than row 1's other seven and the row would
+          // read as broken rather than as three cards being special.
+          //
+          // No `gap`. Every one of these tracks carries its own separation, so a
+          // figure line that collapses to zero on a row where nobody traded
+          // takes its space with it instead of leaving a gap behind.
+          gridTemplateRows:
+            'var(--h-card-rank) auto var(--h-card-name) var(--h-card-fig) var(--h-card-today)',
           justifyItems: 'center',
-          alignContent: 'center',
-          gap: 'var(--s-card-row-gap)',
+          alignContent: 'start',
           padding: 'var(--s-card-pad-y) var(--s-card-inset)',
           minWidth: 0,
         }}
       >
+        <span aria-hidden="true" />
         {/* **On the disc's direct parent, not on the cell.** `perspective`
             applies only to an element's own children, so one level further up it
             does nothing and the turn renders orthographically — a flat squash
@@ -268,19 +277,20 @@ export function VentureCard({
           />
         </div>
 
+        {/* **The name is back.** The mark identifies a venture to anyone who
+            already knows it; the name is what the other thirty-nine teams read.
+            `nameOf` gives an unnamed team its team id rather than a blank — the
+            wall names every card it draws. Two lines are reserved for it: five
+            of forty do not fit on one at this width, and the fix for that is
+            the report's to propose, not this component's to pick. */}
+        <div className="tv-card-name">{nameOf(team)}</div>
+
         {/* The figure the board exists to show. **Nothing at all on a team that
             has not traded** — not an em dash, not a zero. Pale is not what
             decides this; an empty week is. */}
         <div
-          className="tv-figure"
-          style={{
-            font: 'var(--t-tv-card-week)',
-            color: 'var(--card-fig-ink)',
-            // Reserved whether or not there is a figure, so a quiet card's disc
-            // sits on the same line as its neighbours' rather than dropping the
-            // whole card half a line.
-            minHeight: 'var(--h-card-fig)',
-          }}
+          className="tv-figure tv-card-week"
+          style={{ font: 'var(--t-tv-card-week)', color: 'var(--card-fig-ink)' }}
         >
           {traded ? formatRupees(team.weekRevenue) : ''}
         </div>
@@ -299,10 +309,7 @@ export function VentureCard({
             no way to tell the week from the day; a permanent caption over an
             empty line would be apparatus describing absence, on all forty cards
             every morning before the first sale. */}
-        <div
-          className={hot ? 'tv-card-today tv-card-today-hot' : 'tv-card-today'}
-          style={{ minHeight: 'var(--h-card-today)' }}
-        >
+        <div className={hot ? 'tv-card-today tv-card-today-hot' : 'tv-card-today'}>
           {team.todayRevenue > 0 ? (
             <>
               <span className="tv-card-today-tag">Today</span>

@@ -59,7 +59,10 @@ export default function WeeklyPage() {
       style={{
         display: 'grid',
         gridTemplateRows: 'auto minmax(0, 1fr)',
-        padding: 'var(--s-10) var(--s-12)',
+        // **No padding on the frame.** The band is full-bleed — a material that
+        // stopped short of the frame edge would read as a wide dark card rather
+        // than as the board's masthead — so the padding belongs to the grid
+        // underneath it, which is the only thing that still wants a margin.
       }}
     >
       {/* No week number from the sheet means no heading. The board is still
@@ -68,7 +71,15 @@ export default function WeeklyPage() {
           hardcoded 4. */}
       <WallHeader snapshot={snapshot} label={week === null ? undefined : `BYOB Week ${week}`} />
 
-      <WeeklyGrid teams={teams} kick={kick} onSettled={settled} />
+      <div
+        style={{
+          display: 'grid',
+          minHeight: 0,
+          padding: 'var(--s-board-top) var(--s-12) var(--s-board-bottom)',
+        }}
+      >
+        <WeeklyGrid teams={teams} kick={kick} onSettled={settled} />
+      </div>
 
       <DevFlipTrigger
         teams={teams}
