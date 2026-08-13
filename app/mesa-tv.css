@@ -166,8 +166,9 @@
      figure have a legibility floor that does not care where a team is ranked;
      what shrinks is the mark, which degrades gracefully.
 
-     Tuned by measurement at 1920x1080, which is the wall. The marks they yield:
-     115 / 96 / 78 / 63px, a 1.83x spread from row 1 to row 4. The last 1.2vw of
+     Tuned by measurement at 1920x1080, which is the wall. Row 1 is 5% shorter
+     than the ramp's first tuning — its mark was the only one over 110px and it
+     did not need to be — so the marks are 101 / 95 / 78 / 63px. The last 1.2vw of
      it came from the metal numerals: they straddle the card's top corner now
      rather than floating clear above it, so the headroom row 1 opens for them
      only has to receive the 55% that clears the card.
@@ -187,7 +188,7 @@
      gaps, the board's padding, the headroom's two spacers — that make 1600x900
      the tightest viewport rather than the smallest. Re-run
      `scripts/measure-fit.mjs` after touching any of the four. */
-  --h-row-1: 13.3vw;
+  --h-row-1: 12.64vw;
   --h-row-2: 12.3vw;
   --h-row-3: 11.4vw;
   --h-row-4: 8vw;
@@ -207,8 +208,12 @@
      collapses to zero takes its gap with it instead of leaving one behind. */
   --s-card-pad-y: 0.4vw;
 
-  /* The board's margin under the band, and above the frame's bottom edge. */
-  --s-board-top: var(--s-5);
+  /* The board's margin under the band, and above the frame's bottom edge.
+
+     The top one is the whole distance between the band and row 1's numerals, so
+     it is the single value that moves all four rows up or down together — 5% of
+     a row height is 12px, and this is where those 12px come from. */
+  --s-board-top: var(--s-2);
   --s-board-bottom: var(--s-6);
 
   /* ── The card's fixed rhythm: a strip, then three text lines ──
