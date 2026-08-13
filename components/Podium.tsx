@@ -378,37 +378,47 @@ function Strip({
   const teams = ranked.slice(fromRank - 1)
 
   /**
-   * ── HOW FAR A ROW TRAVELS, IN PIXELS, MEASURED ──
+   * ── HOW FAR A ROW TRAVELS, IN PIXELS, MEASURED WHILE THE ROWS ARE AT REST ──
    *
    * **`y: '100%'` was wrong and looked nearly right, which is the worst kind.**
    * A percentage `y` resolves against the element's *own height* — 68.1px — while
-   * the distance to the next row is its height plus the row gap, 118.7px.
-   * So two rows swapping each moved 68px toward the other, crossed, and stopped
-   * 50.6px short of the place they were heading for: they ended overlapping in
-   * the middle of the gap instead of exchanging seats. Measured on the running
-   * board, rows at 387.5 and 506.2 finished at 455.6 and 438.
+   * the distance to the next row is its height plus the gap, 118.7px. Two rows
+   * swapping each moved 68px toward the other, crossed, and stopped 50.6px short
+   * of the seat they were heading for: rows at 387.5 and 506.2 finished at 455.6
+   * and 438, overlapping in the middle of the gap.
    *
-   * The pitch is read from the DOM rather than rebuilt out of tokens, because
-   * `alignContent: space-between` on this grid distributes leftover height into
-   * the gaps — so the real spacing is not `--s-pod-row-gap` and no arithmetic
-   * over the tokens would agree with the board. One read, taken while the rows
-   * are at rest, exactly as `cuesFor` does on /weekly.
+   * **Every row's resting position, re-read on every idle render — not one pitch
+   * cached at mount.** A single mount-time measurement is a number that can go
+   * stale without ever announcing it: a web font landing after first paint, or a
+   * board that first rendered while the feed was still empty, both change the
+   * row height afterwards, and the cached figure then sends the rows a distance
+   * that no longer exists. Worse, if it were ever measured before the rows were
+   * laid out it would be zero, and the swap would degrade to two rows shuffling
+   * sideways in their own seats — a plausible-looking animation that has stopped
+   * doing the one thing it is for.
+   *
+   * `if (kick !== null) return` is what makes this safe to run on every render:
+   * the rows only ever carry a transform during a kick, so the recorded numbers
+   * are always untransformed layout. Same discipline as `cuesFor` on /weekly —
+   * measure at rest, then animate from pure numbers and touch no DOM.
+   *
+   * Positions rather than a pitch, so nothing assumes the gaps are equal.
+   * `alignContent: space-between` distributes leftover height into them, so the
+   * real spacing is not `--s-pod-row-gap` and no arithmetic over the tokens
+   * would agree with the board.
    */
   const stripRef = useRef<HTMLDivElement>(null)
-  const [pitch, setPitch] = useState(0)
+  const restingTops = useRef<number[]>([])
   useLayoutEffect(() => {
+    if (kick !== null) return
     const strip = stripRef.current
     if (strip === null) return
-    const rows = [...strip.children] as HTMLElement[]
-    if (rows.length < 2) return
-    // `getBoundingClientRect`, not `offsetTop`: the latter is rounded to whole
-    // pixels and the pitch is 118.7, so the rows landed 0.7px short of each
-    // other's seats. Safe to read here because rows do not move at rest — it is
-    // the transform on them that does, and there is none when this runs.
-    setPitch(
-      rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().top,
+    restingTops.current = [...strip.children].map(
+      // Not `offsetTop`, which is rounded to whole pixels — the pitch is 118.7
+      // and the rows landed 0.7px short of each other's seats.
+      (row) => row.getBoundingClientRect().top,
     )
-  }, [teams.length])
+  })
 
   // An empty strip carries no heading. Apparatus describing absence is the same
   // filler as a "no data" message, in a smaller typeface.
@@ -554,6 +564,13 @@ function Strip({
                 ? kick.fromRank - rowRank
                 : 0
             : 0
+        // The exact distance to the seat this row is taking, from the resting
+        // layout. Falls back to zero only if the swap points off the end of the
+        // list, which the rank arithmetic above already excludes.
+        const travel =
+          swap === 0
+            ? 0
+            : (restingTops.current[index + swap] ?? 0) - (restingTops.current[index] ?? 0)
         return (
         <motion.div
           key={team.teamId}
@@ -589,7 +606,7 @@ function Strip({
                 // ended must be told it is home.
                 { x: 0, y: 0, opacity: 1 }
               : {
-                  y: [0, 0, (swap * pitch) / 2, swap * pitch, swap * pitch],
+                  y: [0, 0, travel / 2, travel, travel],
                   // **They pass side by side, not through each other.** Two rows
                   // swapping along one axis occupy the same space at the
                   // midpoint, and the first version had one venture's name
