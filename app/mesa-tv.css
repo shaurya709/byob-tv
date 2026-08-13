@@ -343,8 +343,16 @@
   /* The share of the metal numeral that sits *on* the card rather than above
      it. See `.tv-card-numeral` for what the other 55% does. */
   --k-card-num-on: 0.45;
-  /* The metal foot's depth on a card. Under the 17.5px the 3% lift leaves. */
-  --h-card-foot: 0.6vw;
+  /* The metal foot's depth on a card, growing up into it.
+
+     **The ceiling is 15.3px and it is not the foot's to choose.** Ranks 1-3
+     carry 15.3px of bottom padding — `--s-card-pad-y` plus the 3% lift — and the
+     foot may take all of it but no more, because the next pixel is the today
+     figure's. The lift cannot buy more either: it has already pulled the top
+     padding to zero, so lifting further would push the card's contents out
+     through its own top edge and into the rank strip. Past 15.3px the rhythm
+     has to give up a line, which is a bigger decision than a foot. */
+  --h-card-foot: 0.63vw;
   --h-card-headroom: calc(
     var(--fs-card-num) * var(--k-pod-num-cap) * (1 - var(--k-card-num-on)) + var(--s-1)
   );
