@@ -413,10 +413,21 @@ function Strip({
     if (kick !== null) return
     const strip = stripRef.current
     if (strip === null) return
-    restingTops.current = [...strip.children].map(
-      // Not `offsetTop`, which is rounded to whole pixels — the pitch is 118.7
-      // and the rows landed 0.7px short of each other's seats.
-      (row) => row.getBoundingClientRect().top,
+    // **`offsetTop`, not `getBoundingClientRect`.** The rect is the *transformed*
+    // box, so it is only the resting position if nothing is mid-move — and the
+    // render where `kick` drops back to null is exactly the render where a row
+    // may still be carrying the transform Motion is about to clear. Ordering
+    // between Motion's own layout effects and this one is not something to bet a
+    // wall on. `offsetTop` ignores transforms outright, which is the same reason
+    // `slotOf` in components/WeeklyGrid.tsx reads it.
+    //
+    // The cost is that it is rounded to whole pixels, so a 118.7px pitch is
+    // recorded as 119 — 0.3px of error at the far end of a move whose last act
+    // is the settle re-slotting the row exactly. Sub-pixel and invisible, and
+    // the alternative was a measurement that is occasionally, silently, wrong by
+    // a whole row.
+    restingTops.current = ([...strip.children] as HTMLElement[]).map(
+      (row) => row.offsetTop,
     )
   })
 
@@ -554,8 +565,8 @@ function Strip({
         const rowRank = fromRank + index
         // **A slide, and nothing more.** Two bars trading places inside the list
         // is information rather than an event; the podium keeps the wall's one
-        // interrupt. `swapWith` is the rank this row is exchanging with, and the
-        // distance is measured in whole rows because every row is the same height.
+        // interrupt. This is the rank the row is exchanging with; the distance
+        // it implies is measured below, in pixels, off the resting layout.
         const swap =
           kick !== null && !entersPodium(kick.toRank)
             ? rowRank === kick.fromRank
@@ -564,13 +575,35 @@ function Strip({
                 ? kick.fromRank - rowRank
                 : 0
             : 0
-        // The exact distance to the seat this row is taking, from the resting
-        // layout. Falls back to zero only if the swap points off the end of the
-        // list, which the rank arithmetic above already excludes.
+        /**
+         * The exact distance to the seat this row is taking, from the resting
+         * layout — and **zero unless both ends of the move are really there.**
+         *
+         * `toRank` is capped at `WATCH_RANKS_PODIUM`, but `fromRank` is not:
+         * `lib/overtake.ts` bounds only the destination, so a team climbing from
+         * 25th to 8th emits `fromRank: 25`. The row holding 8th is then told to
+         * travel to index 21 of a seven-row list. Read with a `?? 0` fallback
+         * that resolved to `0 - 743.7`, which is not "no movement" — it is the
+         * defender's bar leaving through the top of the frame.
+         */
+        const target = index + swap
+        const here = restingTops.current[index]
+        const there = restingTops.current[target]
         const travel =
-          swap === 0
-            ? 0
-            : (restingTops.current[index + swap] ?? 0) - (restingTops.current[index] ?? 0)
+          swap !== 0 && here !== undefined && there !== undefined ? there - here : 0
+
+        /**
+         * **Everything keys off `travel`, not off `swap`.**
+         *
+         * A row that has a swap but no measurable distance must hold completely
+         * still. Keyed off `swap` it would instead run the lane offset and the
+         * opacity dip with no vertical movement at all — two bars shuffling
+         * sideways in their own seats and returning, which looks like a
+         * deliberate animation and communicates nothing. That is precisely the
+         * shape this board showed when the distance came back zero, and it is
+         * not a state worth being able to reach.
+         */
+        const moving = travel !== 0
         return (
         <motion.div
           key={team.teamId}
@@ -580,7 +613,7 @@ function Strip({
             justifyContent: 'center',
             // A moving row is drawn over the still ones for the length of the
             // move, so it is never half-hidden behind a bar it is passing.
-            zIndex: swap === 0 ? undefined : 2,
+            zIndex: moving ? 2 : undefined,
           }}
           initial={false}
           // ── THE KEYFRAMES WERE IN THE WRONG ORDER, AND IT FROZE ──
@@ -599,7 +632,7 @@ function Strip({
           // should always have been. The extra midpoint keyframe is what carries
           // the lane and the dip, which only exist during the crossing.
           animate={
-            swap === 0
+            !moving
               ? // **A value, not `{}`.** An empty `animate` leaves the last
                 // committed transform in place — the same fault that stranded
                 // the podium cards' details at opacity 0. A row whose swap has
@@ -625,7 +658,7 @@ function Strip({
                 }
           }
           transition={
-            swap === 0
+            !moving
               ? // **`duration: 0`, and this is the half of the reset that
                 // matters.** The row ends its slide a whole row-height from
                 // where it started, and the settle re-slots it into exactly that
