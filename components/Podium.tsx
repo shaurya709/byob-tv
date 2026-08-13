@@ -376,6 +376,40 @@ function Strip({
   incoming?: Team
 }) {
   const teams = ranked.slice(fromRank - 1)
+
+  /**
+   * ── HOW FAR A ROW TRAVELS, IN PIXELS, MEASURED ──
+   *
+   * **`y: '100%'` was wrong and looked nearly right, which is the worst kind.**
+   * A percentage `y` resolves against the element's *own height* — 68.1px — while
+   * the distance to the next row is its height plus the row gap, 118.7px.
+   * So two rows swapping each moved 68px toward the other, crossed, and stopped
+   * 50.6px short of the place they were heading for: they ended overlapping in
+   * the middle of the gap instead of exchanging seats. Measured on the running
+   * board, rows at 387.5 and 506.2 finished at 455.6 and 438.
+   *
+   * The pitch is read from the DOM rather than rebuilt out of tokens, because
+   * `alignContent: space-between` on this grid distributes leftover height into
+   * the gaps — so the real spacing is not `--s-pod-row-gap` and no arithmetic
+   * over the tokens would agree with the board. One read, taken while the rows
+   * are at rest, exactly as `cuesFor` does on /weekly.
+   */
+  const stripRef = useRef<HTMLDivElement>(null)
+  const [pitch, setPitch] = useState(0)
+  useLayoutEffect(() => {
+    const strip = stripRef.current
+    if (strip === null) return
+    const rows = [...strip.children] as HTMLElement[]
+    if (rows.length < 2) return
+    // `getBoundingClientRect`, not `offsetTop`: the latter is rounded to whole
+    // pixels and the pitch is 118.7, so the rows landed 0.7px short of each
+    // other's seats. Safe to read here because rows do not move at rest — it is
+    // the transform on them that does, and there is none when this runs.
+    setPitch(
+      rows[1].getBoundingClientRect().top - rows[0].getBoundingClientRect().top,
+    )
+  }, [teams.length])
+
   // An empty strip carries no heading. Apparatus describing absence is the same
   // filler as a "no data" message, in a smaller typeface.
   if (teams.length === 0) return null
@@ -490,6 +524,7 @@ function Strip({
 
   return (
     <div
+      ref={stripRef}
       style={{
         display: 'grid',
         // **`auto` rows with the slack in the gaps, not `1fr`.** With equal
@@ -554,7 +589,7 @@ function Strip({
                 // ended must be told it is home.
                 { x: 0, y: 0, opacity: 1 }
               : {
-                  y: [0, 0, `${swap * 50}%`, `${swap * 100}%`, `${swap * 100}%`],
+                  y: [0, 0, (swap * pitch) / 2, swap * pitch, swap * pitch],
                   // **They pass side by side, not through each other.** Two rows
                   // swapping along one axis occupy the same space at the
                   // midpoint, and the first version had one venture's name
