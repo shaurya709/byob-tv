@@ -367,7 +367,16 @@ export function VentureCard({
         >
           {team.todayRevenue > 0 ? (
             <>
-              <span className="tv-card-today-tag">Today</span>
+              {/* A shape, not a glyph. `▲`/`▼` come from whatever font
+                  answers for them, and the two are not drawn to match — one
+                  sits higher, one is heavier, and neither is guaranteed to be
+                  present. This is one box clipped two ways, so up and down are
+                  the same size and the same weight by construction and only the
+                  direction changes. */}
+              <span
+                className={day === 'above' ? 'tv-day-mark tv-day-up' : 'tv-day-mark tv-day-down'}
+                aria-hidden="true"
+              />
               {formatRupees(team.todayRevenue)}
             </>
           ) : (
