@@ -340,7 +340,7 @@
 
   /* The board's legend. Smaller than anything on a card, because it explains
      the board rather than belonging to it. */
-  --t-tv-legend: 700 clamp(9px, 0.72vw, 15px) / 1 var(--font-sans);
+  --t-tv-legend: 700 clamp(11px, 0.9vw, 19px) / 1 var(--font-sans);
 
   /* ── Rank, in two treatments and never both on one card ──
 
@@ -1557,11 +1557,17 @@
 
      Muted, because it is apparatus: the smallest type on the board, in the same
      ink the pale cards give their secondary text, so it reads as a note about
-     the board rather than as part of it. */
+     the board rather than as part of it.
+
+     **The offset moved when the type grew.** The legend is pinned by its bottom
+     edge, so a 25% larger caption grows upward into row 4 — measured, the
+     clearance went from 3.6px to 0.2px. Sitting it lower in the frame's own
+     padding splits the margin between the two: 4.3px above the caption and
+     4.3px below it. */
   .tv-legend {
     position: absolute;
     right: var(--s-12);
-    bottom: calc(var(--s-board-bottom) * 0.35);
+    bottom: calc(var(--s-board-bottom) * 0.18);
     margin: 0;
     display: flex;
     align-items: center;
