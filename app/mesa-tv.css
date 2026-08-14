@@ -458,8 +458,6 @@
      the countdown, which is the constraint that stops it going wider. */
   --t-tv-heading: 400 clamp(26px, 2.9vw, 60px) / 1 var(--font-impact);
   --track-tv-heading: 0.48em;
-  /* How far right of centre the heading sits: 5% of its own ink width. */
-  --s-band-title-shift: 1.92vw;
   /* ── The Mesa lockup, sized to the band rather than to the heading ──
 
      It used to take the heading's own glyph height, on the argument that the
@@ -1146,6 +1144,7 @@
      Deep Forest Green is the logomark colour. Rank is carried by surface, size
      and the written position all at once, so a greyscale crop still ranks. */
   .tv-panel-forest {
+    position: relative;
     background: var(--deep-forest-green);
     color: var(--white);
     border-radius: var(--radius-lg);
@@ -1691,17 +1690,24 @@
      padding is applied inside it, so the lockup still lines up with column 1. */
   .tv-band {
     display: grid;
-    /* **The heading centres in the space that is free, not on the frame.**
-       Equal outer tracks put it on the frame's centreline, which is the correct
-       answer to "centred" and the wrong one to "fill the band": the lockup is
-       180px wide and the countdown group is 350, so a frame-centred heading
-       left 412px of empty band on one side and 118px on the other. Centring it
-       in the middle track balances them at 280px each. */
-    grid-template-columns: auto 1fr auto;
+    /* **Equal outer tracks, because the heading centres on the leaderboard.**
+       They were `auto 1fr auto` for a while, which centres the heading in the
+       band's *free space* and balances the empty band either side of it — a
+       reasonable answer to "fill the band" and the wrong one here. The flanks
+       are 193px and 396px, so free-space centring put the ink at 895 against
+       the grid's 960.
+
+       Two equal `1fr` tracks put the middle one on the frame's centreline by
+       construction, at every width, with no value to tune — and the grid below
+       carries the same padding on both sides, so the frame's centre and the
+       leaderboard's centre are the same 960. A `vw` nudge got 1920 right and
+       drifted 48px at 2560; this cannot drift. */
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
     gap: var(--s-8);
     height: var(--h-band);
     padding: 0 var(--s-12);
+    position: relative;
     background: var(--deep-forest-green);
     color: var(--white);
 
@@ -1733,12 +1739,6 @@
     display: inline-block;
     transform: scaleX(1.15);
     transform-origin: center;
-    /* Nudged right of the free span's centre. `position` rather than a margin:
-       a margin on a centred item moves it by *half* what you write, which is
-       the kind of arithmetic that quietly drifts the next time someone tunes
-       it. This moves the ink by exactly what the token says. */
-    position: relative;
-    left: var(--s-band-title-shift);
     font: var(--t-tv-heading);
     letter-spacing: var(--track-tv-heading);
     text-transform: uppercase;
