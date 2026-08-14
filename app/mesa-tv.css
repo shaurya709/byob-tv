@@ -209,10 +209,10 @@
      gaps, the board's padding, the headroom's two spacers — that make 1600x900
      the tightest viewport rather than the smallest. Re-run
      `scripts/measure-fit.mjs` after touching any of the four. */
-  --h-row-1: 13.3vw;
-  --h-row-2: 12.25vw;
-  --h-row-3: 11.2vw;
-  --h-row-4: 10.38vw;
+  --h-row-1: 12.64vw;
+  --h-row-2: 11.64vw;
+  --h-row-3: 10.64vw;
+  --h-row-4: 9.86vw;
 
   /* The grid's own spacing. Fixed px, and therefore the `--s-*` trap: these
      hold their size while every `vw` above shrinks, so the ramp has less room
@@ -228,6 +228,13 @@
      It is also the *row* gap, so the three vertical gaps shrink by 4px each —
      12px the board does not need, which lands in the bottom clearance. */
   --s-card-gap: var(--s-2);
+
+  /* The gap *between rows*, separate from the one between columns since the
+     cards came down 5%. Shorter cards freed 51px of frame, and left at the
+     column gap's 8px the board simply ended 80px above the bottom edge. The
+     rows take the space instead, which keeps the board filling the frame while
+     each card carries less height. */
+  --s-row-gap: 1.35vw;
   --s-card-pad: var(--s-2);
 
   /* How much room the mark leaves around itself inside the card. */
@@ -294,7 +301,7 @@
      enough to be a fade rather than a cut, short enough that the settle does not
      feel like a second event after the mark has already landed. */
   --t-card-fade: 260ms;
-  --h-card-rank: 2vw;
+  --h-card-rank: 1.75vw;
   --h-card-name: 1.9vw;
   --h-card-fig: 1.4vw;
   --h-card-today: 1.25vw;

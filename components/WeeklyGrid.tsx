@@ -213,7 +213,12 @@ export function WeeklyGrid({
         // board with thirty teams would grow row 4 to match row 1 and the
         // hierarchy would vanish exactly when the wall was least populated.
         gridTemplateRows: ROW_HEIGHTS.join(' '),
-        gap: 'var(--s-card-gap)',
+        // **The row gap is its own value now.** It used to be `--s-card-gap`,
+        // the same token the columns use — so opening the rows would have
+        // narrowed every card, and narrowing the cards is not what opening the
+        // rows is for.
+        rowGap: 'var(--s-row-gap)',
+        columnGap: 'var(--s-card-gap)',
         height: '100%',
         // **Headroom for the metal numerals over ranks 1-3, which break above
         // their cards' top edge and are painted outside row 1 entirely.**
