@@ -115,12 +115,17 @@ export function VentureCard({
   cue,
   onSettled,
   todayMean,
+  arriving,
 }: {
   team: Team
   rank: number
   /** The board's average day, for colouring this card's. Null before anyone has
       traded; absent when a card is rendered outside the grid. */
   todayMean?: number | null
+  /** Set for one render on the two cards an overtake just settled, and on
+      nobody else. It is what lets their details fade in after a remount without
+      every unrelated re-sort doing the same. */
+  arriving?: boolean
   /** An idle timeline class. Only row 1 gets one; the other thirty hold still. */
   idle?: string
   /** Phase offset, so ten marks on one row never fall into step. */
@@ -245,6 +250,7 @@ export function VentureCard({
           // than keyframes: the two ends are the two states, and nothing has to
           // agree about when the middle is.
           cue === undefined ? undefined : 'tv-card-away',
+          arriving === true ? 'tv-card-arriving' : undefined,
           // The three cards carrying a metal numeral sit 3% higher inside
           // themselves, so the mark closes some of the gap the numeral opens
           // above it. The card box does not move; only what is in it does.

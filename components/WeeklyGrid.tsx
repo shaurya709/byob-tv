@@ -1,6 +1,6 @@
 'use client'
 
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { VentureCard } from '@/components/VentureCard'
 import { STAGGER, type FlipCue } from '@/lib/flipTimeline'
@@ -180,6 +180,36 @@ export function WeeklyGrid({
   /** Called once, by the attacker's card, when the last beat finishes. */
   onSettled?: () => void
 }) {
+  /**
+   * The two teams an overtake just put down, for one render.
+   *
+   * They are the only cards allowed to fade their details in. Every other card
+   * that happens to be remounted by the same re-sort — anything crossing a row
+   * boundary, which React unmounts and remounts because rows are separate
+   * containers — keeps its details at full opacity. Without this the board
+   * blinked figures at ranks nobody was watching, three deep in a quiet poll.
+   *
+   * Keyed by team id rather than by rank, because the whole point of the commit
+   * this reads is that the ranks have just changed.
+   */
+  const lastKick = useRef<OvertakeEvent | null>(null)
+  const [arriving, setArriving] = useState<ReadonlySet<string>>(() => new Set())
+  useEffect(() => {
+    if (kick !== null) {
+      lastKick.current = kick
+      return
+    }
+    const settledKick = lastKick.current
+    if (settledKick === null) return
+    lastKick.current = null
+    setArriving(new Set([settledKick.attacker, settledKick.defender]))
+    // Cleared once the fade has run. The class only carries an animation, so
+    // dropping it changes nothing on screen — it exists so the *next* re-sort
+    // does not inherit a reason to animate.
+    const done = setTimeout(() => setArriving(new Set()), 600)
+    return () => clearTimeout(done)
+  }, [kick])
+
   const rows = rowsOf(teams)
   // One mean for the board, computed once and handed down: a card comparing
   // itself to an average it derived from its own row would be comparing against
@@ -296,6 +326,7 @@ export function WeeklyGrid({
                 team={team}
                 rank={rank}
                 todayMean={todayMean}
+                arriving={arriving.has(team.teamId)}
                 cue={cue}
                 onSettled={cue?.role === 'attacker' ? onSettled : undefined}
                 {...(i === 0

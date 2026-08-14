@@ -1436,19 +1436,27 @@
      switch that had to be scheduled at the exact instant the mark was
      face-down. A slot's colour is a fact about the slot; nothing about it needs
      to be animated at all. */
-  .tv-card-detail {
-    /* **An animation, not a transition, and the difference is measurable.** A
-       transition needs an element that persists across the change, and a card
-       that changes row does not: React moves it into a different row container,
-       which unmounts and remounts it. Measured at the settle — opacity went 0 to
-       1 with **zero frames in between**, a pop rather than a fade, on exactly
-       the cards an overtake moves. An animation runs on mount, so a remounted
-       card fades in like any other.
+  /* ── The details fade only for a card that was in a flip ──
 
-       It also restarts when `tv-card-away` is removed, because that rule sets
-       `animation: none` and putting a name back is what re-triggers one — so a
-       card that stayed in its row fades in on the same curve as one that did
-       not. */
+     **The animation is not on the base rule, and that is the whole fix.** It
+     was, on the reasoning that a card changing row is remounted by React and a
+     transition has nothing to transition from. True — but a card is remounted
+     whenever it crosses a row boundary for *any* reason, including a quiet
+     re-sort three ranks deep that animates nothing. Measured on the deployed
+     board: a poll moved ranks 25 to 31, and the two that crossed the row 3/4
+     boundary flashed their details out and back over 300ms while the four that
+     stayed in their row did not. From the floor that reads as figures blinking
+     for no reason.
+
+     So the two paths are separated. A card that stays put transitions its
+     opacity, which needs no mount. A card that arrives from a flip is
+     remounted, cannot transition, and is given the animation explicitly by the
+     grid — which knows which two teams were in the overtake and nobody else. */
+  .tv-card-detail {
+    transition: opacity var(--t-card-fade) var(--ease-out);
+  }
+
+  .tv-card-arriving .tv-card-detail {
     animation: tv-detail-in var(--t-card-fade) var(--ease-out) both;
   }
 
