@@ -238,6 +238,16 @@
      collapses to zero takes its gap with it instead of leaving one behind. */
   --s-card-pad-y: 0.4vw;
 
+  /* How far the card's contents sit above where the padding alone would put
+     them. 0.31vw is 6px at 1920 and 5px at 1600 — inside the 7.7px and 6.4px of
+     top padding the card has, so it is taken from space that was doing nothing
+     rather than from the rank's separation or the mark's size.
+
+     Ranks 1-3 do not take it: `.tv-card-lifted` already moves them by 3% of the
+     row and has pulled their top padding to zero, so there is nothing left to
+     give. */
+  --s-card-rise: 0.31vw;
+
   /* The board's margin under the band, and above the frame's bottom edge.
 
      The top one is the whole distance between the band and row 1's numerals, so
@@ -1291,8 +1301,17 @@
     border-radius: var(--radius-sm);
     box-shadow: var(--card-edge);
     /* Declared here rather than inline on the element so the lift below can
-       override it — an inline style beats a class rule, and the lift is a rule. */
-    padding: var(--s-card-pad-y) var(--s-card-inset);
+       override it — an inline style beats a class rule, and the lift is a rule.
+
+       **The top gives 6px to the bottom.** The whole content block sits that
+       much higher, which puts air under the today figure where the card felt
+       stacked. It is a re-split, not a reduction: the two paddings still sum to
+       `2 x --s-card-pad-y`, which is what `--d-card-logo` subtracts, so no mark
+       changes size. The rank moves with it — see `.tv-card-rank` — so the
+       separation the rank strip exists for is carried up intact rather than
+       spent. */
+    padding: calc(var(--s-card-pad-y) - var(--s-card-rise)) var(--s-card-inset)
+      calc(var(--s-card-pad-y) + var(--s-card-rise));
   }
 
   /* ── Ranks 1-3 sit 3% higher inside their cards ──
@@ -1400,7 +1419,8 @@
      separation holds for both. */
   .tv-card-rank {
     position: absolute;
-    top: var(--s-card-pad-y);
+    /* Rises with the card's contents, so the rank-to-mark gap is unchanged. */
+    top: calc(var(--s-card-pad-y) - var(--s-card-rise));
     left: var(--s-card-inset);
     z-index: 2;
     font: var(--t-tv-card-rank);
