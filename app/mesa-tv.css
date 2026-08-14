@@ -340,7 +340,7 @@
 
   /* The board's legend. Smaller than anything on a card, because it explains
      the board rather than belonging to it. */
-  --t-tv-legend: 700 clamp(11px, 0.9vw, 19px) / 1 var(--font-sans);
+  --t-tv-legend: 700 clamp(10px, 0.837vw, 18px) / 1 var(--font-sans);
 
   /* ── Rank, in two treatments and never both on one card ──
 
