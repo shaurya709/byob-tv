@@ -447,7 +447,7 @@
      masthead rather than a caption — while leaving ~135px of clear band before
      the countdown, which is the constraint that stops it going wider. */
   --t-tv-heading: 400 clamp(26px, 2.9vw, 60px) / 1 var(--font-impact);
-  --track-tv-heading: 0.76em;
+  --track-tv-heading: 0.48em;
   /* How far right of centre the heading sits: 5% of its own ink width. */
   --s-band-title-shift: 1.92vw;
   /* ── The Mesa lockup, sized to the band rather than to the heading ──

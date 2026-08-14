@@ -72,11 +72,18 @@ export default function WeeklyPage() {
         // underneath it, which is the only thing that still wants a margin.
       }}
     >
-      {/* No week number from the sheet means no heading. The board is still
-          correct and still worth showing; captioning it "BYOB Week ?" would not
-          be. The number itself is `current_open_week` from `TV_Cohort`, never a
-          hardcoded 4. */}
-      <WallHeader snapshot={snapshot} label={week === null ? undefined : `BYOB Week ${week}`} />
+      {/* **The heading no longer carries the week number**, so it no longer
+          depends on the sheet having published one. It used to read `BYOB Week
+          4` and disappear entirely when `current_open_week` was missing — the
+          right call then, because captioning a board "BYOB Week ?" is worse than
+          not captioning it. A heading that says nothing numeric cannot be wrong
+          about the number, so it is unconditional now, and the board keeps its
+          masthead on a morning when the sheet is late.
+
+          `openWeek` is still read: `/weekly`'s board is the *open week's*
+          revenue whatever the heading says, and the value is what the dev
+          trigger stamps into an event id. */}
+      <WallHeader snapshot={snapshot} label="BYOB This Week" />
 
       <div
         style={{
