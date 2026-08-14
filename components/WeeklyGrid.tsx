@@ -261,10 +261,14 @@ export function WeeklyGrid({
               // cards, its ranks and all forty figures. Measured, not reasoned
               // about — and the reason these two names differ.
               '--h-row': ROW_HEIGHTS[i],
-              // Rows 3 and 4 take 5% more mark. Paid for out of the slack the
-              // card's contents leave below the figures, so the row's height —
-              // and with it the ramp — does not move.
-              ...(i >= 2 ? { '--k-mark': '1.05' } : {}),
+              // Rows 3 and 4 take a bigger mark, paid for out of the slack the
+              // card's contents leave below the figures — so the row's height,
+              // and with it the ramp, does not move. 5% was not visible on marks
+              // this small (3px on row 3), so each row takes what its own card
+              // can actually spare, leaving ~5px of breathing room under the
+              // figures rather than running the contents to the card's edge.
+              ...(i === 2 ? { '--k-mark': '1.12' } : {}),
+              ...(i === 3 ? { '--k-mark': '1.16' } : {}),
               // **Both figure lines are reserved on every row, always.** They
               // used to collapse on a row where nobody had traded, which gave
               // row 4 its height back and was measurably wrong twice over. It
