@@ -114,14 +114,10 @@ export function VentureCard({
   delaySeconds,
   cue,
   onSettled,
-  todayMean,
   arriving,
 }: {
   team: Team
   rank: number
-  /** The board's average day, for colouring this card's. Null before anyone has
-      traded; absent when a card is rendered outside the grid. */
-  todayMean?: number | null
   /** Set for one render on the two cards an overtake just settled, and on
       nobody else. It is what lets their details fade in after a remount without
       every unrelated re-sort doing the same. */
@@ -153,27 +149,19 @@ export function VentureCard({
   const quiet = rank > SOLID_RANKS
 
   /**
-   * ── Today, against the board rather than against a constant ──
+   * ── Today is shown, or it is not ──
    *
-   * A day above the board's average reads warm-positive, a day below it reads
-   * warm-negative, and no day at all reads as neither. The comparison used to be
-   * `HOT_TODAY_MIN`, a fixed ₹5,000: a fine rule in week 1 and a meaningless one
-   * by week 8, when the whole cohort clears it by lunchtime and forty cards go
-   * green together. The mean moves with the cohort, so "a good day" keeps
-   * meaning *a good day here, today*.
+   * A team that has traded today gets a green figure and a mark pointing up. A
+   * team that has not gets neither, and the line stays empty.
    *
-   * **Zero takes no colour at all.** It is not a bad day, it is an absent one,
-   * and colouring it would be the board editorialising about a team that has
-   * simply not opened yet. `todayMean` is null before anyone has traded, which
-   * leaves every card in the same neutral state rather than painting the whole
-   * board one colour at 9am.
+   * **There is no second state and no comparison.** The figure was coloured
+   * against the board's average for a while, green above and red below, which
+   * meant a team that had sold well still read as failing if the cohort's
+   * average happened to be higher. Trading today is the thing worth saying; how
+   * it ranks against everyone else's day is what the board itself already shows
+   * by putting them in order.
    */
-  const day: 'none' | 'above' | 'below' =
-    team.todayRevenue <= 0 || todayMean === null || todayMean === undefined
-      ? 'none'
-      : team.todayRevenue >= todayMean
-        ? 'above'
-        : 'below'
+  const traded = team.todayRevenue > 0
 
   const flips = cue !== undefined && cue.role !== 'slide'
   // `false`, not `undefined`, for a card with no cue: the reset to x/y 0 has to
@@ -365,24 +353,18 @@ export function VentureCard({
         <div
           className={[
             'tv-card-today tv-card-detail',
-            day === 'above' ? 'tv-card-today-above' : undefined,
-            day === 'below' ? 'tv-card-today-below' : undefined,
+            traded ? 'tv-card-today-traded' : undefined,
           ]
             .filter(Boolean)
             .join(' ')}
         >
           {team.todayRevenue > 0 ? (
             <>
-              {/* A shape, not a glyph. `▲`/`▼` come from whatever font
-                  answers for them, and the two are not drawn to match — one
-                  sits higher, one is heavier, and neither is guaranteed to be
-                  present. This is one box clipped two ways, so up and down are
-                  the same size and the same weight by construction and only the
-                  direction changes. */}
-              <span
-                className={day === 'above' ? 'tv-day-mark tv-day-up' : 'tv-day-mark tv-day-down'}
-                aria-hidden="true"
-              />
+              {/* A shape, not a glyph: `▲` comes from whatever font in the
+                  stack answers for it, at whatever weight and height that font
+                  drew it. This is a box with a triangle clipped out of it, so it
+                  is the same mark on every machine. */}
+              <span className="tv-day-mark" aria-hidden="true" />
               {formatRupees(team.todayRevenue)}
             </>
           ) : (

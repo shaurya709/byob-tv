@@ -150,25 +150,6 @@ export function cuesFor(grid: HTMLElement, kick: OvertakeEvent): Map<number, Fli
   return cues
 }
 
-/**
- * The average day among the teams having one.
- *
- * **Zero is not a low day, it is no day** — a team that has not opened is not
- * competing in "above or below average" and would only drag the average down
- * for everyone who is. Excluding them is what keeps the comparison meaningful:
- * with twelve teams at zero, including them halves the mean and turns nearly
- * every trading team green, which says nothing.
- *
- * `null` when nobody has traded, which is every morning before the first sale —
- * and the cards read that as "no comparison to make" rather than as "everyone
- * is below average".
- */
-export function todayMeanOf(teams: readonly Team[]): number | null {
-  const trading = teams.filter((t) => t.todayRevenue > 0)
-  if (trading.length === 0) return null
-  return trading.reduce((sum, t) => sum + t.todayRevenue, 0) / trading.length
-}
-
 export function WeeklyGrid({
   teams,
   kick = null,
@@ -211,10 +192,6 @@ export function WeeklyGrid({
   }, [kick])
 
   const rows = rowsOf(teams)
-  // One mean for the board, computed once and handed down: a card comparing
-  // itself to an average it derived from its own row would be comparing against
-  // ten different numbers depending on where it sat.
-  const todayMean = todayMeanOf(teams)
   const gridRef = useRef<HTMLDivElement>(null)
   const [cues, setCues] = useState<Map<number, FlipCue> | null>(null)
 
@@ -325,7 +302,6 @@ export function WeeklyGrid({
                 key={team.teamId}
                 team={team}
                 rank={rank}
-                todayMean={todayMean}
                 arriving={arriving.has(team.teamId)}
                 cue={cue}
                 onSettled={cue?.role === 'attacker' ? onSettled : undefined}

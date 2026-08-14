@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 
+import { BoardLegend } from '@/components/BoardLegend'
 import { DevFlipTrigger } from '@/components/DevFlipTrigger'
 import { WallHeader } from '@/components/WallHeader'
 import { WeeklyGrid } from '@/components/WeeklyGrid'
@@ -89,6 +90,9 @@ export default function WeeklyPage() {
         style={{
           display: 'grid',
           minHeight: 0,
+          // The legend is positioned against this box, so it sits in the
+          // board's own bottom margin rather than taking height from the rows.
+          position: 'relative',
           padding: 'var(--s-board-top) var(--s-12) var(--s-board-bottom)',
         }}
       >
@@ -102,6 +106,7 @@ export default function WeeklyPage() {
             settled()
           }}
         />
+        <BoardLegend />
       </div>
 
       <DevFlipTrigger

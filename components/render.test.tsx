@@ -8,7 +8,7 @@ import { FleaDial } from '@/components/FleaDial'
 import { Podium, podiumTeams } from '@/components/Podium'
 import { VentureCard } from '@/components/VentureCard'
 import { pagesOf } from '@/components/VentureName'
-import { ROW_LENGTH, WeeklyGrid, rowsOf, todayMeanOf } from '@/components/WeeklyGrid'
+import { ROW_LENGTH, WeeklyGrid, rowsOf } from '@/components/WeeklyGrid'
 import { SOLID_RANKS } from '@/config'
 import type { CountdownState } from '@/lib/countdown'
 import { formatRupees, ordinal } from '@/lib/format'
@@ -364,40 +364,27 @@ describe('VentureCard', () => {
   })
 
   /**
-   * ── Today, against the board's average ──
+   * ── Today is shown, or it is not ──
    *
-   * Above the mean reads one way, below it the other, and a day of zero takes
-   * neither — it is an absent day, not a bad one. The comparison used to be a
-   * fixed `HOT_TODAY_MIN`, which stops meaning anything once the whole cohort
-   * clears it.
+   * A day that happened is green with a mark; a day that has not happened shows
+   * nothing. There is no second colour, because there is no second state: the
+   * figure was once compared against the board's average, which meant a team
+   * that had sold well still read as failing when the cohort's average was
+   * higher.
    */
-  it('colours a day by the board mean, and leaves zero uncoloured', () => {
-    const above = markup(<VentureCard team={team({ todayRevenue: 900 })} rank={4} todayMean={800} />)
-    const below = markup(<VentureCard team={team({ todayRevenue: 700 })} rank={4} todayMean={800} />)
-    const none = markup(<VentureCard team={team({ todayRevenue: 0 })} rank={4} todayMean={800} />)
-    expect(above).toContain('tv-card-today-above')
-    expect(below).toContain('tv-card-today-below')
-    expect(none).not.toContain('tv-card-today-above')
-    expect(none).not.toContain('tv-card-today-below')
+  it('marks a day that happened and shows nothing for one that did not', () => {
+    const traded = markup(<VentureCard team={team({ todayRevenue: 900 })} rank={4} />)
+    const quiet = markup(<VentureCard team={team({ todayRevenue: 0 })} rank={4} />)
+    expect(traded).toContain('tv-card-today-traded')
+    expect(traded).toContain('tv-day-mark')
+    expect(quiet).not.toContain('tv-card-today-traded')
+    expect(quiet).not.toContain('tv-day-mark')
   })
 
-  it('leaves every card uncoloured before anyone has traded', () => {
-    const html = markup(<VentureCard team={team({ todayRevenue: 0 })} rank={4} todayMean={null} />)
-    expect(html).not.toContain('tv-card-today-above')
+  it('has no second direction to draw', () => {
+    const html = markup(<VentureCard team={team({ todayRevenue: 50 })} rank={4} />)
+    expect(html).not.toContain('tv-day-down')
     expect(html).not.toContain('tv-card-today-below')
-  })
-
-  it('averages only the teams that have traded', () => {
-    // Twelve teams at zero would halve a mean that included them, and turn
-    // nearly every trading team green.
-    const teamsWith = [
-      team({ teamId: 'SLE-C401', todayRevenue: 1_000 }),
-      team({ teamId: 'SLE-C402', todayRevenue: 2_000 }),
-      team({ teamId: 'SLE-C403', todayRevenue: 0 }),
-      team({ teamId: 'SLE-C404', todayRevenue: 0 }),
-    ]
-    expect(todayMeanOf(teamsWith)).toBe(1_500)
-    expect(todayMeanOf([team({ todayRevenue: 0 })])).toBeNull()
   })
 
   it('prints no today tag on a card with no day yet', () => {

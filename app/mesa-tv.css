@@ -338,6 +338,10 @@
      reads as apparatus rather than as a third number. */
   --t-tv-card-label: 700 clamp(8px, 0.62vw, 13px) / 1 var(--font-sans);
 
+  /* The board's legend. Smaller than anything on a card, because it explains
+     the board rather than belonging to it. */
+  --t-tv-legend: 700 clamp(9px, 0.72vw, 15px) / 1 var(--font-sans);
+
   /* ── Rank, in two treatments and never both on one card ──
 
      **Never on the artwork, in either treatment.** The original numeral was
@@ -426,19 +430,6 @@
      ink. The solid card keeps `--bright-green`, which was drawn for exactly that
      surface and measures 6.14:1 on it. */
   --tv-card-hot-ink-quiet: color-mix(in srgb, var(--green-600) 75%, var(--deep-forest-green));
-  /* ── A day below the board's average, on each surface ──
-
-     The red itself on the dark card: a light red on Deep Forest is exactly what
-     `--signal-red` was chosen for. Deepened into the neutral on the pale card,
-     because a red bright enough for Deep Forest is too light for Soft Mint.
-
-     **Mixed with charcoal, never with Deep Forest.** The tangerine this
-     replaced was deepened against the green and went olive — measured,
-     saturation 0.50, close enough in hue to the green beside it that the two
-     states stopped reading as opposites. A red deepened against a green goes
-     brown the same way. Against the neutral the hue holds. */
-  --tv-card-cold-ink: var(--signal-red);
-  --tv-card-cold-ink-quiet: color-mix(in srgb, var(--signal-red) 78%, var(--midnight-charcoal));
   --tv-card-badge-fill: var(--deep-teal);
   --tv-card-badge-ink: var(--mint-300);
 
@@ -612,29 +603,10 @@
   --metal-silver: #A8AFB5;
   --metal-bronze: #AF602C;
 
-  /* ── The signal red — the second literal exemption, and the reason for it ──
-
-     **The palette has no red.** Its hues are charcoal, mint, green, tangerine,
-     forest and teal, which is a warm-and-cool brand rather than a
-     positive-and-negative one. `/weekly`'s day figure needs a direction: above
-     the board's average and below it. Green already exists for the first.
-     Nothing here can carry the second.
-
-     Tangerine was tried first and is the reason this exists. It is the wall's
-     warm accent, it reads as *attention* rather than as *down*, and deepening
-     it toward Deep Forest to clear the pale card pulled it to olive — measured,
-     saturation 0.50, close enough in hue to the green beside it that the two
-     states stopped reading as opposites. A signal that has to be compared with
-     its counterpart to be understood is not a signal.
-
-     `#D64A2F` is a true red at hue 10°, far from `--tangerine-600` at 31° and
-     from `--metal-bronze` at 20°, so it cannot be mistaken for either — the
-     bronze numeral and a falling figure are never on the same card, but they
-     are on the same board.
-
-     Like the metals, it encodes one thing and nothing else: a day below the
-     board's average. Not an error. Not a warning. Not a surface. */
-  --signal-red: #D64A2F;
+  /* A signal red was added here and has been removed again. It encoded a day
+     below the board's average, and that state no longer exists: a team either
+     traded today or it did not, and the one that did is green. The exemption is
+     the three metals and nothing else, which is where it started. */
 
 
   /* ========= PODIUM — a spine, three cards on plinths, seven pills =========
@@ -1358,7 +1330,6 @@
       0 0.2vw 0.5vw color-mix(in srgb, var(--deep-teal) 18%, transparent);
     --card-sub-ink: var(--tv-card-sub-ink);
     --card-hot-ink: var(--bright-green);
-    --card-cold-ink: var(--tv-card-cold-ink);
     --card-fig-ink: var(--tv-card-fig-ink);
 
     background: var(--card-fill);
@@ -1420,7 +1391,6 @@
       0 0.15vw 0.4vw color-mix(in srgb, var(--deep-teal) 8%, transparent);
     --card-sub-ink: var(--tv-card-sub-ink-quiet);
     --card-hot-ink: var(--tv-card-hot-ink-quiet);
-    --card-cold-ink: var(--tv-card-cold-ink-quiet);
     --card-fig-ink: var(--tv-card-fig-ink-quiet);
   }
 
@@ -1570,19 +1540,46 @@
     overflow: hidden;
   }
 
-  /* ── Above and below the board's average day ──
-
-     Both take the heavier weight, because the emphasis is "this is worth
-     reading" either way; the colour says which direction. A day of zero gets
-     neither class and stays in the card's secondary ink — absent, not bad. */
-  .tv-card-today-above {
+  /* A day that happened. The heavier weight and the green together are the
+     emphasis; there is no second state to distinguish it from, because a team
+     with no day shows nothing at all rather than showing a worse colour. */
+  .tv-card-today-traded {
     font: var(--t-tv-card-today-hot);
     color: var(--card-hot-ink, var(--green-600));
   }
 
-  .tv-card-today-below {
-    font: var(--t-tv-card-today-hot);
-    color: var(--card-cold-ink, var(--tangerine-600));
+  /* ── The legend, in the board's own margin ──
+
+     Bottom right, in the gap between the last row and the frame's edge — a
+     margin the grid already leaves and does not use. Absolute, so it takes no
+     height from the rows and cannot move a card; if the ramp ever grows into
+     that space this is what gets clipped, which is the right way round.
+
+     Muted, because it is apparatus: the smallest type on the board, in the same
+     ink the pale cards give their secondary text, so it reads as a note about
+     the board rather than as part of it. */
+  .tv-legend {
+    position: absolute;
+    right: var(--s-12);
+    bottom: calc(var(--s-board-bottom) * 0.35);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--s-2);
+    font: var(--t-tv-legend);
+    letter-spacing: var(--track-overline);
+    text-transform: uppercase;
+    color: var(--fg-muted);
+    white-space: nowrap;
+  }
+
+  /* The card's own mark, at the legend's scale. `--card-hot-ink` is not in
+     scope out here — the legend is not inside a card — so the green is named
+     directly, and it is the same token the solid cards resolve that variable
+     to. */
+  .tv-legend-mark {
+    color: var(--bright-green);
+    color: var(--green-600);
   }
 
   /* ── The direction mark ──
@@ -1610,12 +1607,8 @@
     flex: none;
   }
 
-  .tv-day-up {
+  .tv-day-mark {
     clip-path: polygon(50% 0, 100% 100%, 0 100%);
-  }
-
-  .tv-day-down {
-    clip-path: polygon(0 0, 100% 0, 50% 100%);
   }
 
 
