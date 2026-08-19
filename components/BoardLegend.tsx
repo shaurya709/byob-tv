@@ -22,11 +22,23 @@
  * triangle's shape or size reaches the legend automatically. Two drawings of
  * one symbol is how a legend starts lying about what it explains.
  */
-export function BoardLegend() {
+export function BoardLegend({ since }: { since?: string | null }) {
   return (
     <p className="tv-legend">
       <span className="tv-day-mark tv-legend-mark" aria-hidden="true" />
       Today&rsquo;s revenue
+      {/* **What the big figure now measures.** It changed meaning from "this
+          week" to "since the baseline", and nothing else on the board says so —
+          which is the same argument that put the green triangle's explanation
+          here. A passer-by deciding a number must mean something it does not is
+          the failure this component exists to prevent.
+
+          `since` comes from `challenge_start_iso`, never a literal: on 1
+          September it reads "31 Aug" because one sheet cell changed. Absent
+          until the sheet publishes the window, at which point the phrase simply
+          appears — the wall says nothing rather than naming a date it is
+          guessing at. */}
+      {since ? <span className="tv-legend-since">Revenue since {since}</span> : null}
     </p>
   )
 }

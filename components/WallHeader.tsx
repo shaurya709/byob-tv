@@ -1,8 +1,8 @@
 import Image from 'next/image'
 
 import { AsOf } from '@/components/AsOf'
-import { FleaStrip } from '@/components/FleaStrip'
-import { fleaInstant } from '@/lib/feed'
+import { ChallengeDay } from '@/components/ChallengeDay'
+import { cohortInstant } from '@/lib/feed'
 import type { Snapshot } from '@/lib/types'
 
 /**
@@ -19,19 +19,23 @@ import type { Snapshot } from '@/lib/types'
  * locally so the components inside keep asking for "muted" and the *surface*
  * decides what muted means on it.
  *
- * ── The countdown is the second-loudest thing on the board ──
+ * ── The day count is the second-loudest thing on the board ──
  *
  * After rank 1's numeral and before everything else, which is a deliberate
- * inversion: it used to be smaller than the timestamp beside it. The Flea date
- * is the only element on this wall that changes what a team does today — a
- * board of standings tells forty teams where they are, and the countdown tells
- * them how long they have to move. `--h-tv-cal` and `--t-tv-cal-figure` are
- * redefined on the band rather than at the root, so `FleaDial` is unchanged and
- * the sizing lives with the surface that wanted it.
+ * inversion: it used to be smaller than the timestamp beside it. A board of
+ * standings tells forty teams where they are, and this tells them how long they
+ * have left to move — which is the only thing on the wall that changes what a
+ * team does today.
  *
- * Tangerine Glow, not Tangerine 600: the 600 was picked to survive a white
- * ground, and this ground is Deep Forest. On it the darker value goes muddy at
- * six metres while looking correct on a laptop.
+ * **The Mesa Flea countdown used to hold this slot.** It moved out when the
+ * board became a two-week challenge with a hard close: the Flea is still the
+ * horizon, but the fortnight is the deadline, and the deadline is what a
+ * passer-by needs. The Flea has not left the wall — `/podium` carries its own
+ * full countdown and the rotation still shows it.
+ *
+ * `--h-tv-cal` and `--t-tv-cal-figure` are still redefined on the band rather
+ * than at the root, so `ChallengeDay` reads the surface's scale rather than
+ * declaring one, exactly as `FleaDial` did.
  *
  * The as-of stamp goes the other way — down to a small tracked caption in muted
  * mint. It is provenance, and provenance recedes.
@@ -58,7 +62,10 @@ export function WallHeader({ snapshot, label }: { snapshot: Snapshot | null; lab
       <div
         style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-5)', justifySelf: 'end' }}
       >
-        <FleaStrip at={snapshot === null ? null : fleaInstant(snapshot.cohort)} />
+        <ChallengeDay
+          start={snapshot === null ? null : cohortInstant(snapshot.cohort, 'challenge_start_iso')}
+          end={snapshot === null ? null : cohortInstant(snapshot.cohort, 'challenge_end_iso')}
+        />
         <AsOf snapshot={snapshot} />
       </div>
     </header>

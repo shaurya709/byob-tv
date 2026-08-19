@@ -1588,6 +1588,20 @@
     color: var(--green-600);
   }
 
+  /* The legend's second phrase: what the board's big figure measures.
+     Separated by space rather than by a glyph — a bullet or a pipe would be one
+     more mark to explain, in a strip whose entire job is explaining marks.
+     `--s-4` against the row's own `--s-2` gap is enough to read as two
+     statements rather than one run-on.
+
+     It inherits everything else from `.tv-legend`, so it cannot drift out of
+     step with the phrase beside it. The strip sits in the board's bottom margin
+     — 25.8px at 1920 — and if the pair ever stops fitting on one line there, it
+     is the legend that gets shorter, never the grid that moves. */
+  .tv-legend-since {
+    margin-left: var(--s-4);
+  }
+
   /* ── The direction mark ──
 
      **A shape, not a glyph.** `▲` and `▼` are drawn by whichever font in the

@@ -7,7 +7,8 @@ import { DevFlipTrigger } from '@/components/DevFlipTrigger'
 import { WallHeader } from '@/components/WallHeader'
 import { WeeklyGrid } from '@/components/WeeklyGrid'
 import { WATCH_RANKS_WEEKLY } from '@/config'
-import { currentChallenge, openWeek } from '@/lib/feed'
+import { baselineLabel } from '@/lib/challenge'
+import { cohortInstant, currentChallenge, openWeek } from '@/lib/feed'
 import { competingTeams, rankByChallenge } from '@/lib/ranking'
 import { useDevOvertakes } from '@/lib/devOvertake'
 import { useKick } from '@/lib/useKick'
@@ -93,7 +94,7 @@ export default function WeeklyPage() {
           `openWeek` is still read: `/weekly`'s board is the *open week's*
           revenue whatever the heading says, and the value is what the dev
           trigger stamps into an event id. */}
-      <WallHeader snapshot={snapshot} label="BYOB This Week" />
+      <WallHeader snapshot={snapshot} label="2-Week Challenge" />
 
       <div
         style={{
@@ -115,7 +116,13 @@ export default function WeeklyPage() {
             settled()
           }}
         />
-        <BoardLegend />
+        <BoardLegend
+          since={
+            snapshot === null
+              ? null
+              : baselineLabel(cohortInstant(snapshot.cohort, 'challenge_start_iso'))
+          }
+        />
       </div>
 
       <DevFlipTrigger
