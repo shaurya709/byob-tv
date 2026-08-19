@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { baselineLabel, challengeDay } from '@/lib/challenge'
 
 const start = new Date('2026-08-18T00:00:00+05:30')
-const end = new Date('2026-08-31T23:59:59+05:30')
+/** Challenge 1's real close: 09:00 IST on 31 August, not end of day. */
+const end = new Date('2026-08-31T09:00:00+05:30')
 
 describe('challengeDay', () => {
   it('counts a fourteen-day challenge from day one', () => {
@@ -15,10 +16,33 @@ describe('challengeDay', () => {
       day: 2,
       total: 14,
     })
-    expect(challengeDay(start, end, Date.parse('2026-08-31T23:00:00+05:30'))).toEqual({
+    expect(challengeDay(start, end, Date.parse('2026-08-31T08:59:00+05:30'))).toEqual({
       day: 14,
       total: 14,
     })
+  })
+
+  /**
+   * A window that is not a whole number of days.
+   *
+   * 18 Aug 00:00 → 31 Aug 09:00 is 13 days and 9 hours, and `ceil` is what makes
+   * that a **fourteen**-day challenge rather than a thirteen-day one. `floor`
+   * would print "of 13" and `round` would agree with `ceil` here only by luck —
+   * at 13 days and 9 hours it rounds to 13.
+   */
+  it('counts the part-day at the end as a day', () => {
+    expect(challengeDay(start, end, Date.parse('2026-08-18T09:00:00+05:30'))?.total).toBe(14)
+  })
+
+  /**
+   * The deadline is 09:00, so the wall stops counting at 09:00 — it does not sit
+   * on "Day 14 of 14" for the rest of the day. Between the close and the next
+   * challenge opening the band simply shows nothing, which is the same silence
+   * the Flea countdown keeps once its event is over.
+   */
+  it('shows nothing once the deadline passes, not a stuck final day', () => {
+    expect(challengeDay(start, end, Date.parse('2026-08-31T09:30:00+05:30'))).toBeNull()
+    expect(challengeDay(start, end, Date.parse('2026-08-31T20:00:00+05:30'))).toBeNull()
   })
 
   /**

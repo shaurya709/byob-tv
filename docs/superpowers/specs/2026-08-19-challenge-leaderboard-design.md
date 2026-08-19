@@ -33,7 +33,7 @@ team at ₹0 every two weeks, which is what makes the board a race instead of a 
 
 | | |
 |---|---|
-| Challenge 1 | Tue 18 Aug → Mon 31 Aug — **exactly 14 days** |
+| Challenge 1 | Tue 18 Aug 00:00 → **Mon 31 Aug 09:00 IST** — 13 days 9 hours, counted as 14 |
 | Challenge 2 | Tue 1 Sep → Mon 14 Sep |
 | Mesa Flea | Sun 13 Sep — **inside challenge 2**, one day before it closes |
 | Programme weeks | Mondays. wk 5 = 17 Aug, wk 6 = 24 Aug, wk 7 = 31 Aug |
@@ -72,8 +72,17 @@ read 0 while the true deltas span −3,850 to +16,141. `K` being stored as text
 ```
 current_challenge     1                             → 2 on 1 Sep, 3 after that
 challenge_start_iso   2026-08-18T00:00:00+05:30
-challenge_end_iso     2026-08-31T23:59:59+05:30
+challenge_end_iso     2026-08-31T09:00:00+05:30
 ```
+
+**The close is 09:00, not end of day** — confirmed 19 Aug. The window is therefore
+13 days and 9 hours, which `challengeDay` counts as fourteen because it takes the
+`ceil`: a part-day at the end is still a day of the challenge. `floor` would print
+"of 13", and `round` agrees with `ceil` at this length only by coincidence.
+
+The wall stops counting at 09:00 rather than sitting on "Day 14 of 14" for the rest
+of the 31st. Between the close and challenge 2 opening, the band shows nothing —
+the same silence the Flea countdown keeps once its event is over.
 
 The `+05:30` offset is **mandatory**, for the reason `fleaInstant` already enforces it:
 an instant with no offset is parsed in the browser's timezone, so a laptop set to
