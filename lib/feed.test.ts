@@ -4,6 +4,8 @@ import { cohort, cohortCsv, feedCsv, teams } from '@/test/fixtures'
 import {
   COHORT_KEYS,
   TvSchemaError,
+  cohortInstant,
+  currentChallenge,
   fleaInstant,
   openWeek,
   parseCohort,
@@ -172,6 +174,50 @@ describe('parseCohort', () => {
     const values = cohort()
     delete values.current_open_week
     expect(() => parseCohort(cohortCsv(values))).toThrow(TvSchemaError)
+  })
+})
+
+describe('currentChallenge', () => {
+  it('reads the challenge number', () => {
+    expect(currentChallenge({ current_challenge: '1' })).toBe(1)
+    expect(currentChallenge({ current_challenge: '2' })).toBe(2)
+  })
+
+  /**
+   * Optional on purpose, and not in `COHORT_KEYS`. A wall fetching a sheet
+   * mid-edit gets `null`, which routes into the same branch a brand-new TV
+   * takes: record what you see, animate nothing.
+   */
+  it('is null when the sheet has not said', () => {
+    expect(currentChallenge({})).toBeNull()
+    expect(currentChallenge({ current_challenge: '' })).toBeNull()
+    expect(currentChallenge({ current_challenge: 'first' })).toBeNull()
+    expect(currentChallenge({ current_challenge: '0' })).toBeNull()
+  })
+})
+
+describe('cohortInstant', () => {
+  it('reads an instant that carries an offset', () => {
+    const at = cohortInstant(
+      { challenge_start_iso: '2026-08-18T00:00:00+05:30' },
+      'challenge_start_iso',
+    )
+    expect(at?.toISOString()).toBe('2026-08-17T18:30:00.000Z')
+  })
+
+  /**
+   * The load-bearing half. Without the offset the string is parsed in the
+   * *browser's* timezone, so a laptop set to anything but IST derives a
+   * different day number and looks completely healthy doing it.
+   */
+  it('refuses an instant with no offset', () => {
+    expect(
+      cohortInstant({ challenge_start_iso: '2026-08-18T00:00:00' }, 'challenge_start_iso'),
+    ).toBeNull()
+  })
+
+  it('is null for a key the sheet has not published', () => {
+    expect(cohortInstant({}, 'challenge_end_iso')).toBeNull()
   })
 })
 

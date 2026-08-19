@@ -197,27 +197,64 @@ export function openWeek(cohort: Cohort): number | null {
   return Number.isInteger(value) && value >= 1 ? value : null
 }
 
-/** An ISO instant must carry `Z` or an explicit ±HH:MM offset. See `fleaInstant`. */
+/**
+ * Which two-week challenge is open, or `null` if the sheet has not said.
+ *
+ * This is `/weekly`'s answer to the question `openWeek` answers for a weekly
+ * board: *did the figure this board ranks on just reset to zero for everyone at
+ * once?* The two are different clocks and always will be — challenges run
+ * Tuesday→Monday and programme weeks run Monday→Sunday, so week 7 spans both the
+ * end of challenge 1 and the start of challenge 2. Reading the week here would
+ * be wrong in both directions: silent on 24 August when nothing reset, and
+ * talkative on 1 September when everything did.
+ *
+ * Read optionally, and deliberately **not** in `COHORT_KEYS`: a missing key
+ * there throws away the whole fetch, and this one is allowed to be absent while
+ * the sheet is mid-edit. `null` then behaves exactly as a wall with no stored
+ * state does — it records what it sees and animates nothing.
+ */
+export function currentChallenge(cohort: Cohort): number | null {
+  const raw = (cohort.current_challenge ?? '').trim()
+  if (raw === '') return null
+  const value = Number(raw)
+  return Number.isInteger(value) && value >= 1 ? value : null
+}
+
+/** An ISO instant must carry `Z` or an explicit ±HH:MM offset. See `cohortInstant`. */
 const ABSOLUTE_INSTANT = /(?:Z|[+-]\d{2}:\d{2})$/
+
+/**
+ * An absolute instant from a `TV_Cohort` cell, or `null`.
+ *
+ * **The offset is mandatory.** `new Date('2026-08-18T00:00:00')` — no offset —
+ * is parsed in the *browser's* timezone, so a laptop set to anything but IST
+ * computes a different instant and looks completely healthy doing it. Requiring
+ * `+05:30` is what makes every figure derived from these cells a difference
+ * between two absolute instants, correct on any machine whose clock is right —
+ * and it is why `lib/challenge.ts` needs no timezone arithmetic at all.
+ *
+ * One rule in one place, for both the Flea and the challenge window. Two copies
+ * is how one of them quietly stops enforcing it.
+ */
+export function cohortInstant(cohort: Cohort, key: string): Date | null {
+  const raw = (cohort[key] ?? '').trim()
+  if (!ABSOLUTE_INSTANT.test(raw)) return null
+  const at = new Date(raw)
+  return Number.isFinite(at.getTime()) ? at : null
+}
 
 /**
  * When the Mesa Flea opens, or `null` if the sheet has not said.
  *
- * **The offset is mandatory.** `new Date('2026-09-06T10:00:00')` — no offset —
- * is parsed in the *browser's* timezone, so a laptop set to anything but IST
- * would count down to the wrong instant and look completely healthy doing it.
- * Requiring `+05:30` is what makes the countdown a difference between two
- * absolute instants, correct on any machine whose clock is right.
+ * The offset requirement lives in `cohortInstant`, which this delegates to
+ * rather than repeating — see there for why it is mandatory.
  *
- * `null` renders as no countdown strip at all. The opening time is still
- * unconfirmed and lives in one cell now; a wall showing nothing there is a
- * legible state, and a guessed date is not.
+ * `null` renders as no countdown at all. The opening time is still unconfirmed
+ * and lives in one cell now; a wall showing nothing there is a legible state,
+ * and a guessed date is not.
  */
 export function fleaInstant(cohort: Cohort): Date | null {
-  const raw = (cohort.flea_datetime_iso ?? '').trim()
-  if (!ABSOLUTE_INSTANT.test(raw)) return null
-  const at = new Date(raw)
-  return Number.isFinite(at.getTime()) ? at : null
+  return cohortInstant(cohort, 'flea_datetime_iso')
 }
 
 /** The only thing that ever produces a `Snapshot`, from cache and network alike. */

@@ -7,7 +7,7 @@ import { fetchCsv, parseSnapshot, passesRowGate } from '@/lib/feed'
 import { openWeek } from '@/lib/feed'
 import { detect } from '@/lib/overtake'
 import { enqueueKicks, readBoard, readCsvCache, writeBoard, writeCsvCache } from '@/lib/storage'
-import type { Snapshot, Team } from '@/lib/types'
+import type { Cohort, Snapshot, Team } from '@/lib/types'
 
 /**
  * The 60-second loop. The only module in the project that touches `fetch`,
@@ -46,6 +46,20 @@ export type BoardSpec = {
   rank: (teams: readonly Team[]) => Team[]
   earned: (team: Team) => number
   watchTo: number
+  /**
+   * What counts as "the period this board's figure resets with", read off the
+   * cohort. Defaults to the programme week.
+   *
+   * `detect` goes silent when this number changes, because that is the tick
+   * where every figure on the board drops to zero together and forty resets
+   * must not read as forty overtakes.
+   *
+   * `/weekly` overrides it with `currentChallenge`: its figure resets when a
+   * challenge rolls over, which is a Tuesday, and not on the Monday a programme
+   * week turns. `/podium` leaves it alone — its figure is the all-time total,
+   * which never resets at all.
+   */
+  period?: (cohort: Cohort) => number | null
 }
 
 export function useWallData(board: BoardSpec): WallData {
@@ -140,10 +154,17 @@ export function useWallData(board: BoardSpec): WallData {
       // Detection runs only on a freshly gated fetch. The boot cache is
       // render-only: reconciling it would emit nothing anyway, since detection
       // is idempotent, and would cost a write for nothing.
-      const { name, rank, earned, watchTo } = board
+      const { name, rank, earned, watchTo, period = openWeek } = board
       const { state, events } = detect(readBoard(name), {
         ranked: rank(fresh.teams),
-        week: openWeek(fresh.cohort),
+        // `BoardState.week` keeps its name while carrying a challenge number on
+        // `/weekly`. Renaming the stored field would change the shape of what
+        // every TV holds in localStorage and force a storage key version bump —
+        // and buy nothing, because the mismatch heals itself: a wall's stored
+        // `week: 5` meets the new `period: 1` on the first poll after deploy,
+        // the guard fires once, and the wall records what it sees and animates
+        // nothing. Which is exactly the seeding the version bump was for.
+        week: period(fresh.cohort),
         watchTo,
         earned,
       })
