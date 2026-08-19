@@ -29,6 +29,33 @@ export type Team = {
   /** First tie-break for absolute ranking only. */
   totalUnits: number
   /**
+   * Revenue banked since the current challenge's baseline was photographed —
+   * `total_revenue` minus a frozen snapshot of itself, computed in the sheet.
+   *
+   * **Ranks `/weekly`.** `weekRevenue` is still published and still correct; it
+   * simply is not what that board is about any more. `/podium` and the mover
+   * panel are unaffected.
+   *
+   * ── Why the sheet subtracts rather than sums a date range ──
+   *
+   * `Daily Team Summary` col B is cumulative, and `Daily Dump`'s date column is
+   * empty on 99.4% of sale rows, so there is no windowed figure to read
+   * anywhere in `BYOB_MASTER`. Photographing the running total when the window
+   * opens and subtracting it is the only thing that can work.
+   *
+   * **Legitimately negative.** A baseline is a photograph of a *proof-gated*
+   * figure, and proof can be revoked after the shutter closes: a sale logged
+   * before the baseline that later has its proof set to `No` shrinks the
+   * all-time total while the photograph still shows the larger number. Three
+   * teams were in this state on 19 August. Nothing clamps it — the comparator
+   * sorts the true value and the card prints it, so a team that went backwards
+   * says so from the bottom of the board.
+   *
+   * `0` when the sheet has not published the column — read optionally, like
+   * `prevWeekRank`, so the wall works before the column exists.
+   */
+  challengeRevenue: number
+  /**
    * This team's rank at the close of last week, **among teams that had banked
    * something by then**, or `undefined`.
    *

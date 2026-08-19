@@ -15,6 +15,7 @@ export function team(overrides: Partial<Team> = {}): Team {
     weekRevenue: 0,
     todayRevenue: 0,
     totalUnits: 0,
+    challengeRevenue: 0,
     ...overrides,
   }
 }

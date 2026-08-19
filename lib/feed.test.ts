@@ -57,6 +57,24 @@ describe('parseTeams', () => {
     expect(parseTeams(csv)[0].totalRevenue).toBe(104_500)
   })
 
+  it('reads challenge_revenue, including a negative one', () => {
+    const csv = [
+      'team_id,venture_name,total_revenue,week_revenue,today_revenue,total_units,challenge_revenue',
+      'SLE-C401,Dosa Crisps,57826,0,0,236,"-3,850"',
+      'SLE-C402,ROOH,37830,3190,0,108,"3,190"',
+    ].join('\n')
+    expect(parseTeams(csv)[0]).toMatchObject({ teamId: 'SLE-C401', challengeRevenue: -3_850 })
+    expect(parseTeams(csv)[1]).toMatchObject({ teamId: 'SLE-C402', challengeRevenue: 3_190 })
+  })
+
+  it('defaults challenge_revenue to 0 when the sheet has not grown the column', () => {
+    const csv = [
+      'team_id,venture_name,total_revenue,week_revenue,today_revenue,total_units',
+      'SLE-C401,Dosa Crisps,57826,0,0,236',
+    ].join('\n')
+    expect(parseTeams(csv)[0]).toMatchObject({ challengeRevenue: 0 })
+  })
+
   it('treats a blank revenue as zero — a team with no sales yet is normal', () => {
     const csv = ['team_id,venture_name,total_revenue,week_revenue,today_revenue,total_units', 'SLE-C401,Aurora,,,,'].join('\n')
     expect(parseTeams(csv)[0]).toMatchObject({

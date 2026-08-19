@@ -100,6 +100,17 @@ function toTeam(row: Record<string, string>): Team | null {
     weekRevenue,
     todayRevenue,
     totalUnits,
+    // `?? 0` rather than a null-check that drops the row: an unreadable
+    // optional column must not discard a row the required six columns fully
+    // describe. The row gate judges whether a whole *fetch* is trustworthy, and
+    // it cannot judge what never reaches it.
+    //
+    // Deliberately **not** in `FEED_HEADERS`, for the reason `prev_week_rank`
+    // is not: every name in that list is required and a missing one throws away
+    // the fetch, so keeping this one optional is what lets the wall run against
+    // a sheet that has not grown the column yet, and pick it up the moment it
+    // does — no second deploy, no version check.
+    challengeRevenue: toNumber(row.challenge_revenue ?? '') ?? 0,
     ...prevWeekRankOf(row.prev_week_rank),
   }
 }
