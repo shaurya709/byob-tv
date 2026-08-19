@@ -1,7 +1,15 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
-import { compareTeams, compareWeek, competingTeams, rankByWeek, rankTeams } from '@/lib/ranking'
+import {
+  compareChallenge,
+  compareTeams,
+  compareWeek,
+  competingTeams,
+  rankByChallenge,
+  rankByWeek,
+  rankTeams,
+} from '@/lib/ranking'
 import { teams } from '@/test/fixtures'
 
 describe('rankTeams', () => {
@@ -75,6 +83,58 @@ describe('rankByWeek', () => {
     ]).slice(0, 2)
     expect(rankByWeek(tied)[0].teamId).toBe('SLE-C401')
     expect(rankByWeek([...tied].reverse())[0].teamId).toBe('SLE-C401')
+  })
+})
+
+describe('rankByChallenge', () => {
+  it('orders by challenge revenue, then all-time revenue, then team id', () => {
+    const ranked = rankByChallenge(
+      teams([
+        { teamId: 'SLE-C401', challengeRevenue: 4_000, totalRevenue: 10_000 },
+        { teamId: 'SLE-C402', challengeRevenue: 9_000, totalRevenue: 9_000 },
+        { teamId: 'SLE-C403', challengeRevenue: 4_000, totalRevenue: 80_000 },
+      ]),
+    )
+    expect(ranked.slice(0, 3).map((team) => team.teamId)).toEqual([
+      'SLE-C402',
+      'SLE-C403',
+      'SLE-C401',
+    ])
+  })
+
+  /**
+   * A baseline is a photograph of a proof-gated figure, and proof can be revoked
+   * after the shutter closes — so a team can sit below the total it started the
+   * fortnight on. It belongs *beneath* the teams that have simply not traded,
+   * not tied with them, which is why nothing clamps this value on its way here.
+   */
+  it('sorts a team below its baseline beneath a team that has not traded', () => {
+    const ranked = rankByChallenge(
+      teams([
+        { teamId: 'SLE-C401', challengeRevenue: -3_850, totalRevenue: 57_826 },
+        { teamId: 'SLE-C402', challengeRevenue: 0, totalRevenue: 12_075 },
+      ]).slice(0, 2),
+    )
+    expect(ranked.map((team) => team.teamId)).toEqual(['SLE-C402', 'SLE-C401'])
+  })
+
+  /**
+   * Day one of a challenge: every team on ₹0, exactly as Monday morning is for
+   * the weekly board. The order has to be the *same* order on the next fetch, or
+   * forty cards reshuffle and every shuffle reads as an overtake.
+   */
+  it('is total when the whole cohort is on zero for the challenge', () => {
+    const dayOne = teams().map((team, index) => ({ ...team, totalRevenue: 1_000 * (42 - index) }))
+    const once = rankByChallenge(dayOne).map((team) => team.teamId)
+    const again = rankByChallenge([...dayOne].reverse()).map((team) => team.teamId)
+    expect(again).toEqual(once)
+    // and it falls back to the standing the wall showed all last fortnight
+    expect(once[0]).toBe('SLE-C401')
+  })
+
+  it('never returns 0 for two different teams', () => {
+    const [a, b] = teams()
+    expect(compareChallenge(a, b)).not.toBe(0)
   })
 })
 

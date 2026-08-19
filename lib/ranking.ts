@@ -46,12 +46,43 @@ export function compareWeek(a: Team, b: Team): number {
   return a.teamId.localeCompare(b.teamId)
 }
 
+/**
+ * This challenge's standing: challenge revenue desc → **all-time** revenue desc
+ * → team ID asc.
+ *
+ * All-time revenue is the second key for the reason `compareWeek` gives, and the
+ * reason survives the change of first key intact: day one of a challenge has
+ * every team on ₹0, and falling back to the standing the wall showed all of last
+ * fortnight is the reading a passer-by already has in their head. Ordering forty
+ * zeroes by team ID would look arbitrary, and would make `/weekly` disagree with
+ * `/podium` for no reason anyone could see.
+ *
+ * **A total order, like every comparator in this file.** On the morning a
+ * challenge opens, forty teams sit on ₹0 — and an order that can shuffle between
+ * two identical fetches is indistinguishable from forty teams overtaking each
+ * other.
+ *
+ * **Sorts the true value, including a negative one.** A team below its baseline
+ * belongs beneath a team that has simply not traded, and its card prints the
+ * negative rather than hiding it. Nothing is clamped, here or at the card —
+ * clamping either would collapse the two into a tie.
+ */
+export function compareChallenge(a: Team, b: Team): number {
+  if (b.challengeRevenue !== a.challengeRevenue) return b.challengeRevenue - a.challengeRevenue
+  if (b.totalRevenue !== a.totalRevenue) return b.totalRevenue - a.totalRevenue
+  return a.teamId.localeCompare(b.teamId)
+}
+
 export function rankTeams(teams: readonly Team[]): Team[] {
   return [...teams].sort(compareTeams)
 }
 
 export function rankByWeek(teams: readonly Team[]): Team[] {
   return [...teams].sort(compareWeek)
+}
+
+export function rankByChallenge(teams: readonly Team[]): Team[] {
+  return [...teams].sort(compareChallenge)
 }
 
 /**
