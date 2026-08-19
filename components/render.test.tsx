@@ -2,18 +2,19 @@
 import { readFileSync } from 'node:fs'
 import { act } from 'react'
 import { createRoot } from 'react-dom/client'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { FleaDial } from '@/components/FleaDial'
 import { Podium, podiumTeams } from '@/components/Podium'
 import { VentureCard } from '@/components/VentureCard'
 import { pagesOf } from '@/components/VentureName'
+import { WallHeader } from '@/components/WallHeader'
 import { ROW_LENGTH, WeeklyGrid, rowsOf } from '@/components/WeeklyGrid'
 import { SOLID_RANKS } from '@/config'
 import type { CountdownState } from '@/lib/countdown'
 import { formatRupees, ordinal } from '@/lib/format'
 import { competingTeams, rankByChallenge, rankTeams } from '@/lib/ranking'
-import { team, teams } from '@/test/fixtures'
+import { cohort, team, teams } from '@/test/fixtures'
 
 /**
  * Smoke tests: every surface renders with mock data and puts the right words on
@@ -260,6 +261,55 @@ describe('podiumTeams', () => {
       'SLE-C402',
       'SLE-C403',
     ])
+  })
+})
+
+describe('WallHeader', () => {
+  const snapshotAt = (start: string, end: string) => ({
+    teams: teams(),
+    cohort: cohort({ challenge_start_iso: start, challenge_end_iso: end }),
+  })
+
+  const WINDOW = ['2026-08-18T00:00:00+05:30', '2026-08-31T09:00:00+05:30'] as const
+
+  /**
+   * `Date` only, so the component's `setInterval` stays real and `act` behaves.
+   * The clock has to be pinned rather than derived from `Date.now()`: a relative
+   * window would make the closed-challenge case below pass or fail depending on
+   * the day the suite happened to run, which is not a test.
+   */
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('counts the day while the challenge is open', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-08-19T12:41:00+05:30'))
+    const text = render(<WallHeader snapshot={snapshotAt(...WINDOW)} label="2-Week Challenge" />)
+    expect(text).toContain('2-Week Challenge')
+    expect(text).toContain('Day')
+    expect(text).toContain('2')
+    expect(text).toContain('of 14')
+  })
+
+  /**
+   * ── The fifteen hours after the deadline ──
+   *
+   * Challenge 1 closes at 09:00 on 31 August and challenge 2 opens at midnight,
+   * so the wall spends the rest of the 31st with the challenge over and the
+   * figures frozen. The day count leaves rather than sticking on "Day 14 of 14",
+   * and the band has to stay a band without it — heading and provenance both
+   * still present, nothing collapsed into the hole it left.
+   */
+  it('drops the day count once the deadline passes, and stays a band', () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    // 14:00 on 31 August: five hours after the close, seventeen before the next.
+    vi.setSystemTime(new Date('2026-08-31T14:00:00+05:30'))
+    const text = render(<WallHeader snapshot={snapshotAt(...WINDOW)} label="2-Week Challenge" />)
+    expect(text).toContain('2-Week Challenge')
+    expect(text).not.toContain('Day')
+    // Provenance survives, so a frozen results board still says when it last read.
+    expect(text).toContain('Updated')
   })
 })
 

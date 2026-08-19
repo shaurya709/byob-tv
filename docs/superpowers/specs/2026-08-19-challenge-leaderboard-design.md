@@ -99,16 +99,43 @@ version check, and no window where a half-migrated sheet blanks the wall.
 Until `challenge_revenue` exists, a team's challenge revenue reads 0 and the board sorts
 on the all-time tie-break. That is a legible state, not a broken one.
 
-### The rollover is one operation with three parts
+### Closing challenge 1 — freeze at 09:00 on 31 August
 
-On 1 September, in a single edit:
+`challenge_revenue` is `total_revenue − challenge_baseline`, and that subtraction has
+**no upper bound**. Left alone it keeps counting sales logged after the deadline, so a
+team banking ₹5,000 at 2pm on the 31st would still climb five hours after the challenge
+closed — on a board that looks entirely correct. Nothing in the data can prevent this:
+`total_revenue` is cumulative and carries no date, which is the same absence that forced
+the baseline-and-subtract approach in the first place.
 
-1. Re-freeze `challenge_baseline` to each team's `total_revenue` at the close of 31 Aug.
-2. Bump `current_challenge` to `2`.
-3. Move `challenge_start_iso` and `challenge_end_iso` to the new window.
+**Decided: freeze the column by hand at 09:00.** Select `H2:H43` → Copy → *Paste special
+▸ Values only*, over itself. The formulas become static numbers, the standings lock to
+the final result, and the wall spends the rest of the 31st as a results board — the band
+already shows nothing once the deadline passes, so the two states agree.
 
-Doing (1) without (2) means the wall does not know a reset happened. Doing (2) without
-(1) means nothing resets. They are one action.
+### Opening challenge 2 — four parts, in one edit
+
+On 1 September:
+
+1. Re-photograph `challenge_baseline`: `C2:C43` → Copy → `G2` → *Paste special ▸ Values only*.
+2. **Restore the `challenge_revenue` formula, which the freeze destroyed.** Select
+   `H2:H43` → **Delete** — the whole range, not just `H2` — then type into `H2`:
+   ```
+   =IF(A2:A43="","",C2:C43-G2:G43)
+   ```
+   Deleting the whole range first is not optional: `H2` spills down to `H43`, and a spill
+   into cells still holding the frozen numbers is blocked outright.
+3. Bump `current_challenge` to `2`.
+4. Move `challenge_start_iso` and `challenge_end_iso` to the new window.
+
+**Step 2 is the one that will be forgotten, and it is the one that fails silently.** Skip
+it and every card keeps printing challenge 1's final figure for a fortnight: no error, no
+blank, no stale timestamp — the as-of stamp keeps ticking because the *other* columns are
+still live. A wall that is confidently wrong and looks healthy is this project's whole
+failure mode, and this is the one hand-operated step that can produce it.
+
+Skipping (1) means nothing resets. Skipping (3) means the wall does not know a reset
+happened. They are one action.
 
 ## 4. Ranking — decided
 
