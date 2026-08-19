@@ -38,7 +38,7 @@ import type { Team, TeamId } from '@/lib/types'
 const DEV = process.env.NODE_ENV === 'development'
 
 /** Queued by the trigger on click, drained by the board on settle. */
-let pending: { teamId: TeamId; weekRevenue: number }[] = []
+let pending: { teamId: TeamId; challengeRevenue: number }[] = []
 
 /**
  * What the climb is worth, in revenue.
@@ -50,11 +50,11 @@ let pending: { teamId: TeamId; weekRevenue: number }[] = []
  */
 export function devQueueClimb(attacker: Team, defender: Team, above: Team | undefined): void {
   if (!DEV) return
-  const ceiling = above?.weekRevenue ?? defender.weekRevenue + 2
-  const gap = ceiling - defender.weekRevenue
-  const weekRevenue =
-    gap > 2 ? defender.weekRevenue + Math.floor(gap / 2) : defender.weekRevenue + 1
-  pending.push({ teamId: attacker.teamId, weekRevenue })
+  const ceiling = above?.challengeRevenue ?? defender.challengeRevenue + 2
+  const gap = ceiling - defender.challengeRevenue
+  const challengeRevenue =
+    gap > 2 ? defender.challengeRevenue + Math.floor(gap / 2) : defender.challengeRevenue + 1
+  pending.push({ teamId: attacker.teamId, challengeRevenue })
 }
 
 export function useDevOvertakes(teams: readonly Team[]): {
@@ -73,7 +73,7 @@ export function useDevOvertakes(teams: readonly Team[]): {
     pending = []
     setApplied((prev) => {
       const next = new Map(prev)
-      for (const p of taken) next.set(p.teamId, p.weekRevenue)
+      for (const p of taken) next.set(p.teamId, p.challengeRevenue)
       return next
     })
   }, [])
@@ -86,8 +86,8 @@ export function useDevOvertakes(teams: readonly Team[]): {
   const adjusted = useMemo(() => {
     if (!DEV || applied.size === 0) return teams
     return teams.map((t) => {
-      const week = applied.get(t.teamId)
-      return week === undefined ? t : { ...t, weekRevenue: week }
+      const figure = applied.get(t.teamId)
+      return figure === undefined ? t : { ...t, challengeRevenue: figure }
     })
   }, [teams, applied])
 

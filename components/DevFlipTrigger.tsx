@@ -1,7 +1,7 @@
 'use client'
 
 import { devQueueClimb } from '@/lib/devOvertake'
-import { rankByWeek } from '@/lib/ranking'
+import { rankByChallenge } from '@/lib/ranking'
 import { clearKicks, enqueueKicks } from '@/lib/storage'
 import type { OvertakeEvent, Team } from '@/lib/types'
 
@@ -66,7 +66,7 @@ export function DevFlipTrigger({
 }) {
   if (process.env.NODE_ENV === 'production') return null
 
-  const ranked = rankByWeek(teams)
+  const ranked = rankByChallenge(teams)
   const fire = (from: number, to: number) => {
     const attacker = ranked[from - 1]
     const defender = ranked[to - 1]

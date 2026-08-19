@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { WATCH_RANKS_WEEKLY } from '@/config'
 import { detect } from '@/lib/overtake'
-import { rankByWeek } from '@/lib/ranking'
+import { rankByChallenge, rankByWeek } from '@/lib/ranking'
 import { teams } from '@/test/fixtures'
 import type { BoardState, Team } from '@/lib/types'
 
@@ -29,6 +29,65 @@ function run(
     earned: (team) => team.weekRevenue,
   })
 }
+
+/** `board`, scored the way `/weekly` now scores: on the challenge figure. */
+function challengeBoard(overrides: Partial<Team>[] = []): Team[] {
+  return teams(overrides).map((team, index) => ({
+    ...team,
+    challengeRevenue: team.challengeRevenue || 1_000 * (42 - index),
+    totalRevenue: team.totalRevenue || 1_000 * (42 - index),
+  }))
+}
+
+/** `run`, ranked and scored the way `/weekly`'s spec now does. */
+function runChallenge(
+  prev: BoardState | null,
+  rows: readonly Team[],
+  challenge: number | null = 1,
+) {
+  return detect(prev, {
+    ranked: rankByChallenge(rows),
+    week: challenge,
+    watchTo: WATCH_RANKS_WEEKLY,
+    earned: (team) => team.challengeRevenue,
+  })
+}
+
+describe('a challenge board', () => {
+  it('speaks when a team climbs inside an open challenge', () => {
+    const before = runChallenge(null, challengeBoard()).state
+    const { events } = runChallenge(
+      before,
+      challengeBoard([{ teamId: 'SLE-C410', challengeRevenue: 41_500 }]),
+    )
+    expect(events.length).toBeGreaterThan(0)
+  })
+
+  /**
+   * 1 September. Every baseline is re-photographed, every figure drops to zero
+   * together, and the board reshuffles into all-time order. That is a reset, not
+   * forty overtakes, and the challenge number is what tells the two apart.
+   */
+  it('goes quiet when the challenge number rolls over', () => {
+    const before = runChallenge(null, challengeBoard(), 1).state
+    const { events } = runChallenge(
+      before,
+      challengeBoard([{ teamId: 'SLE-C410', challengeRevenue: 41_500 }]),
+      2,
+    )
+    expect(events).toEqual([])
+  })
+
+  it('is silent through the whole-board reset itself', () => {
+    const before = runChallenge(null, challengeBoard(), 1).state
+    const reset = runChallenge(
+      before,
+      teams().map((team) => ({ ...team, challengeRevenue: 0 })),
+      2,
+    )
+    expect(reset.events).toEqual([])
+  })
+})
 
 describe('seeding', () => {
   it('records everything and animates nothing on a wall with no memory', () => {

@@ -7,8 +7,8 @@ import { DevFlipTrigger } from '@/components/DevFlipTrigger'
 import { WallHeader } from '@/components/WallHeader'
 import { WeeklyGrid } from '@/components/WeeklyGrid'
 import { WATCH_RANKS_WEEKLY } from '@/config'
-import { openWeek } from '@/lib/feed'
-import { competingTeams, rankByWeek } from '@/lib/ranking'
+import { currentChallenge, openWeek } from '@/lib/feed'
+import { competingTeams, rankByChallenge } from '@/lib/ranking'
 import { useDevOvertakes } from '@/lib/devOvertake'
 import { useKick } from '@/lib/useKick'
 import { useWallData, type BoardSpec } from '@/lib/useWallData'
@@ -29,14 +29,23 @@ import { useWallData, type BoardSpec } from '@/lib/useWallData'
  * also what makes the ending invisible: both cards finish exactly on the
  * positions the re-sorted board is about to give them.
  */
-const BOARD: BoardSpec = {
+// Exported so `board.test.ts` can assert the wiring. Both ways of getting this
+// wrong are invisible on screen — see that file for why they earn a test.
+export const BOARD: BoardSpec = {
   name: 'weekly',
-  rank: (teams) => rankByWeek(competingTeams(teams)),
-  earned: (team) => team.weekRevenue,
+  rank: (teams) => rankByChallenge(competingTeams(teams)),
+  earned: (team) => team.challengeRevenue,
   // Ranks 1–20 are the top two rows of the grid. The old justification was "the
   // whole first column", which the columns took with them — see the spec's
   // WATCH_RANKS_WEEKLY note for why the number survived the reasoning.
   watchTo: WATCH_RANKS_WEEKLY,
+  // **Not `openWeek`, which is the default.** This board's figure resets when a
+  // challenge rolls over — a Tuesday — and not on the Monday a programme week
+  // turns. The two clocks never align: week 7 spans both the end of challenge 1
+  // and the start of challenge 2. Left at the default the wall would go deaf to
+  // real overtakes every Monday and stay talkative through the one tick where
+  // forty figures drop to zero together.
+  period: currentChallenge,
 }
 
 export default function WeeklyPage() {

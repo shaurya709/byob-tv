@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
 import { VentureCard } from '@/components/VentureCard'
 import { STAGGER, type FlipCue } from '@/lib/flipTimeline'
-import { rankByWeek } from '@/lib/ranking'
+import { rankByChallenge } from '@/lib/ranking'
 import type { OvertakeEvent, Team } from '@/lib/types'
 
 /**
@@ -74,9 +74,16 @@ const ROW_HEIGHTS = [
   'var(--h-row-4)',
 ] as const
 
-/** Ranks 1–40 in four rows of ten. Short boards simply produce shorter rows. */
+/**
+ * Ranks 1–40 in four rows of ten. Short boards simply produce shorter rows.
+ *
+ * **This sorts again, independently of the page's board spec, and the two must
+ * agree.** If the grid renders in one order while `detect` reasons about
+ * another, an overtake animates the wrong two cards — on a board that otherwise
+ * looks entirely correct. `app/weekly/board.test.ts` pins them together.
+ */
 export function rowsOf(teams: readonly Team[]): Team[][] {
-  const ranked = rankByWeek(teams)
+  const ranked = rankByChallenge(teams)
   return ROW_HEIGHTS.map((_, i) => ranked.slice(i * ROW_LENGTH, (i + 1) * ROW_LENGTH))
 }
 
