@@ -12,7 +12,7 @@ import { ROW_LENGTH, WeeklyGrid, rowsOf } from '@/components/WeeklyGrid'
 import { SOLID_RANKS } from '@/config'
 import type { CountdownState } from '@/lib/countdown'
 import { formatRupees, ordinal } from '@/lib/format'
-import { competingTeams, rankByWeek, rankTeams } from '@/lib/ranking'
+import { competingTeams, rankByChallenge, rankTeams } from '@/lib/ranking'
 import { team, teams } from '@/test/fixtures'
 
 /**
@@ -265,18 +265,18 @@ describe('podiumTeams', () => {
 
 describe('WeeklyGrid', () => {
   const board = () =>
-    competingTeams(teams().map((row, index) => ({ ...row, weekRevenue: 1_000 * (42 - index) })))
+    competingTeams(teams().map((row, index) => ({ ...row, challengeRevenue: 1_000 * (42 - index) })))
 
   /**
    * Identified by figure, not by name: the card no longer prints the venture
-   * name at all. The fixtures give every team a distinct week revenue, so the
-   * figures are what say who is on the board.
+   * name at all. The fixtures give every team a distinct challenge revenue, so
+   * the figures are what say who is on the board.
    */
   it('puts all forty competing teams on screen at once', () => {
     const text = render(<WeeklyGrid teams={board()} />)
-    const ranked = rankByWeek(board())
-    expect(text).toContain(formatRupees(ranked[0].weekRevenue))
-    expect(text).toContain(formatRupees(ranked[39].weekRevenue))
+    const ranked = rankByChallenge(board())
+    expect(text).toContain(formatRupees(ranked[0].challengeRevenue))
+    expect(text).toContain(formatRupees(ranked[39].challengeRevenue))
     // The spares are not on the board at all.
     expect(ranked).toHaveLength(40)
     expect(ranked.some((t) => t.teamId === 'SLE-C441')).toBe(false)
@@ -316,9 +316,29 @@ describe('VentureCard', () => {
    * who is moving today. Silence is the honest answer for everyone else.
    */
   it('shows nothing rather than a zero for a team that has not sold today', () => {
-    const text = render(<VentureCard team={team({ weekRevenue: 4_000, todayRevenue: 0 })} rank={7} />)
+    const text = render(<VentureCard team={team({ challengeRevenue: 4_000, todayRevenue: 0 })} rank={7} />)
     expect(text).toContain(formatRupees(4_000))
     expect(text).not.toContain(formatRupees(0))
+  })
+
+  it('prints the challenge figure, not the week', () => {
+    const text = render(
+      <VentureCard team={team({ challengeRevenue: 16_141, weekRevenue: 999 })} rank={7} />,
+    )
+    expect(text).toContain(formatRupees(16_141))
+    expect(text).not.toContain(formatRupees(999))
+  })
+
+  /**
+   * A team can sit below the total it started the fortnight on, when proof is
+   * revoked on a sale logged before the baseline was photographed. Three were on
+   * 19 August. The card says so rather than hiding it — and `compareChallenge`
+   * has already put such a team at the bottom of the board, beneath the teams
+   * that have simply not traded.
+   */
+  it('prints a team below its baseline in full', () => {
+    const text = render(<VentureCard team={team({ challengeRevenue: -3_850 })} rank={38} />)
+    expect(text).toContain('-₹3,850')
   })
 
   /**
@@ -330,7 +350,7 @@ describe('VentureCard', () => {
    */
   it('prints the week figure and today underneath it', () => {
     const text = render(
-      <VentureCard team={team({ weekRevenue: 12_000, todayRevenue: 3_000 })} rank={7} />,
+      <VentureCard team={team({ challengeRevenue: 12_000, todayRevenue: 3_000 })} rank={7} />,
     )
     expect(text).toContain(formatRupees(12_000))
     expect(text).toContain(formatRupees(3_000))
@@ -388,7 +408,7 @@ describe('VentureCard', () => {
   })
 
   it('prints no today tag on a card with no day yet', () => {
-    const html = markup(<VentureCard team={team({ weekRevenue: 9_000, todayRevenue: 0 })} rank={4} />)
+    const html = markup(<VentureCard team={team({ challengeRevenue: 9_000, todayRevenue: 0 })} rank={4} />)
     expect(html).toContain('tv-card-today')
     expect(html).not.toContain('tv-card-today-tag')
   })
@@ -401,7 +421,7 @@ describe('VentureCard', () => {
    * number where those had a gap. The em dash stays gone; a zero is not a dash.
    */
   it('prints a zero week as a figure', () => {
-    const text = render(<VentureCard team={team({ weekRevenue: 0, todayRevenue: 0 })} rank={38} />)
+    const text = render(<VentureCard team={team({ challengeRevenue: 0, todayRevenue: 0 })} rank={38} />)
     expect(text).toContain(formatRupees(0))
     expect(text).not.toContain('—')
   })
@@ -415,18 +435,18 @@ describe('VentureCard', () => {
    * a forty-card board.
    */
   it('keeps the figure on a pale card when the team traded', () => {
-    const text = render(<VentureCard team={team({ weekRevenue: 6_440 })} rank={25} />)
+    const text = render(<VentureCard team={team({ challengeRevenue: 6_440 })} rank={25} />)
     expect(text).toContain(formatRupees(6_440))
   })
 
   it('prints the zero on a solid card too', () => {
     // A Monday: someone holds rank 3 on a week that has barely started.
-    const text = render(<VentureCard team={team({ weekRevenue: 0, todayRevenue: 0 })} rank={3} />)
+    const text = render(<VentureCard team={team({ challengeRevenue: 0, todayRevenue: 0 })} rank={3} />)
     expect(text).toContain(formatRupees(0))
   })
 
   it('takes the surface from the rank and not from the revenue', () => {
-    const earner = team({ weekRevenue: 6_440 })
+    const earner = team({ challengeRevenue: 6_440 })
     expect(markup(<VentureCard team={earner} rank={SOLID_RANKS} />)).not.toContain('tv-card-quiet')
     expect(markup(<VentureCard team={earner} rank={SOLID_RANKS + 1} />)).toContain('tv-card-quiet')
   })
@@ -438,7 +458,7 @@ describe('VentureCard', () => {
    * a dark chip. A dead CSS rule reports nothing; this does.
    */
   it('inks a pale card\'s rank for the pale surface', () => {
-    const earner = team({ weekRevenue: 6_440 })
+    const earner = team({ challengeRevenue: 6_440 })
     expect(markup(<VentureCard team={earner} rank={SOLID_RANKS + 1} />)).toContain(
       'tv-card-rank-quiet',
     )
@@ -474,7 +494,7 @@ describe('VentureCard', () => {
   it('fades a card in a flip and leaves its surface alone', () => {
     const cue = { role: 'attacker', dx: 0, dy: -120, shift: 0, scale: 0.82 } as const
     const html = markup(
-      <VentureCard team={team({ weekRevenue: 6_440 })} rank={SOLID_RANKS + 3} cue={cue} />,
+      <VentureCard team={team({ challengeRevenue: 6_440 })} rank={SOLID_RANKS + 3} cue={cue} />,
     )
     expect(html).toContain('tv-card-away')
     expect(html).toContain('tv-card-detail')
@@ -484,7 +504,7 @@ describe('VentureCard', () => {
   })
 
   it('leaves a card with no cue unfaded', () => {
-    const html = markup(<VentureCard team={team({ weekRevenue: 6_440 })} rank={9} />)
+    const html = markup(<VentureCard team={team({ challengeRevenue: 6_440 })} rank={9} />)
     expect(html).not.toContain('tv-card-away')
   })
 })

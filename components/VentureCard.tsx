@@ -321,19 +321,30 @@ export function VentureCard({
         <div className="tv-card-name tv-card-detail">{nameOf(team)}</div>
 
         {/* The figure the board exists to show, **on every card, including a
-            week of zero**.
+            challenge of zero and a challenge below zero**.
 
             It used to print nothing at all for a team that had not traded, on
             the argument that absence is carried by the card being quiet rather
             than by a character in a box. The board disagreed in practice: ten
             cards with a name and a blank where every other card has a number
             read as ten cards that failed to load, not as ten teams on nothing.
-            A zero is a fact about a team's week and it says so. */}
+            A zero is a fact about a team's fortnight and it says so.
+
+            **A negative prints as a negative.** A team can sit below the total
+            it started the fortnight on — proof revoked on a sale logged before
+            the baseline was photographed — and that is what happened, so the
+            card says it. The board's ordering already agrees:
+            `compareChallenge` sorts the true value, so such a team is at the
+            bottom rather than tied with the teams that simply have not traded.
+            Nothing is clamped, here or in the comparator; clamping either would
+            collapse the two into one. The `-₹0` a sub-rupee shortfall used to
+            print is fixed in `formatRupees`, where it belongs — it was a
+            rounding bug, not a rule about this board. */}
         <div
           className="tv-figure tv-card-week tv-card-detail"
           style={{ font: 'var(--t-tv-card-week)', color: 'var(--card-fig-ink)' }}
         >
-          {formatRupees(team.weekRevenue)}
+          {formatRupees(team.challengeRevenue)}
         </div>
 
         {/* ── Today, back on the card ──

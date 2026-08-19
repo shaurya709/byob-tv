@@ -13,7 +13,18 @@ const RUPEES = new Intl.NumberFormat('en-IN', {
 const PLAIN = new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 })
 
 export function formatRupees(value: number): string {
-  return RUPEES.format(Math.round(value))
+  // `|| 0`, and not a comparison. `Math.round(-0.5)` is **negative zero**, which
+  // `Intl.NumberFormat` faithfully renders as `-₹0` — and `-0 === 0` is `true`,
+  // so `rounded < 0` can never catch it while `rounded === 0` would need a
+  // second branch to say the same thing. At whole-rupee precision the value *is*
+  // zero, so the sign describes precision already discarded, and a minus in
+  // front of a zero on a wall reads as a fault rather than a fact.
+  //
+  // Every real negative passes through untouched. Reached only by `/weekly`'s
+  // challenge figure, which can sit below its baseline when proof is revoked on
+  // a sale logged before the photograph was taken; every figure `/podium` prints
+  // is a non-negative all-time total.
+  return RUPEES.format(Math.round(value) || 0)
 }
 
 export function formatCount(value: number): string {
