@@ -11,7 +11,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 # BYOB Campus TV Wall
 
 Two pages displayed on TVs across Mesa campus during BYOB Cohort 2026, driven from a
-laptop over HDMI inside a slideshow rotation someone else runs.
+laptop over HDMI. The wall rotates between its own two slides every thirty seconds; if it
+also sits inside a wider campus slideshow, that outer rotation is someone else's.
 
 **This is a display system, not a dashboard.** Nobody interacts with it. It runs
 unattended for weeks. The bar: on a wall nobody is actively watching, a bug that renders
@@ -40,7 +41,13 @@ npm run build        # next build
 - **No filler content.** Empty is a valid state. The wall being quiet is what makes it
   loud when something happens. No spinners, ever — first paint reads cached CSV.
 - **No trigger types beyond the 15 in the design.** The list was deliberately narrowed.
-- **No slideshow or rotation logic.** External system.
+- **The rotation between the two slides is ours, and it is the only rotation logic
+  here.** `components/Rotator.tsx`, thirty seconds a slide, by soft navigation. That
+  reverses the original "external system" rule, which assumed the campus slideshow drove
+  both URLs. It must never become a page reload: the TV runs fullscreen with nobody at
+  the laptop, and a reload drops out of fullscreen for good. Nothing else about the
+  rotation — ordering with the other Mesa slides, what else is in the loop — belongs
+  here.
 
 ## Domain
 

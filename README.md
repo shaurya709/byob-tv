@@ -121,11 +121,26 @@ instant is why the countdown is correct on a laptop set to any timezone.
 **The 10:00 opening time is assumed, not confirmed.** That is recorded as a
 comment in `config.ts` and deliberately never shown on screen.
 
-## How it behaves inside the slideshow
+## How the two slides rotate
 
-Something else drives the rotation between these pages and the other Mesa
-slides; this project contains no rotation logic and no way to switch between the
-two pages.
+`components/Rotator.tsx` swaps `/weekly` and `/podium` every **30 seconds**. It is
+mounted once in the root layout and renders nothing.
+
+The swap is a **client-side navigation, never a reload** — the document is never
+replaced, so the wall stays fullscreen. That is the whole reason it works this
+way: the TV runs fullscreen with nobody at the laptop, and a reload would drop it
+to a windowed browser and leave it there for weeks.
+
+Add **`?still`** to either URL to stop the rotation and hold that slide —
+`localhost:3000/podium?still`. That is what makes a slide measurable, since
+`scripts/measure-fit.mjs` walks four viewport sizes on one URL and would
+otherwise be measuring whichever board happened to be up.
+
+If this wall also sits inside a wider campus slideshow, that outer rotation is
+someone else's and this project knows nothing about it. **Do not point it at
+these two URLs** — two rotators produce a slide that changes early, at irregular
+intervals, for no visible reason. Point it at `/weekly` alone and let this handle
+the rest.
 
 Each page is self-sufficient. On becoming visible it fetches immediately,
 reconciles against localStorage to work out what has happened since it was last

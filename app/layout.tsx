@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import localFont from 'next/font/local'
+
+import { Rotator } from '@/components/Rotator'
 import './globals.css'
 
 /**
@@ -132,7 +134,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         condensed.variable,
       ].join(' ')}
     >
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* Renders nothing. It is the wall's slideshow — thirty seconds a slide,
+            by soft navigation, so the page never reloads and never drops out of
+            fullscreen. Mounted here rather than in either page because it has to
+            outlive both of them: a rotator inside `/weekly` would unmount at the
+            moment it navigated away and never arm the swap back. */}
+        <Rotator />
+      </body>
     </html>
   )
 }
