@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-import { takeKick } from '@/lib/storage'
+import { clearKicks, takeKick } from '@/lib/storage'
 import type { OvertakeEvent } from '@/lib/types'
 
 /**
@@ -40,6 +40,31 @@ export type Kick = {
 export function useKick(board: string, queueVersion: number): Kick {
   const [playing, setPlaying] = useState<OvertakeEvent | null>(null)
   const settled = useCallback(() => setPlaying(null), [])
+
+  /**
+   * Anything already in the queue at mount is stale news. Drop it.
+   *
+   * Only a mounted board detects and enqueues, and a mounted board drains within
+   * milliseconds — so a queue that is *not* empty here can only hold what was
+   * left behind when this slide last rotated away. Meanwhile the board re-sorted
+   * itself: the CSV cache is written on every tick, freeze or no freeze, so the
+   * remount paints the new order before this hook ever runs.
+   *
+   * Playing that leftover against the new order is the failure this project is
+   * built to avoid, because it renders perfectly. `cuesFor` picks the cards to
+   * animate by **board position** — `kick.fromRank`, `kick.toRank` — so a stale
+   * event moves whichever ventures now occupy those slots, and the wall shows a
+   * confident, well-timed overtake between two teams that did not overtake
+   * anyone. Discarding is also what the queue already does with superseded news
+   * everywhere else: latest wins, and an event nobody could see before the slide
+   * left is not the latest any more.
+   *
+   * Declared above the drain below so it runs first — effects fire in
+   * declaration order, so the drain finds the queue already empty.
+   */
+  useEffect(() => {
+    clearKicks(board)
+  }, [board])
 
   // Take the next event, but only while nothing is playing. The dependency on
   // `playing` is what makes this run again the moment the previous one ends.

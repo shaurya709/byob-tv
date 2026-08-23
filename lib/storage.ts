@@ -145,7 +145,14 @@ export function enqueueKicks(board: string, events: readonly OvertakeEvent[]): v
   writeJson(KEYS.queue(board), fresh.slice(-KICK_QUEUE_CAP))
 }
 
-/** Drop everything waiting. Development only; nothing in the wall's own path calls this. */
+/**
+ * Drop everything waiting.
+ *
+ * Called on every board mount by `useKick`, which is how a kick left behind by a
+ * slide rotation is prevented from playing against a board that re-sorted while
+ * it was away, and by the dev triggers' reset. Nothing else in the wall's path
+ * calls it — the ordinary drain is `takeKick`.
+ */
 export function clearKicks(board: string): void {
   writeJson(KEYS.queue(board), [])
 }
