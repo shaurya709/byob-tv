@@ -28,7 +28,7 @@ import type { Snapshot } from '@/lib/types'
  * team does today.
  *
  * **The Mesa Flea countdown used to hold this slot.** It moved out when the
- * board became a two-week challenge with a hard close: the Flea is still the
+ * board became a fixed-window challenge with a hard close: the Flea is still the
  * horizon, but the fortnight is the deadline, and the deadline is what a
  * passer-by needs. The Flea has not left the wall — `/podium` carries its own
  * full countdown and the rotation still shows it.

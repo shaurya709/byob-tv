@@ -94,7 +94,7 @@ export default function WeeklyPage() {
           `openWeek` is still read: `/weekly`'s board is the *open week's*
           revenue whatever the heading says, and the value is what the dev
           trigger stamps into an event id. */}
-      <WallHeader snapshot={snapshot} label="2-Week Challenge" />
+      <WallHeader snapshot={snapshot} label="10-Day Challenge" />
 
       <div
         style={{

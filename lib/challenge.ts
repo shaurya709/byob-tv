@@ -1,7 +1,7 @@
 import { IST_TIMEZONE } from '@/config'
 
 /**
- * Which day of the current two-week challenge it is, and what the baseline day
+ * Which day of the current challenge it is, and what the baseline day
  * was called. Two pure functions.
  *
  * ── Why there is no timezone arithmetic here ──

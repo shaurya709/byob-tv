@@ -198,7 +198,7 @@ export function openWeek(cohort: Cohort): number | null {
 }
 
 /**
- * Which two-week challenge is open, or `null` if the sheet has not said.
+ * Which challenge is open, or `null` if the sheet has not said.
  *
  * This is `/weekly`'s answer to the question `openWeek` answers for a weekly
  * board: *did the figure this board ranks on just reset to zero for everyone at
