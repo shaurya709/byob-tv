@@ -104,13 +104,28 @@ Chosen cadence: **every 5 minutes**, flea day only.
 | UrlFetch | 12h × 12 runs × 40 teams = **5,760** against a 20,000/day quota |
 | Runtime | ~20s a run × 144 runs ≈ **48 min** |
 
-Runtime is the tighter budget, not fetch count. **`verifyPayments` is suspended
-for flea day** — it opens 40 workbooks per run and nothing needs it live.
+Runtime is the tighter budget, not fetch count. **Neither existing trigger needs
+suspending:** `pullPayments` fires between 02:00 and 03:00 and `verifyPayments`
+between 03:00 and 04:00, so neither overlaps the market. They share only the
+daily runtime budget, and all three together sit well inside a Workspace
+account's six hours.
+
+The two also hold **different locks, deliberately**. The pull takes the document
+lock; `verifyPayments` keeps the script lock. The invariant the pull needs is
+only "no two pulls at once", and sharing verify's lock would have made a pull
+skip whenever verify was running — verify holds it for minutes while opening
+forty workbooks — introducing a starvation that never existed before.
 
 The trigger reads `Flea_Config!B1/B2` and **deletes itself after the window
-closes**, so a forgotten trigger cannot burn quota for weeks. `pullPayments` also
-gains the `as_of` stamp, so the pipeline is observable from today rather than
-first being trusted on the day.
+closes**, so a forgotten trigger cannot burn quota for weeks. `installFleaTrigger`
+additionally records the window's end in Script Properties as it arms, and that
+record is consulted **only when the config cannot be read** — a tab deleted,
+renamed or overwritten would otherwise leave the trigger unable to conclude the
+flea was over, which is precisely the failure the self-deletion exists to
+prevent. It is not a hardcoded date; it is whatever the config said at arm time.
+
+`pullPayments` also gains the `as_of` stamp, so the pipeline is observable from
+today rather than first being trusted on the day.
 
 ## 6. Wall — one more board, no new machinery
 
