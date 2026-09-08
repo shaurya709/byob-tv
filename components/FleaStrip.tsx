@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { TICK_MS, TICK_SLOW_MS } from '@/config'
 import { FleaDial } from '@/components/FleaDial'
 import { computeCountdownState, type CountdownState } from '@/lib/countdown'
+import { devClockSkew } from '@/lib/devClock'
 
 /**
  * How long until the Mesa Flea, in the corner of both slides — a small calendar
@@ -31,20 +32,12 @@ import { computeCountdownState, type CountdownState } from '@/lib/countdown'
  *
  * ── Faking the clock, in development only ──
  *
- * `?now=2026-09-05T23:00:00+05:30` on the URL skews this component's clock —
- * and only this component's — so every mode can be watched on a real page. The
- * check is `NODE_ENV`, inlined at build time, so a production build carries no
- * trace of it: a wall accidentally launched with a leftover query param must
- * not spend the cohort counting down from the wrong day.
+ * `?now=2026-09-05T23:00:00+05:30` on the URL skews this component's clock so
+ * every mode can be watched on a real page. `devClockSkew` moved to
+ * `lib/devClock.ts` when the market board needed the same skew: it is a
+ * `NODE_ENV`-guarded safety helper, and two copies of a guard is how one of them
+ * quietly loses its check.
  */
-
-function devClockSkew(): number {
-  if (process.env.NODE_ENV !== 'development') return 0
-  const raw = new URLSearchParams(window.location.search).get('now')
-  if (raw === null) return 0
-  const parsed = Date.parse(raw)
-  return Number.isNaN(parsed) ? 0 : parsed - Date.now()
-}
 
 export function FleaStrip({ at }: { at: Date | null }) {
   const [state, setState] = useState<CountdownState | null>(null)
