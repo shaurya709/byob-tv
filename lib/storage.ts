@@ -38,6 +38,17 @@ export const KEYS = {
   csv: `${PREFIX}.csv`,
   board: (board: string) => `${PREFIX}.board.${board}`,
   queue: (board: string) => `${PREFIX}.queue.${board}`,
+  /**
+   * The market board's CSV, in a key of its own.
+   *
+   * **Not folded into `csv`, deliberately.** That key holds both wall CSVs in
+   * one object behind one type guard, and `writeCsvCache` overwrites the whole
+   * thing every sixty seconds. A market CSV sharing it would mean a torn write
+   * or a quota error on the flea side taking `/podium`'s first-paint cache with
+   * it — and the market tab is the newest, least proven source on the wall.
+   * A separate key makes that impossible rather than merely unlikely.
+   */
+  market: `${PREFIX}.market`,
 } as const
 
 /**
@@ -89,6 +100,26 @@ export function readCsvCache(): CsvCache | null {
 
 export function writeCsvCache(cache: CsvCache): void {
   writeJson(KEYS.csv, cache)
+}
+
+function isMarketCsv(value: unknown): value is string {
+  return typeof value === 'string'
+}
+
+/**
+ * The market board's last good CSV, as **raw text**.
+ *
+ * Text rather than parsed rows, for the reason the wall's own cache is text:
+ * `parseMarket` stays the single path from bytes to data, so a field rename
+ * cannot leave a shape-stale cached object yielding `undefined` with no error
+ * anywhere.
+ */
+export function readMarketCsv(): string | null {
+  return readJson(KEYS.market, isMarketCsv)
+}
+
+export function writeMarketCsv(csv: string): void {
+  writeJson(KEYS.market, csv)
 }
 
 function isBoardState(value: unknown): value is BoardState {
