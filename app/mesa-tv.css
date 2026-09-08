@@ -1040,9 +1040,22 @@
   --t-mkt-label: 700 clamp(9px, 0.63vw, 13px) / 1 var(--font-sans);
   /* The wordmark. Impact, with Archivo Black as the bundled fallback that will
      actually render on a machine without it — the same chain `--t-tv-heading`
-     uses, at the size a band can carry beside a 67px total. */
-  --t-mkt-word: 400 clamp(24px, 2.4vw, 50px) / 1 var(--font-impact);
-  --h-mkt-logo: 2.4vw;
+     uses.
+
+     **Grown 10% vertically and 20% horizontally**, which is two separate moves
+     because no face here has a width axis: the font size carries the 10% in
+     both directions, and `--k-mkt-word-x` stretches the glyphs the remaining
+     9.09% sideways. `font-stretch` would be the right tool and does nothing —
+     Impact and Archivo Black are single-width, so a browser silently ignores
+     it. */
+  --t-mkt-word: 400 clamp(26px, 2.64vw, 55px) / 1 var(--font-impact);
+  /* 1.2 / 1.1 — the horizontal share the font size does not already carry. */
+  --k-mkt-word-x: 1.0909;
+  /* Grown 20%. Capped in px as well as `vw`, because the band's height is
+     `auto` — driven by the tallest thing in it — so an uncapped mark on a
+     2560-wide screen would simply make the band taller and take rows off the
+     board below. */
+  --h-mkt-logo: min(2.88vw, 62px);
 
   /* An empty place. A dashed outline rather than a filled card: the board is
      always twenty rows, and a slot nobody has reached should read as a place
@@ -2465,9 +2478,11 @@
   }
 
   .market-band {
-    display: flex;
+    display: grid;
+    /* Equal flanks, so the wordmark lands on the frame's centreline by
+       construction rather than by a nudge that drifts with viewport width. */
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
     gap: var(--s-8);
     padding: var(--s-4) var(--s-mkt-pad-x);
     background: var(--deep-forest-green);
@@ -2483,6 +2498,50 @@
     text-transform: uppercase;
     color: var(--bright-green);
   }
+
+  .market-mark {
+    height: var(--h-mkt-logo);
+    width: auto;
+    justify-self: start;
+  }
+
+  .market-word {
+    font: var(--t-mkt-word);
+    letter-spacing: var(--track-snug);
+    justify-self: center;
+    white-space: nowrap;
+    /* The horizontal stretch. `inline-block` because a transform does nothing
+       to an inline box, and the grid track is sized from the *untransformed*
+       width — so the extra 9% overhangs into the `gap` either side rather than
+       widening the column. Measured against the widest figure the band can
+       carry; see the note on `.market-figures`. */
+    display: inline-block;
+    transform: scaleX(var(--k-mkt-word-x));
+  }
+
+  /* ── How much figure this band can carry before anything touches ──
+     Measured, not estimated, with every stall forced to the same total:
+       ₹20,00,000   160px of clearance at 1920, 81px at 1366
+       ₹1,00,00,000 112px at 1920, 46px at 1366
+       ₹10,00,00,000 49px at 1920, **-0.5px at 1366** — the first overlap
+     So the band is safe to ten crore on the wall and to just under it in a
+     1366-wide laptop window. A full day on 29 August was ₹2.2 lakh, which
+     leaves roughly fifty times the headroom of any realistic flea.
+     The wordmark stays centred throughout: the flanking tracks are equal `1fr`,
+     so the group grows leftward into its own slack rather than pushing it. */
+  .market-figures {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    justify-self: end;
+    gap: var(--s-10);
+    min-width: 0;
+  }
+
+  /* Every figure and its label share one centre line, so the group reads as one
+     row of numbers rather than three stacks with drifting baselines. */
+  .market-cell { text-align: center; }
+  .market-cell .market-label { margin-top: var(--s-1); }
 
   .market-total { font: var(--t-mkt-total); font-variant-numeric: tabular-nums; }
   .market-stat { font: var(--t-mkt-stat); color: var(--green-200); font-variant-numeric: tabular-nums; }
@@ -2663,12 +2722,9 @@
       padding: 14px 16px;
     }
 
+    .market-band { grid-template-columns: 1fr; gap: 10px; }
+    .market-mark { justify-self: center; }
     .market-figures { justify-content: space-between; gap: 12px; }
-    /* Sales and stalls-trading come off a 390px header. The total and the clock
-       are what a stallholder glances at between customers; the other two are
-       still one scroll away on the board itself. */
-    .market-stat-cell { display: none; }
-    .market-clock-cell { border-left: 0 !important; padding-left: 0 !important; }
 
     .market-foot { padding: 12px 16px; }
     .market-pinned { padding: 14px 16px; }

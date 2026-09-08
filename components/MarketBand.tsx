@@ -10,8 +10,26 @@ import { marketClock, type MarketClock } from '@/lib/marketClock'
 import type { MarketSnapshot } from '@/lib/marketTypes'
 
 /**
- * The market board's masthead: the Mesa lockup, what the market has taken, and
- * how long it has left.
+ * The market board's masthead: the Mesa lockup, the wordmark, what the market
+ * has taken, and how long it has left.
+ *
+ * ── Three tracks, and the middle one is on the frame's centreline ──
+ *
+ * `1fr auto 1fr` with equal flanks puts the wordmark on the centre of the frame
+ * by construction, at every width, with no value to tune. `.tv-band` reaches the
+ * same arrangement by the same reasoning.
+ *
+ * The figures sit in the right track and are right-aligned within it, so the
+ * group grows leftward into its own slack as the numbers get longer rather than
+ * pushing the wordmark off centre.
+ *
+ * ── What "digital takings" used to say here ──
+ *
+ * A sub-line under the wordmark read "Live digital takings", which was the
+ * board's one on-screen admission that cash is invisible to it. It came off for
+ * the sake of the heading, and the admission did not: the footer carries
+ * "Razorpay payments only · cash sales not counted" on every frame. If that
+ * footer ever goes, this has to come back — the claim is not decoration.
  *
  * ── The clock is the only thing on this board allowed to tick ──
  *
@@ -57,7 +75,6 @@ export function MarketBand({ snapshot }: { snapshot: MarketSnapshot | null }) {
   const rows = snapshot?.rows ?? []
   const taken = rows.reduce((sum, row) => sum + row.takings, 0)
   const sales = rows.reduce((sum, row) => sum + row.txns, 0)
-  const trading = rows.filter((row) => row.takings > 0).length
 
   // `null` until the effect has run. A live clock cannot match between the
   // server render of a prerendered route and the first client render, so it is
@@ -66,65 +83,39 @@ export function MarketBand({ snapshot }: { snapshot: MarketSnapshot | null }) {
 
   return (
     <header className="market-band">
-      <div className="market-brand" style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-6)', minWidth: 0 }}>
-        <Image
-          src="/brand/logo-pg-white.png"
-          alt="Mesa School of Business"
-          width={448}
-          height={128}
-          // Near-white on the band, where the green lockup would disappear.
-          style={{ height: 'var(--h-mkt-logo)', width: 'auto' }}
-          unoptimized
-        />
-        <div style={{ minWidth: 0 }}>
-          <div style={{ font: 'var(--t-mkt-word)', letterSpacing: 'var(--track-snug)' }}>
-            MESA FLEA
-          </div>
-          {/* Says what it counts, on the board itself. Cash is invisible here,
-              and a board that does not admit that is a competing claim about
-              the same money `/podium` reports. */}
-          <div className="market-label" style={{ marginTop: 'var(--s-1)' }}>
-            Live digital takings
-          </div>
-        </div>
-      </div>
+      <Image
+        src="/brand/logo-pg-white.png"
+        alt="Mesa School of Business"
+        width={448}
+        height={128}
+        // Near-white on the band, where the green lockup would disappear.
+        className="market-mark"
+        unoptimized
+      />
 
-      <div className="market-figures" style={{ display: 'flex', alignItems: 'flex-end', gap: 'var(--s-10)' }}>
-        <div style={{ textAlign: 'right' }}>
+      {/* Centred on the frame's centreline, not in the band's free space — the
+          two flanking tracks are equal `1fr`, which is the same construction
+          `.tv-band` uses and for the same reason: free-space centring balances
+          the empty band either side and puts the ink off-centre. */}
+      <div className="market-word">MESA FLEA</div>
+
+      <div className="market-figures">
+        <div className="market-cell">
           <div className="market-total">{formatRupees(taken)}</div>
-          <div className="market-label" style={{ marginTop: 'var(--s-1)' }}>
-            Taken so far
-          </div>
+          <div className="market-label">Taken so far</div>
         </div>
-        <div className="market-stat-cell" style={{ textAlign: 'right' }}>
+        <div className="market-cell">
           <div className="market-stat">{formatCount(sales)}</div>
-          <div className="market-label" style={{ marginTop: 'var(--s-1)' }}>
-            Sales
-          </div>
-        </div>
-        <div className="market-stat-cell" style={{ textAlign: 'right' }}>
-          <div className="market-stat">{formatCount(trading)}</div>
-          <div className="market-label" style={{ marginTop: 'var(--s-1)' }}>
-            Stalls trading
-          </div>
+          <div className="market-label">Sales</div>
         </div>
 
         {/* Nothing at all when the sheet has not named its window. A board that
             cannot say when the market closes says nothing, rather than counting
             to a guess. */}
         {clock !== null && clock.display !== '' && (
-          <div
-            className="market-clock-cell"
-            style={{
-              textAlign: 'right',
-              borderLeft: '1px solid var(--surface-glass-strong)',
-              paddingLeft: 'var(--s-10)',
-            }}
-          >
+          <div className="market-cell market-clock-cell">
             <div className="market-clock">{clock.display}</div>
-            <div className="market-label" style={{ marginTop: 'var(--s-1)' }}>
-              {clock.label}
-            </div>
+            <div className="market-label">{clock.label}</div>
           </div>
         )}
       </div>
