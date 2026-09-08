@@ -2906,6 +2906,12 @@
          clock is pushed to the right edge by the auto margin below, so the row
          reads as two groups rather than three things adrift in the middle. */
       flex-wrap: nowrap;
+      /* **Baselines, not box centres.** The three figures are three different
+         sizes, so centring their boxes sits the two small ones above the big
+         one's baseline and the row stops reading as a line. Aligning on the
+         first baseline puts all three figures on the same rule; the labels
+         follow underneath. */
+      align-items: baseline;
       justify-content: flex-start;
       justify-self: stretch;
       width: 100%;
@@ -2913,6 +2919,10 @@
       min-width: 0;
     }
     .market-cell { text-align: left; white-space: nowrap; }
+    /* The count centres over its own word rather than hanging off the left of
+       it: "160" is narrower than "ORDERS", so left-aligning left it adrift
+       above a wider label. */
+    .market-orders-cell { text-align: center; }
     .market-clock-cell { margin-left: auto; }
     .market-figures { justify-content: space-between; gap: 12px; }
 

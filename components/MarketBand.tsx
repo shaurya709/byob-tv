@@ -104,7 +104,7 @@ export function MarketBand({ snapshot }: { snapshot: MarketSnapshot | null }) {
           <div className="market-total">{formatRupees(taken)}</div>
           <div className="market-label">Cohort sales</div>
         </div>
-        <div className="market-cell">
+        <div className="market-cell market-orders-cell">
           <div className="market-stat">{formatCount(orders)}</div>
           <div className="market-label">Orders</div>
         </div>
