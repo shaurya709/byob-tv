@@ -77,17 +77,24 @@ export const COHORT_CSV_URL: string = feedUrl(
  * `MesaFlea_TV`, published as CSV out of the **Razorpay workbook** — a different
  * spreadsheet from the two above, which both come from `BYOB_MASTER`.
  *
- * **The published default is empty, deliberately.** The tab is not published
- * yet. An empty URL is not a failure state here: `useMarketData` checks for it
- * and never arms its interval, so the board renders its twenty empty slots —
- * which is a legible state — instead of throwing once a minute into a console
- * nobody is reading. Replacing this string is the whole of "connect the board".
+ * Published 8 September and verified against the live URL before being wired in
+ * here: forty rows, the eight expected headers, a window all forty rows agree
+ * on, and — the check that mattered — no `payment_id`, email or contact anywhere
+ * in the body. Only the tab is published, never the document.
+ *
+ * An empty string here is still a legible state rather than a failure:
+ * `useMarketData` checks for it and never arms its interval, so a fresh clone
+ * before the tab existed rendered twenty empty slots instead of throwing once a
+ * minute into a console nobody reads.
  *
  * Read longhand through `feedUrl` like the other two, and for the same reason:
  * Next inlines `process.env.NEXT_PUBLIC_*` by textual substitution of the member
  * expression, so a computed lookup silently yields `undefined` in the browser.
  */
-export const MARKET_CSV_URL: string = feedUrl(process.env.NEXT_PUBLIC_MARKET_CSV_URL, '')
+export const MARKET_CSV_URL: string = feedUrl(
+  process.env.NEXT_PUBLIC_MARKET_CSV_URL,
+  'https://docs.google.com/spreadsheets/d/e/2PACX-1vTV4zvvYKx4l6By_FKeJZuIG4-9KtaDHvSIyvw1gh_pfoeBGwcSHDSfB-ER1Wi9sT4Xf5xbnfigbGGx/pub?gid=287716852&single=true&output=csv',
+)
 
 /**
  * The fewest usable rows a market fetch may carry and still be trusted.
