@@ -71,6 +71,55 @@ export const COHORT_CSV_URL: string = feedUrl(
   'https://docs.google.com/spreadsheets/d/e/2PACX-1vTZTHFUyVPNGcV0rsFtd45y9KxvT2Yh2Bj8qs6qMqIFrY8rTtqc9sqb_fKOUyi_Us1hnJWZhHN0n-_z/pub?gid=359094552&single=true&output=csv',
 )
 
+// ── Mesa Flea market board ──────────────────────────────────────────────────
+
+/**
+ * `MesaFlea_TV`, published as CSV out of the **Razorpay workbook** — a different
+ * spreadsheet from the two above, which both come from `BYOB_MASTER`.
+ *
+ * **The published default is empty, deliberately.** The tab is not published
+ * yet. An empty URL is not a failure state here: `useMarketData` checks for it
+ * and never arms its interval, so the board renders its twenty empty slots —
+ * which is a legible state — instead of throwing once a minute into a console
+ * nobody is reading. Replacing this string is the whole of "connect the board".
+ *
+ * Read longhand through `feedUrl` like the other two, and for the same reason:
+ * Next inlines `process.env.NEXT_PUBLIC_*` by textual substitution of the member
+ * expression, so a computed lookup silently yields `undefined` in the browser.
+ */
+export const MARKET_CSV_URL: string = feedUrl(process.env.NEXT_PUBLIC_MARKET_CSV_URL, '')
+
+/**
+ * The fewest usable rows a market fetch may carry and still be trusted.
+ *
+ * **Its own constant, not `MIN_TEAM_ROWS`, though both are 40 today.** They are
+ * the same number for different reasons and would move for different ones:
+ * `MIN_TEAM_ROWS` is 40 because two of the 42 published workbooks are spares,
+ * while this is 40 because `MesaFlea_TV` is hand-keyed as exactly forty rows and
+ * has no spares in it at all. Sharing one constant would make adding a 43rd
+ * workbook silently change what counts as a whole market fetch.
+ */
+export const MIN_MARKET_ROWS = 40
+
+/**
+ * How many places the market board shows: two columns of ten.
+ *
+ * Twenty rows, **always** — a rank nobody has reached yet renders as an empty
+ * slot rather than shortening the board. The ranking stays honest and the
+ * layout stops moving, which matters on a board that fills up over twelve
+ * hours.
+ */
+export const MARKET_TOP_N = 20
+
+/**
+ * How often the market board polls.
+ *
+ * Sixty seconds, the same as the wall, and for a sharper reason: the ingestion
+ * trigger writes every five minutes, so this already samples the same bytes five
+ * times over. Faster would buy nothing and spend the browser's day doing it.
+ */
+export const MARKET_POLL_INTERVAL_MS = 60_000
+
 /**
  * The fewest usable rows a fetch may carry and still be trusted.
  *
