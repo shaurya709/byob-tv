@@ -127,21 +127,66 @@ prevent. It is not a hardcoded date; it is whatever the config said at arm time.
 `pullPayments` also gains the `as_of` stamp, so the pipeline is observable from
 today rather than first being trusted on the day.
 
-## 6. Wall — one more board, no new machinery
+## 6. Wall — a separate data path, on purpose
 
-New route `/flea`. Three decisions, all following existing patterns:
+New route `/flea`, with its **own fetch, own row gate, own cache key and own poll
+hook**. Zero lines change in `lib/feed.ts`, `lib/useWallData.ts`, `lib/types.ts`,
+`lib/ranking.ts`, `components/Rotator.tsx` or `app/layout.tsx`.
 
-**The third CSV joins the atomic snapshot.** `fetchCsv` fetches all three
-together — one gate, one cache, one poll — rather than forking the poll logic
-into a second hook. **But the flea CSV is read optionally**: a missing tab, a
-parse failure or a short export yields `null` and the other two boards are
-unaffected. Mandatory rather than defensive — the tab did not exist when this was
-written, and the wall had to keep working.
+**This reverses what this section originally said**, which was "one gate, one
+cache, one poll — rather than forking the poll logic into a second hook", with
+the flea CSV read optionally inside the shared snapshot. That was written before
+the shared path had been read closely. The doc is corrected to match the
+architecture, not the other way round — the same way the `venture_name` line in
+`AGENTS.md` was.
 
-**The flea fetch is cache-busted** with `&_=${Date.now()}`. `cache: 'no-store'`
-stops the *browser* reusing a body; it says nothing about an edge cache keyed on
-URL. Measurement could not separate the two, so the board does not depend on the
-answer. Verified harmless: Google ignores the unknown parameter.
+The decisive reason is the row gate below. A published CSV that empties and hangs
+several times an hour leaves exactly two options under one shared gate, and both
+are worse than a duplicated poll loop:
+
+- gate on all three, and `/podium` and `/weekly` freeze several times an hour in
+  the week of the event;
+- split the gate, and `Snapshot` is no longer atomic — which `lib/types.ts:96-102`
+  documents as load-bearing, because a fresh cohort against a stale feed either
+  animates a reset or suppresses a real week of overtakes.
+
+Two supporting reasons. `writeCsvCache` blindly overwrites the entire `csv` blob
+every 60 seconds and both existing CSVs live in it behind one type guard, so flea
+bytes sharing that key means a torn write takes the podium's first-paint cache
+with it. And this board has a **twelve-hour lifespan**: you do not refactor the
+foundation of two live boards five days out for a component that dies on the 14th.
+
+What is duplicated is about 35 lines — visibility gate, running ref, interval, one
+catch. `useMarketData` has no freeze, no thaw, no pending ref, no `detect`, no
+`BoardState` and no kick queue; it is roughly 40% of `useWallData`, and the two
+are meant to diverge. Extracting a shared `usePoll` is post-event cleanup.
+
+**No overtake animation in v1.** The data steps every five minutes, so rank
+changes arrive in batches while `KICK_QUEUE_CAP` is 4; `detect` needs a period the
+figure resets with and this window has none; and at 09:00 forty teams sit on ₹0,
+so the first non-zero fetch produces a wave of simultaneous rank changes. `/flea`
+does not even write a `BoardState`. Recorded as a deliberate deferral, and pinned
+by a source-scan test so it is not later "repaired".
+
+**Naming.** `FleaDial`, `FleaStrip`, `fleaInstant`, `flea_datetime_iso` and
+`FLEA_EVENT_DURATION_MS` all already mean *the countdown to the event*. The route
+stays `/flea`; every new symbol is `Market*`, so `grep -i flea` still returns only
+countdown code. The figure is **`takings`**, never `revenue` — `Team.totalRevenue`
+is proof-backed logged revenue and `MarketRow.takings` is Razorpay captured
+payments minus cash minus unreturned refunds. Naming both `revenue` invites
+someone to add them.
+
+**The flea fetch is cache-busted.** `cache: 'no-store'` stops the *browser*
+reusing a body; it says nothing about an edge cache keyed on URL. Measurement
+could not separate the two, so the board does not depend on the answer. Verified
+harmless: Google ignores the unknown parameter.
+
+The separator is **conditional**, not a bare `&`:
+`` `${url}${url.includes('?') ? '&' : '?'}_=${Date.now()}` ``. A published Google
+URL already carries a query string, but the local fixture path does not — and a
+bare `&_=` turns `/mock/market.csv` into `/mock/market.csv&_=123`, which 404s.
+That breaks only the local path, so it presents as a broken fixture rather than a
+broken fetch.
 
 **Ranking is a total order** — `flea_revenue` desc → `flea_txns` desc → `team_id`
 asc. At 09:00 all forty teams sit on ₹0, and an order that can shuffle between
@@ -196,11 +241,26 @@ source.
 ## 9. Still open
 
 1. **All forty Razorpay credential pairs verified live.** See §7. Blocking.
-2. **Whether `/flea` takes over the wall for 09:00–21:00** or joins the rotation
-   as a third slide. Proposed: takeover, because the other two boards are frozen
-   for exactly that window.
+2. **Decided: the rotation is not touched.** `/flea` is a standalone URL.
+   `Rotator.tsx:67` already returns `null` for any path that is not `/weekly` or
+   `/podium`, so the route holds indefinitely with no change at all.
+
+   The consequence is a person: nothing puts `/flea` on the wall, so someone
+   opens it at 09:00 and switches back at 21:00 — at a laptop `AGENTS.md` says
+   nobody is standing at. That is a calendar reminder, not a code path.
 3. **A "just sold" pulse.** `last_sale_at` makes it possible, but at 5-minute
    granularity it fires as a *wave* — every team that sold since the last refresh
    lights at once, every five minutes. Shipping without it; add it only if the
    board reads as dead.
-4. **The published CSV URL**, once the tab is published, for `config.ts`.
+4. **The published CSV URL**, once the tab is published, for `config.ts`. Until
+   then `MARKET_CSV_URL` is the empty string and the poll never arms — the board
+   renders twenty dashed slots, which is a valid state, rather than throwing once
+   a minute.
+
+5. **`/flea?team=SLE-C407` — the per-team deep link.** The same route on a
+   stallholder's phone, with their row highlighted in place, pinned to the bottom
+   with the gap to 20th if they are outside the top 20, and reading `NO SALES YET`
+   rather than a rank when they have taken nothing. No login and no backend: the
+   team id is a query parameter, read from `window.location.search` in an effect
+   (reading it during render would not match the prerendered HTML) and normalised
+   to uppercase, because it will be typed by hand into forty phones.
