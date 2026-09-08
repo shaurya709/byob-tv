@@ -1,17 +1,21 @@
 # BYOB Campus TV Wall
 
-Two pages that run on TVs across Mesa campus during BYOB Cohort 2026: a live
-leaderboard and a Mesa Flea countdown with achievement notifications.
+Boards that run on TVs across Mesa campus during BYOB Cohort 2026.
 
 - `/podium` — top three across the frame, ranks 4–10 below, and the overtake
   sequence when rank 1 changes hands.
-- `/countdown` — the Mesa Flea countdown, milestone takeovers, ambient sub-cards
-  and the microsecond ticker.
+- `/weekly` — the 10-day challenge board, forty cards in a 4 × 10 grid.
+- `/flea` — the Mesa Flea market board: twenty places fed live from Razorpay,
+  on the wall and on a stallholder's phone. **Not in the rotation** — someone
+  opens it when the doors open. See [The market board](#the-market-board).
 
 **This is a display system, not a dashboard.** Nobody interacts with it. It runs
 unattended for weeks, refreshes itself, survives network blips, and never asks
 for a login. There is no backend, no auth and no database — just a static site
-fetching two public CSVs.
+fetching public CSVs.
+
+`/podium` and `/weekly` rotate on the wall; `/flea` is a standalone URL for one
+day of the programme.
 
 The design and the reasoning behind every decision are in
 [`docs/DESIGN.md`](docs/DESIGN.md). Read that before changing behaviour.
@@ -59,6 +63,7 @@ the wall at local fixtures without editing a tracked file:
 |---|---|
 | `NEXT_PUBLIC_FEED_CSV_URL` | `TV_Feed` |
 | `NEXT_PUBLIC_COHORT_CSV_URL` | `TV_Cohort` |
+| `NEXT_PUBLIC_MARKET_CSV_URL` | `MesaFlea_TV` |
 
 Unset, blank or whitespace all mean "use the published default". The
 `NEXT_PUBLIC_` prefix is required — both fetches run in the browser — and it
@@ -187,3 +192,69 @@ Anything it returns has escaped the frame and is invisible on the wall.
 
 When fixing a bug with a test, reintroduce the bug first and confirm the test
 fails. Every load-bearing test in this repo was verified that way.
+
+## The market board
+
+`/flea` is the Mesa Flea leaderboard: **13 September, 09:00–21:00 IST**, twenty
+places in two columns, fed from Razorpay rather than from anything a team types.
+The other two boards are driven by `Daily Tracker` entries, and nobody fills one
+while serving a queue — so both would sit frozen for the twelve hours the market
+runs.
+
+It counts **Razorpay captured payments only**, and says so on the board. Cash is
+invisible to it. That is deliberate: it is *digital takings*, not the
+proof-backed revenue `/podium` reports, so the two are not competing claims about
+the same money.
+
+### Connecting it
+
+The board reads a third published CSV — the `MesaFlea_TV` tab of the **Razorpay
+workbook**, which is a different spreadsheet from `BYOB_MASTER`.
+
+**Publish the tab, never the document.** That workbook holds `payment_id`,
+`email` and `contact` for thousands of real customer payments. In File ▸ Share ▸
+Publish to web, the left dropdown must say `MesaFlea_TV` and not "Entire
+document".
+
+Then paste the URL into `MARKET_CSV_URL` in `config.ts`. Until you do it is the
+empty string, and the board **does not poll at all** — it renders its twenty
+empty slots and logs one line saying why, rather than throwing once a minute for
+the rest of the programme.
+
+### Running it locally
+
+```bash
+# .env.local
+NEXT_PUBLIC_MARKET_CSV_URL=/mock/market.csv
+```
+
+`scripts/dev-flea.mjs` sells into `public/mock/market.csv` every few seconds, so
+figures step and ranks re-sort through the real pipeline. It writes a UTF-8 BOM
+and CRLF endings because that is what Google publishes, and testing against a
+clean file would mean production is the first place the parser meets the case it
+most needs to survive.
+
+`?now=2026-09-13T20:59:00+05:30` skews the clock in development, so every phase
+of the countdown can be watched rather than waited for.
+
+### The phone view
+
+`/flea?team=SLE-C407` is the same board with that stall's row highlighted. No
+login and no backend — the team id is a query parameter, so each stall gets its
+own link.
+
+Three states, and the third is the common one:
+
+- **In the top 20** — the row is highlighted in place.
+- **Outside it** — the row pins to the bottom with what it has to make up.
+- **No sales yet** — it says so, rather than showing a rank. On the sample day
+  seventeen of forty stalls were on ₹0 well into the evening; their "rank" is a
+  tie-break among seventeen zeroes, which looks precise and means nothing.
+
+### What it deliberately does not do
+
+**No overtake animation.** The ingestion writes every five minutes, so rank
+changes arrive in batches while the kick queue caps at four — the board would
+animate continuously and still be behind. At 09:00 every stall is on ₹0, so the
+first non-zero fetch would fire a wave. A source-scan test pins the absence so it
+reads as a decision rather than an omission.
