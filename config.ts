@@ -167,11 +167,21 @@ export const PODIUM_WEEKS_FROM_MS = 7 * 24 * 60 * 60 * 1000
 export const PODIUM_CLOCK_UNDER_MS = 3 * 24 * 60 * 60 * 1000
 
 /**
- * How long the Flea itself runs — 10:00 to 18:00 IST assumed, like the opening
- * time. While it runs the calendar says LIVE NOW; after it ends the calendar
- * leaves the wall entirely.
+ * How long the Flea itself runs — **09:00 to 21:00 IST, twelve hours**. While it
+ * runs the calendar says LIVE NOW; after it ends the calendar leaves the wall
+ * entirely.
+ *
+ * Was eight hours against an assumed 10:00–18:00. The hours are confirmed now,
+ * and the two halves of the correction live in different places on purpose: the
+ * *duration* is a shape and belongs here, while the *instant* it starts from is
+ * `flea_datetime_iso` in `TV_Cohort`, so moving the opening time stays one sheet
+ * edit with no deploy.
+ *
+ * **Both halves are required.** `TV_Cohort` still publishing 10:00 while this
+ * says twelve hours puts the close at 22:00 — a countdown that is wrong in a way
+ * nothing on screen would reveal.
  */
-export const FLEA_EVENT_DURATION_MS = 8 * 60 * 60 * 1000
+export const FLEA_EVENT_DURATION_MS = 12 * 60 * 60 * 1000
 
 /**
  * When the programme started — 20 July 2026, 00:00 IST.

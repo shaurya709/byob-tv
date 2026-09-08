@@ -62,13 +62,13 @@ describe('computeCountdownState', () => {
     expect(at('2026-09-06T10:00:00+05:30').mode).toBe('live')
     const mid = at('2026-09-06T12:00:00+05:30')
     expect(mid).toMatchObject({ display: 'LIVE NOW', mode: 'live', numeric: null })
-    // 17:59 IST — the eighth hour is still running.
-    expect(at('2026-09-06T17:59:59+05:30').mode).toBe('live')
+    // 20:59 IST — the twelfth hour is still running.
+    expect(at('2026-09-06T20:59:59+05:30').mode).toBe('live')
   })
 
   it('hides entirely once the event has ended', () => {
-    // 18:00 IST on the day — exactly flea + 8 hours.
-    expect(at('2026-09-06T18:00:00+05:30')).toMatchObject({
+    // 22:00 IST on the day — exactly flea + 12 hours.
+    expect(at('2026-09-06T22:00:00+05:30')).toMatchObject({
       display: '',
       mode: 'hidden',
       numeric: null,
