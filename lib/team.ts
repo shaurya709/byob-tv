@@ -1,5 +1,3 @@
-import type { Team } from '@/lib/types'
-
 /**
  * A venture's name, or its ID.
  *
@@ -14,7 +12,14 @@ import type { Team } from '@/lib/types'
  * disagreeing about what an unnamed team is called — one showing an ID, the
  * other a blank — is exactly the kind of quiet inconsistency that runs for weeks
  * on a wall nobody is actively watching.
+ *
+ * **Typed on the two fields it reads, not on `Team`.** The market board's rows
+ * are a different shape from a different spreadsheet, and they need the same
+ * name-or-ID rule for the same reason — a third board disagreeing about what an
+ * unnamed stall is called would be the same quiet inconsistency one layer down.
+ * A structural parameter shares the rule without pretending the two rows are
+ * the same thing, which `lib/marketTypes.ts` is at pains to keep apart.
  */
-export function nameOf(team: Team): string {
+export function nameOf(team: { ventureName: string; teamId: string }): string {
   return team.ventureName || team.teamId
 }

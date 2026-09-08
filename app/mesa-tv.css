@@ -976,6 +976,87 @@
      Nothing on this wall sets `--bright-green` any more. */
 }
 
+/* ============================================================
+   MESA FLEA MARKET BOARD — `/flea`
+   ============================================================
+
+   Twenty places in two columns of ten, on the same 1920x1080 frame, plus a
+   phone layout for a stallholder checking between customers. Everything here is
+   an extension in the same sense as the rest of this file: no new hues, every
+   colour a brand token or a mix of two, and every class rule that sets a colour
+   lives inside the `@layer components` block below.
+
+   ── The rows are not given a height ──
+
+   The weekly grid names four explicit row heights and warns that they must sum
+   under a `vw` budget, because its `--s-*` gaps hold their size while its `vw`
+   rows shrink — which makes 1600x900 tighter than the arithmetic at 1920
+   suggests, and cost a board that looked perfect at 1920 and overflowed at 1600.
+
+   This board sidesteps that whole class of bug rather than tuning around it:
+   the frame is a three-row grid, the board takes `minmax(0, 1fr)`, and the ten
+   rows divide whatever that leaves with `1fr` each. There is no height to get
+   wrong, nothing to re-measure when the band changes, and no viewport at which
+   the twentieth row can be pushed off the frame. What it costs is that the row
+   is not a fixed size, so everything inside it is sized *from* the row rather
+   than from the viewport — see `--d-mkt-logo`.
+   ============================================================ */
+
+:root {
+  /* The logo is a share of its row, not a share of the viewport, because the
+     row's height is decided by the frame rather than declared. 62% keeps it
+     clear of the row's padding at every size this is driven at.
+
+     `--d-pod-row-logo` documents the floor these wordmarks stop resolving at —
+     about 50px, below which they become coloured dots. Measured: at 0.62 the
+     mark came out 52px at 1920 and **41.8px at 1600x900**, under the floor at
+     the tightest size the wall is actually driven at. 0.72 puts it at 60.5px
+     and 48.6px, which clears it at both. */
+  --k-mkt-logo: 0.72;
+
+  --s-mkt-gap: var(--s-2);
+  --s-mkt-col-gap: 1.67vw;
+  --s-mkt-pad-x: 2.29vw;
+  --s-mkt-row-pad: 1.04vw;
+
+  /* Venture names, in the condensed face at **400**.
+
+     Bebas Neue has one weight and maps lowercase to capitals by design. Asking
+     for anything heavier makes the browser synthesise a bold by smearing the
+     outlines, which on a condensed face closes the counters and turns a name
+     into a block at six metres. Every token that sets it asks for 400. */
+  --t-mkt-name: 400 clamp(18px, 1.72vw, 36px) / 1 var(--font-condensed);
+  --t-mkt-id: 500 clamp(9px, 0.63vw, 13px) / 1.2 var(--font-mono);
+  --t-mkt-fig: 700 clamp(17px, 1.77vw, 37px) / 1 var(--font-serif);
+  --t-mkt-sub: 600 clamp(10px, 0.68vw, 14px) / 1 var(--font-sans);
+  --t-mkt-rank: 700 clamp(15px, 1.41vw, 29px) / 1 var(--font-serif);
+  --t-mkt-rank-lead: 700 clamp(19px, 2.08vw, 43px) / 1 var(--font-serif);
+
+  /* The band. The total is the largest figure on the board — it is the one
+     number a passer-by can read from the far end of a corridor. */
+  --t-mkt-total: 700 clamp(30px, 3.23vw, 67px) / 1 var(--font-serif);
+  --t-mkt-stat: 700 clamp(18px, 2.08vw, 43px) / 1 var(--font-serif);
+  --t-mkt-clock: 700 clamp(22px, 2.08vw, 43px) / 1 var(--font-serif);
+  --t-mkt-label: 700 clamp(9px, 0.63vw, 13px) / 1 var(--font-sans);
+  /* The wordmark. Impact, with Archivo Black as the bundled fallback that will
+     actually render on a machine without it — the same chain `--t-tv-heading`
+     uses, at the size a band can carry beside a 67px total. */
+  --t-mkt-word: 400 clamp(24px, 2.4vw, 50px) / 1 var(--font-impact);
+  --h-mkt-logo: 2.4vw;
+
+  /* An empty place. A dashed outline rather than a filled card: the board is
+     always twenty rows, and a slot nobody has reached should read as a place
+     waiting rather than as a stall that has failed. */
+  --mkt-slot-stroke: var(--border-mint);
+  --mkt-slot-ink: var(--tv-card-stroke-quiet);
+
+  /* The viewer's own row, on a phone. **Slight, on purpose.** It has to be
+     findable in a scroll without turning the board into a page about one stall,
+     so the row keeps its normal treatment and gains an edge and a chip. */
+  --mkt-you-edge: var(--bright-green);
+}
+
+
 /* Animations defined in CSS rather than in Motion, for one shared reason: each
    runs forever, unrelated to any state change, and handing a permanent loop to
    a JS animation loop would keep the main thread busy for the life of a page
@@ -2363,4 +2444,248 @@
     }
   }
 
+  /* ── Mesa Flea market board ── */
+
+  /* **Not `.tv-frame`.** That one is `100vw/100vh` with `overflow: hidden`,
+     which is right for a board only ever seen on a TV. This board is also read
+     on a phone, so it is `100dvh` — mobile browser chrome collapses, and `100vh`
+     overflows by the toolbar's height on iOS Safari, which puts the last rows
+     under the address bar.
+
+     `body { overflow: hidden }` in globals.css stays untouched. It stops the
+     *body* scrolling; a descendant with a bounded height and its own
+     `overflow-y` scrolls underneath it perfectly well, which is what the phone
+     layout below relies on. */
+  .market-frame {
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .market-band {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-8);
+    padding: var(--s-4) var(--s-mkt-pad-x);
+    background: var(--deep-forest-green);
+    color: var(--white);
+    /* The surface decides what its own tokens mean, exactly as `.tv-band` does:
+       a light-surface muted grey on Deep Forest is unreadable at six metres. */
+    --fg-muted: var(--mint-300);
+  }
+
+  .market-label {
+    font: var(--t-mkt-label);
+    letter-spacing: var(--track-overline);
+    text-transform: uppercase;
+    color: var(--bright-green);
+  }
+
+  .market-total { font: var(--t-mkt-total); font-variant-numeric: tabular-nums; }
+  .market-stat { font: var(--t-mkt-stat); color: var(--green-200); font-variant-numeric: tabular-nums; }
+  .market-clock { font: var(--t-mkt-clock); font-variant-numeric: tabular-nums; }
+
+  .market-board {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s-mkt-col-gap);
+    /* Symmetric: the board sat flush against the footer with a bottom of 0,
+       which read as the last row being cut off rather than as the end of a
+       list. The rows are `1fr`, so they absorb it rather than overflowing. */
+    padding: var(--s-4) var(--s-mkt-pad-x);
+    min-height: 0;
+  }
+
+  /* Ten rows dividing whatever the frame gives them. No declared height, so no
+     viewport at which the tenth row is pushed off the board. */
+  .market-column {
+    display: grid;
+    grid-template-rows: repeat(10, minmax(0, 1fr));
+    gap: var(--s-mkt-gap);
+    min-height: 0;
+  }
+
+  .market-row {
+    display: flex;
+    align-items: center;
+    gap: var(--s-mkt-row-pad);
+    padding: 0 var(--s-mkt-row-pad);
+    border-radius: var(--radius-sm);
+    min-width: 0;
+  }
+
+  /* Ranks 1-3: the same solid Deep Forest object a podium card is. */
+  .market-row-lead {
+    background: var(--tv-card-fill);
+    color: var(--tv-card-fig-ink);
+  }
+
+  .market-row-quiet {
+    background: var(--tv-card-fill-quiet);
+    border: 1px solid var(--tv-card-stroke-quiet);
+    color: var(--tv-card-fig-ink-quiet);
+  }
+
+  .market-row-empty {
+    border: 1px dashed var(--mkt-slot-stroke);
+    color: var(--mkt-slot-ink);
+  }
+
+  .market-rank {
+    font: var(--t-mkt-rank);
+    text-align: center;
+    flex-shrink: 0;
+    /* Width lives here, not on the element, so the phone breakpoint can change
+       it. As an inline `2.4vw` it measured 9px on a 390px screen. */
+    width: 2.4vw;
+    font-variant-numeric: tabular-nums;
+  }
+  .market-row-lead .market-rank { font: var(--t-mkt-rank-lead); }
+
+  .market-logo {
+    height: calc(100% * var(--k-mkt-logo));
+    aspect-ratio: 1;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .market-name {
+    font: var(--t-mkt-name);
+    letter-spacing: var(--track-snug);
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .market-id { font: var(--t-mkt-id); letter-spacing: var(--track-wide); color: var(--green-600); }
+  .market-row-lead .market-id { color: var(--bright-green); }
+
+  .market-sub { font: var(--t-mkt-sub); letter-spacing: var(--track-wide); color: var(--tv-card-sub-ink-quiet); }
+  .market-row-lead .market-sub { color: var(--tv-card-sub-ink); }
+
+  .market-fig {
+    font: var(--t-mkt-fig);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    flex-shrink: 0;
+    min-width: 8vw;
+  }
+
+  .market-body { flex-grow: 1; min-width: 0; }
+  .market-name-row { display: flex; align-items: center; gap: var(--s-2); min-width: 0; }
+  .market-meta { display: block; margin-top: 0.2vw; }
+  /* The sales count rides its own column on a TV and folds under the name on a
+     phone, where there is no room for a fourth column. One markup, two shapes. */
+  .market-sales { flex-shrink: 0; text-align: right; }
+  .market-meta-sales { display: none; }
+
+  .market-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--s-3) var(--s-mkt-pad-x);
+  }
+
+  /* The viewer's own row. */
+  .market-row-you {
+    background: var(--white);
+    border: 1px solid var(--mkt-you-edge);
+    border-left: 4px solid var(--mkt-you-edge);
+    color: var(--tv-card-fig-ink-quiet);
+  }
+
+  .market-you-chip {
+    font: var(--t-mkt-label);
+    letter-spacing: var(--track-overline);
+    background: var(--bright-green);
+    color: var(--deep-forest-green);
+    border-radius: var(--radius-xs);
+    padding: 2px 6px;
+    flex-shrink: 0;
+  }
+
+  .market-pinned {
+    background: var(--deep-forest-green);
+    color: var(--white);
+    padding: var(--s-4) var(--s-mkt-pad-x);
+    --fg-muted: var(--mint-300);
+  }
+
+  /* ── The phone ──
+
+     The project's first size breakpoint, and it is deliberately far from both
+     ends: 900px is comfortably above any phone and far below any TV, so it also
+     catches a laptop window someone opens to check the board.
+
+     Both layouts are always rendered and CSS chooses between them. A
+     `matchMedia` switch in JS would render one tree on the server and the other
+     on the client, which is a hydration mismatch on the one route that has to
+     work on a stranger's phone. */
+  @media (max-width: 900px) {
+    /* **Flex, not grid.** As a one-column grid the two `.market-column`
+       children became two grid rows sharing the scroller's height, so each
+       clipped its own ten rows and the board showed 1-5 then 11-15. `display:
+       contents` on the columns dissolves them and lets all twenty rows flow as
+       one list. */
+    .market-board {
+      display: flex;
+      flex-direction: column;
+      gap: var(--s-1);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: var(--s-3) var(--s-3) var(--s-3);
+      min-height: 0;
+    }
+
+    .market-column { display: contents; }
+
+    .market-row { height: 54px; gap: 11px; padding: 0 12px; }
+    .market-rank { width: 24px; }
+    .market-fig { min-width: 0; }
+    .market-meta { margin-top: 3px; }
+    .market-meta-sales { display: inline; }
+    .market-sales { display: none; }
+
+    /* The band stacks: the lockup, then the two figures worth the width. */
+    .market-band {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 14px;
+      padding: 14px 16px;
+    }
+
+    .market-figures { justify-content: space-between; gap: 12px; }
+    /* Sales and stalls-trading come off a 390px header. The total and the clock
+       are what a stallholder glances at between customers; the other two are
+       still one scroll away on the board itself. */
+    .market-stat-cell { display: none; }
+    .market-clock-cell { border-left: 0 !important; padding-left: 0 !important; }
+
+    .market-foot { padding: 12px 16px; }
+    .market-pinned { padding: 14px 16px; }
+
+    :root {
+      --t-mkt-name: 400 19px / 1 var(--font-condensed);
+      --t-mkt-fig: 700 19px / 1 var(--font-serif);
+      --t-mkt-sub: 600 10px / 1 var(--font-sans);
+      --t-mkt-id: 500 10px / 1.2 var(--font-mono);
+      --t-mkt-rank: 700 16px / 1 var(--font-serif);
+      --t-mkt-rank-lead: 700 19px / 1 var(--font-serif);
+      --t-mkt-total: 700 34px / 1 var(--font-serif);
+      --t-mkt-clock: 700 24px / 1 var(--font-serif);
+      --t-mkt-label: 700 9px / 1 var(--font-sans);
+      --t-mkt-word: 400 22px / 1 var(--font-impact);
+      --h-mkt-logo: 20px;
+      --s-mkt-pad-x: 16px;
+    }
+  }
 }

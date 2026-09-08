@@ -2,7 +2,6 @@ import Image from 'next/image'
 
 import { LOGOS } from '@/config'
 import { hashTeamId } from '@/lib/seed'
-import type { Team } from '@/lib/types'
 
 /**
  * A venture's mark: its logo if one has been committed, otherwise a coloured
@@ -47,7 +46,7 @@ function tintFor(teamId: string): string {
  * yet. A nameless team never fires a trigger, but it can still appear on the
  * podium, and `SLE-C407` needs *something* in its tile.
  */
-function initialFor(team: Team): string {
+function initialFor(team: Identified): string {
   const letter = team.ventureName.trim().charAt(0)
   if (letter !== '') return letter.toUpperCase()
   return team.teamId.trim().slice(-1)
@@ -61,7 +60,18 @@ function initialFor(team: Team): string {
  * it scaled was measured climbing into the header band at 1600x900, which is
  * the whole reason this component accepts a CSS length at all.
  */
-export function VentureLogo({ team, size }: { team: Team; size: number | string }) {
+/**
+ * The two fields this component actually reads.
+ *
+ * **Not `Team`.** The market board's rows come from a different spreadsheet and
+ * carry a different figure — `lib/marketTypes.ts` keeps the two apart on
+ * purpose, so that nobody adds proof-gated revenue to Razorpay takings — but a
+ * stall's mark is drawn the same way a venture's is. A structural parameter
+ * shares the drawing without merging the shapes.
+ */
+type Identified = { teamId: string; ventureName: string }
+
+export function VentureLogo({ team, size }: { team: Identified; size: number | string }) {
   const dim = typeof size === 'number' ? `${size}px` : size
 
   if (LOGOS.includes(team.teamId)) {
