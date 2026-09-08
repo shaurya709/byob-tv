@@ -49,6 +49,16 @@ export const KEYS = {
    * A separate key makes that impossible rather than merely unlikely.
    */
   market: `${PREFIX}.market`,
+  /**
+   * Which stall the person holding this phone is standing at.
+   *
+   * The only thing on this wall a *viewer* ever chooses, and it is per-device
+   * by construction — nothing about it reaches the sheet, the other boards, or
+   * anybody else's screen. A stallholder picks their venture once and the board
+   * remembers, because asking someone to retype `?team=SLE-C407` between
+   * customers is not a thing anyone will do twice.
+   */
+  marketTeam: `${PREFIX}.market-team`,
 } as const
 
 /**
@@ -120,6 +130,24 @@ export function readMarketCsv(): string | null {
 
 export function writeMarketCsv(csv: string): void {
   writeJson(KEYS.market, csv)
+}
+
+/** The stall this device belongs to, or `null`. */
+export function readMarketTeam(): string | null {
+  return readJson(KEYS.marketTeam, isMarketCsv)
+}
+
+/** Passing `null` forgets it, which is how someone un-picks a stall. */
+export function writeMarketTeam(teamId: string | null): void {
+  if (teamId === null) {
+    try {
+      localStorage.removeItem(KEYS.marketTeam)
+    } catch {
+      // Storage disabled entirely. Nothing was stored, so nothing to forget.
+    }
+    return
+  }
+  writeJson(KEYS.marketTeam, teamId)
 }
 
 function isBoardState(value: unknown): value is BoardState {

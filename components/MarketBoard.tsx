@@ -69,10 +69,7 @@ function Row({ rank, row, you }: { rank: number; row: MarketRow | null; you: boo
           <span className="market-name">{nameOf(row)}</span>
           {you && <span className="market-you-chip">YOU</span>}
         </span>
-        <span className="market-meta market-id">
-          {row.teamId}
-          <span className="market-meta-sales"> &middot; {sales(row)}</span>
-        </span>
+        <span className="market-meta market-sub">{sales(row)}</span>
       </span>
       <span className="market-sales market-sub">{sales(row)}</span>
       <span className="market-fig">{formatRupees(row.takings)}</span>

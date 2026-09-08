@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 
 import { MarketBand } from '@/components/MarketBand'
 import { MarketBoard } from '@/components/MarketBoard'
+import { MarketPicker } from '@/components/MarketPicker'
+import { readMarketTeam, writeMarketTeam } from '@/lib/storage'
 import { useMarketData } from '@/lib/useMarketData'
 
 /**
@@ -27,13 +29,22 @@ import { useMarketData } from '@/lib/useMarketData'
  */
 export default function FleaPage() {
   const { snapshot } = useMarketData()
-  const highlight = useTeamParam()
+  const [highlight, setHighlight] = useTeam()
 
   return (
     <main className="market-frame">
       <MarketBand snapshot={snapshot} />
       <MarketBoard snapshot={snapshot} highlight={highlight} />
       <footer className="market-foot">
+        {/* Phone only — hidden on the corridor TV, which belongs to nobody. */}
+        <MarketPicker
+          rows={snapshot?.rows ?? []}
+          value={highlight}
+          onChange={(teamId) => {
+            writeMarketTeam(teamId)
+            setHighlight(teamId)
+          }}
+        />
         <span className="tv-ticker">Razorpay payments only &middot; cash sales not counted</span>
         {snapshot !== null && snapshot.asOf !== '' && (
           <span className="tv-ticker">Updated {snapshot.asOf}</span>
@@ -56,15 +67,21 @@ export default function FleaPage() {
  * client render would disagree with the server's markup. The board renders
  * unhighlighted for one frame, then the row lights up.
  *
- * Normalised to uppercase because it will be typed by hand into forty phones,
- * and an unknown id simply highlights nothing — somebody will mistype it, and a
- * board that breaks on that is worse than one that quietly shows the standings.
+ * Normalised to uppercase because it may still be typed by hand into a URL, and
+ * an unknown id simply highlights nothing — a board that breaks on a typo is
+ * worse than one that quietly shows the standings.
+ *
+ * Falls back to whatever this device last picked, so a stallholder chooses their
+ * venture once rather than between every customer.
  */
-function useTeamParam(): string | null {
+function useTeam(): [string | null, (teamId: string | null) => void] {
   const [team, setTeam] = useState<string | null>(null)
 
   useEffect(() => {
-    const raw = new URLSearchParams(window.location.search).get('team')
+    // The link wins over the remembered choice: somebody who was *sent* a link
+    // means the stall in it, and silently showing them a different one because
+    // this phone picked something last week would be baffling.
+    const raw = new URLSearchParams(window.location.search).get('team') ?? readMarketTeam()
     // A mount-only read of something outside React that must not happen during
     // render. The rule guards against cascading renders; this runs once, sets
     // state nothing else in the effect reads, and has nowhere else to go — the
@@ -74,5 +91,5 @@ function useTeamParam(): string | null {
     setTeam(raw === null ? null : raw.trim().toUpperCase() || null)
   }, [])
 
-  return team
+  return [team, setTeam]
 }
