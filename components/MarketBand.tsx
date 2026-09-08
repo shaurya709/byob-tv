@@ -28,7 +28,7 @@ import type { MarketSnapshot } from '@/lib/marketTypes'
  * A sub-line under the wordmark read "Live digital takings", which was the
  * board's one on-screen admission that cash is invisible to it. It came off for
  * the sake of the heading, and the admission did not: the footer carries
- * "Razorpay payments only · cash sales not counted" on every frame. If that
+ * "Razorpay payments only · cash not counted" on every frame. If that
  * footer ever goes, this has to come back — the claim is not decoration.
  *
  * ── The clock is the only thing on this board allowed to tick ──
@@ -74,7 +74,7 @@ function useMarketCountdown(opensAt: number | null, closesAt: number | null): Ma
 export function MarketBand({ snapshot }: { snapshot: MarketSnapshot | null }) {
   const rows = snapshot?.rows ?? []
   const taken = rows.reduce((sum, row) => sum + row.takings, 0)
-  const sales = rows.reduce((sum, row) => sum + row.txns, 0)
+  const orders = rows.reduce((sum, row) => sum + row.txns, 0)
 
   // `null` until the effect has run. A live clock cannot match between the
   // server render of a prerendered route and the first client render, so it is
@@ -102,11 +102,11 @@ export function MarketBand({ snapshot }: { snapshot: MarketSnapshot | null }) {
       <div className="market-figures">
         <div className="market-cell">
           <div className="market-total">{formatRupees(taken)}</div>
-          <div className="market-label">Taken so far</div>
+          <div className="market-label">Cohort sales</div>
         </div>
         <div className="market-cell">
-          <div className="market-stat">{formatCount(sales)}</div>
-          <div className="market-label">Sales</div>
+          <div className="market-stat">{formatCount(orders)}</div>
+          <div className="market-label">Orders</div>
         </div>
 
         {/* Nothing at all when the sheet has not named its window. A board that

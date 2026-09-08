@@ -28,9 +28,16 @@ import { VentureLogo } from '@/components/VentureLogo'
  * `lib/useMarketData.ts` for why — so nothing here should move on its own.
  */
 
-/** `20 SALES`, or `1 SALE` — a count of one should not read as a plural. */
-function sales(row: MarketRow): string {
-  return `${formatCount(row.txns)} ${row.txns === 1 ? 'SALE' : 'SALES'}`
+/**
+ * `20 ORDERS`, or `1 ORDER` — a count of one should not read as a plural.
+ *
+ * **Orders, not sales.** The board carries two different things that "sales"
+ * was being used for: an amount of money and a number of transactions. One word
+ * for both made every row ambiguous — `16 SALES` beside `₹9,110` reads as two
+ * figures for the same quantity until you work out that it is not.
+ */
+function orders(row: MarketRow): string {
+  return `${formatCount(row.txns)} ${row.txns === 1 ? 'ORDER' : 'ORDERS'}`
 }
 
 /** The metal a rank is written in, or the board's own ink below the podium. */
@@ -79,9 +86,9 @@ function Row({ rank, row, you }: { rank: number; row: MarketRow | null; you: boo
           <span className="market-name">{nameOf(row)}</span>
           {you && <span className="market-you-chip">YOU</span>}
         </span>
-        <span className="market-meta market-sub">{sales(row)}</span>
+        <span className="market-meta market-sub">{orders(row)}</span>
       </span>
-      <span className="market-sales market-sub">{sales(row)}</span>
+      <span className="market-sales market-sub">{orders(row)}</span>
       <span className="market-fig">{formatRupees(row.takings)}</span>
     </div>
   )
@@ -123,7 +130,7 @@ function Pinned({ row, rank, gap }: { row: MarketRow; rank: number; gap: number 
             {nameOf(row)}
           </span>
           <span className="market-sub" style={{ color: 'var(--bright-green)' }}>
-            {row.takings > 0 ? sales(row) : 'NO SALES YET'}
+            {row.takings > 0 ? orders(row) : 'NO ORDERS YET'}
           </span>
         </span>
         {row.takings > 0 && <span className="market-fig">{formatRupees(row.takings)}</span>}
@@ -137,7 +144,7 @@ function Pinned({ row, rank, gap }: { row: MarketRow; rank: number; gap: number 
       >
         <span className="market-label" style={{ color: 'var(--green-200)' }}>
           {row.takings === 0
-            ? 'One sale puts you on the board'
+            ? 'One order puts you on the board'
             : gap === null
               ? 'On the board'
               : `${formatRupees(gap)} behind ${MARKET_TOP_N}th place`}

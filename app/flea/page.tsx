@@ -41,7 +41,7 @@ export default function FleaPage() {
         <Link href="/stall" className="market-change">
           {highlight === null ? 'Which stall are you?' : 'Change stall'}
         </Link>
-        <span className="tv-ticker">Razorpay payments only &middot; cash sales not counted</span>
+        <span className="tv-ticker">Razorpay payments only &middot; cash not counted</span>
         {snapshot !== null && snapshot.asOf !== '' && (
           <span className="tv-ticker">Updated {snapshot.asOf}</span>
         )}

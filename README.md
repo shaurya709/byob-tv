@@ -259,7 +259,7 @@ Three states, and the third is the common one:
   thing on the board away from the person who earned it. The `YOU` chip marks
   them instead.
 - **Outside it** — the row pins to the bottom with what it has to make up.
-- **No sales yet** — it says so, rather than showing a rank. On the sample day
+- **No orders yet** — it says so, rather than showing a rank. On the sample day
   seventeen of forty stalls were on ₹0 well into the evening; their "rank" is a
   tie-break among seventeen zeroes, which looks precise and means nothing.
 
