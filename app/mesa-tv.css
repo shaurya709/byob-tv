@@ -1086,6 +1086,38 @@
 }
 
 
+/* ── Phone tokens ──
+   **Outside `@layer components`, and that is the whole point.** These lived
+   inside it, in the media query below, and never applied once: `mesa-tv.css` is
+   imported unlayered, so its top-level `:root` beats anything in a layer no
+   matter the specificity or the media query. The phone was rendering desktop
+   `vw` values the entire time.
+
+   Most tokens survived that by accident — their `clamp()` floors held the size
+   up. The two without a floor did not: the wordmark resolved to `3.6vw`, which
+   is **14px on a 390px screen**, and the lockup to 11px. That is the same
+   layering trap this file warns about at the top, arriving from the other
+   direction. */
+@media (max-width: 900px) {
+  :root {
+      --t-mkt-name: 400 19px / 1 var(--font-condensed);
+      --t-mkt-fig: 700 19px / 1 var(--font-serif);
+      --t-mkt-sub: 600 10px / 1 var(--font-sans);
+      --t-mkt-id: 500 10px / 1.2 var(--font-mono);
+      --t-mkt-rank: 700 16px / 1 var(--font-serif);
+      --t-mkt-rank-lead: 700 19px / 1 var(--font-serif);
+      --t-mkt-total: 700 34px / 1 var(--font-serif);
+      --t-mkt-clock: 700 24px / 1 var(--font-serif);
+      --t-mkt-label: 700 9px / 1 var(--font-sans);
+      --t-mkt-word: 400 42px / 1 var(--font-impact);
+      /* Bumped with the wordmark: a 20px lockup beside 48px caps reads as an
+         afterthought rather than as the other half of a masthead. */
+      --h-mkt-logo: 26px;
+      --s-mkt-pad-x: 16px;
+  }
+}
+
+
 /* Animations defined in CSS rather than in Motion, for one shared reason: each
    runs forever, unrelated to any state change, and handing a permanent loop to
    a JS animation loop would keep the main thread busy for the life of a page
@@ -2839,13 +2871,37 @@
       padding: 14px 16px;
     }
 
+    /* Wordmark top-left where the lockup used to be, lockup top-right, and the
+       figures on their own row underneath — left-aligned, so the eye lands on
+       the takings first and reads across rather than hunting the right edge of
+       a 390px screen. */
     .market-band {
-      grid-template-columns: 1fr;
-      gap: 10px;
+      grid-template-columns: 1fr auto;
+      grid-template-rows: auto auto;
+      column-gap: 12px;
+      row-gap: 12px;
       padding: 14px 16px;
       height: auto;
     }
-    .market-mark { justify-self: center; }
+    .market-word {
+      grid-column: 1;
+      grid-row: 1;
+      justify-self: start;
+      /* **Left origin, because it is left-aligned here.** The desktop band
+         centres the wordmark, so a centre-origin scaleX grows it evenly into
+         the gaps either side. Left-aligned, that same origin pushes its left
+         edge off the screen — measured at -7px. */
+      transform-origin: left center;
+    }
+    .market-mark { grid-column: 2; grid-row: 1; justify-self: end; align-self: center; }
+    .market-figures {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      justify-content: flex-start;
+      justify-self: start;
+      gap: 22px;
+    }
+    .market-cell { text-align: left; }
     .market-figures { justify-content: space-between; gap: 12px; }
 
     .market-foot { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
@@ -2866,19 +2922,5 @@
     }
     .market-pinned { padding: 14px 16px; }
 
-    :root {
-      --t-mkt-name: 400 19px / 1 var(--font-condensed);
-      --t-mkt-fig: 700 19px / 1 var(--font-serif);
-      --t-mkt-sub: 600 10px / 1 var(--font-sans);
-      --t-mkt-id: 500 10px / 1.2 var(--font-mono);
-      --t-mkt-rank: 700 16px / 1 var(--font-serif);
-      --t-mkt-rank-lead: 700 19px / 1 var(--font-serif);
-      --t-mkt-total: 700 34px / 1 var(--font-serif);
-      --t-mkt-clock: 700 24px / 1 var(--font-serif);
-      --t-mkt-label: 700 9px / 1 var(--font-sans);
-      --t-mkt-word: 400 30px / 1 var(--font-impact);
-      --h-mkt-logo: 20px;
-      --s-mkt-pad-x: 16px;
-    }
   }
 }
