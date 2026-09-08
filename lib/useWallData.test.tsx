@@ -3,7 +3,7 @@ import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { POLL_INTERVAL_MS, WATCH_RANKS_WEEKLY } from '@/config'
+import { COHORT_CSV_URL, FEED_CSV_URL, POLL_INTERVAL_MS, WATCH_RANKS_WEEKLY } from '@/config'
 import { rankByWeek } from '@/lib/ranking'
 import { KEYS } from '@/lib/storage'
 import type { Team } from '@/lib/types'
@@ -69,14 +69,25 @@ beforeEach(async () => {
   vi.useFakeTimers()
   localStorage.clear()
   servedTeams = board()
+  // **Dispatch on the configured URLs, never on a substring of them.** This
+  // read `url.includes('feed')`, which was true while the URLs were
+  // `/mock/feed.csv` and false from `8e70f67` onward, when they became the
+  // published Google ones — neither of which contains "feed". Both fetches then
+  // returned the cohort CSV, `parseTeams` threw on every tick, and five tests
+  // in this file failed while looking like they were exercising the freeze.
+  //
+  // A substring is also the wrong shape for a third URL: two published Google
+  // URLs differ only by `gid=`, so nothing but the constants tells them apart.
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string) => ({
       ok: true,
-      text: async () =>
-        String(url).includes('feed') ? feedCsv(servedTeams) : cohortCsv(cohort()),
+      text: async () => (String(url) === FEED_CSV_URL ? feedCsv(servedTeams) : cohortCsv(cohort())),
     })),
   )
+  if (FEED_CSV_URL === COHORT_CSV_URL) {
+    throw new Error('FEED_CSV_URL and COHORT_CSV_URL are identical; this stub cannot tell them apart')
+  }
   host = document.createElement('div')
   document.body.append(host)
   root = createRoot(host)
