@@ -43,6 +43,7 @@ export default function FleaPage() {
           onChange={(teamId) => {
             writeMarketTeam(teamId)
             setHighlight(teamId)
+            rewriteTeamParam(teamId)
           }}
         />
         <span className="tv-ticker">Razorpay payments only &middot; cash sales not counted</span>
@@ -92,4 +93,23 @@ function useTeam(): [string | null, (teamId: string | null) => void] {
   }, [])
 
   return [team, setTeam]
+}
+
+/**
+ * Keep `?team=` agreeing with what was just picked.
+ *
+ * Without this the two sources of truth disagree the moment somebody arrives
+ * through a link and then changes their mind: the picker would move the
+ * highlight, and the next reload would silently put it back, because the link
+ * wins on load. Rewriting the URL means a reload, a bookmark and a shared link
+ * all say the same thing as the screen.
+ *
+ * `replaceState`, not `pushState` — changing your stall is a correction, not a
+ * place in history to press Back to.
+ */
+function rewriteTeamParam(teamId: string | null): void {
+  const url = new URL(window.location.href)
+  if (teamId === null) url.searchParams.delete('team')
+  else url.searchParams.set('team', teamId)
+  window.history.replaceState(null, '', url)
 }

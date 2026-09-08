@@ -1010,11 +1010,8 @@
      `--d-pod-row-logo` documents the floor these wordmarks stop resolving at —
      about 50px, below which they become coloured dots. Measured: at 0.62 the
      mark came out 52px at 1920 and **41.8px at 1600x900**, under the floor at
-     the tightest size the wall is actually driven at. 0.72 cleared it at both.
-
-     Raised again to 0.80 when the band took a second row for the wordmark:
-     shorter board rows put 0.72 back to 50.9px at 1920 and 40.9px at 1600. */
-  --k-mkt-logo: 0.8;
+     the tightest size the wall is actually driven at. 0.72 clears it at both. */
+  --k-mkt-logo: 0.72;
 
   --s-mkt-gap: var(--s-2);
   --s-mkt-col-gap: 1.67vw;
@@ -1051,34 +1048,25 @@
      Impact and Archivo Black, so the width is a `scaleX` rather than a
      property of the type.
 
-     ── Why the band is two rows ──
+     ── What this can be, and why ──
 
-     Both asks together are geometrically impossible in one row, and the
-     numbers are worth keeping. Frame-centred, the wordmark can only reach as
-     far left as it reaches right, so its width is capped at twice the distance
-     from the centreline to the figures. Measured against a ₹20,00,000 total —
-     the case this has to survive, not today's — every combination overlapped:
-     7.0vw at 1.05x was -23px at 1920, and it got worse from there in both
-     directions. Dropping the Sales figure did not rescue it either.
+     The heading is capped by the figures beside it, not by taste. Centred on
+     the frame it reaches only as far left as it reaches right, so its width is
+     twice the gap from the centreline to the figures — and the figures are at
+     their widest on the busiest hour, not now. Measured against a ₹20,00,000
+     total, one row leaves about 520px for the wordmark. That is what sets the
+     size below: 3.6vw clears 40px at 1600 and 73px at 1920 with every stall
+     forced to ₹20,00,000. 4.2vw clears 1920 and leaves only 14px at 1600, which
+     is a heading waiting to be touched by a font that loads a step heavier.
 
-     Giving the wordmark a row of its own removes the figures from its budget
-     entirely: it is then capped by the frame rather than by the longest number
-     of the day, which is the only version of this that cannot break on the
-     busiest hour. */
-  /* The wordmark's row is sized to sit just clear of its cap height rather than
-     to a round number: at 7.9vw the glyphs filled 67% of their own row and the
-     slack came straight out of the board below, taking the venture marks under
-     the ~50px floor at 1600. At 6.4vw the same glyphs fill 83% — which is what
-     "almost fills it" actually looks like — and the board gets the difference
-     back. */
-  --h-mkt-word-row: 6.4vw;
-  /* The figures row is **content-sized**, not declared. Fixed at 3.5vw it was
-     shorter than a 3.23vw figure plus its label, and the labels were clipped by
-     the band's bottom edge — "TAKEN SO FAR" sheared in half. A declared height
-     here buys nothing: the wordmark is what needed a fixed row to be measured
-     against, and this row has nothing measuring itself against it. */
-  --t-mkt-word: 400 7.4vw / 1 var(--font-impact);
-  --k-mkt-word-x: 1.7;
+     A two-row band was tried and reverted: it removed the cap entirely and
+     allowed a much larger heading, at the cost of restructuring the masthead
+     and taking ~86px off the board. Not worth it. If a bigger heading is ever
+     wanted again, the honest lever is the figures — every stat that leaves the
+     band gives the wordmark twice its width back. */
+  --h-mkt-band: 6.6vw;
+  --t-mkt-word: 400 3.6vw / 1 var(--font-impact);
+  --k-mkt-word-x: 1.2;
   /* Grown 20%. Capped in px as well as `vw`, because the band's height is
      `auto` — driven by the tallest thing in it — so an uncapped mark on a
      2560-wide screen would simply make the band taller and take rows off the
@@ -2507,16 +2495,15 @@
 
   .market-band {
     display: grid;
-    /* Row 1 is the lockup and the wordmark; row 2 is the figures. Equal flanks
-       on row 1, so the wordmark lands on the frame's centreline by
+    /* Equal flanks, so the wordmark lands on the frame's centreline by
        construction rather than by a nudge that drifts with viewport width.
 
-       Declared heights, not `auto`: the wordmark is sized against its row, so
-       a row sized against the wordmark would chase its own tail. */
+       A declared height, not `auto`: the wordmark is sized against the band, so
+       a band sized against the wordmark would chase its own tail. */
     grid-template-columns: 1fr auto 1fr;
-    grid-template-rows: var(--h-mkt-word-row) auto;
     align-items: center;
-    column-gap: var(--s-8);
+    gap: var(--s-8);
+    height: var(--h-mkt-band);
     padding: 0 var(--s-mkt-pad-x);
     background: var(--deep-forest-green);
     color: var(--white);
@@ -2536,13 +2523,9 @@
     height: var(--h-mkt-logo);
     width: auto;
     justify-self: start;
-    grid-row: 1;
-    grid-column: 1;
   }
 
   .market-word {
-    grid-row: 1;
-    grid-column: 2;
     font: var(--t-mkt-word);
     letter-spacing: var(--track-snug);
     justify-self: center;
@@ -2573,11 +2556,6 @@
      The wordmark stays centred throughout: the flanking tracks are equal `1fr`,
      so the group grows leftward into its own slack rather than pushing it. */
   .market-figures {
-    /* The whole width of row 2, right-aligned within it — so a growing number
-       eats its own slack and nothing above it moves. */
-    grid-row: 2;
-    grid-column: 1 / -1;
-    padding-bottom: var(--s-3);
     display: flex;
     align-items: center;
     justify-content: flex-end;
@@ -2794,14 +2772,11 @@
 
     .market-band {
       grid-template-columns: 1fr;
-      grid-template-rows: auto auto auto;
       gap: 10px;
       padding: 14px 16px;
       height: auto;
     }
-    .market-mark { justify-self: center; grid-column: 1; grid-row: 1; }
-    .market-word { grid-column: 1; grid-row: 2; justify-self: center; }
-    .market-figures { grid-column: 1; grid-row: 3; }
+    .market-mark { justify-self: center; }
     .market-figures { justify-content: space-between; gap: 12px; }
 
     .market-foot { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
