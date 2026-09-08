@@ -51,11 +51,21 @@ function Row({ rank, row, you }: { rank: number; row: MarketRow | null; you: boo
   }
 
   const lead = rank <= 3
-  const cls = you ? 'market-row-you' : lead ? 'market-row-lead' : 'market-row-quiet'
+  // **A top-three row keeps its Deep Forest whoever is looking at it.** The
+  // podium treatment is the board's statement about the standings, not about
+  // the viewer, and turning first place pale because its own stallholder opened
+  // the page would take the loudest thing on the board away from the person who
+  // earned it. Below the podium there is no such statement to protect, so the
+  // viewer's row takes the highlight. The chip marks "you" in both cases, which
+  // is all the marking a row needs when it is already the darkest object there.
+  const cls = lead ? 'market-row-lead' : you ? 'market-row-you' : 'market-row-quiet'
 
   return (
     <div className={`market-row ${cls}`} data-rank={rank} data-team={row.teamId}>
-      <span className="market-rank" style={{ color: you ? 'inherit' : rankInk(rank) }}>
+      {/* `rankInk` is already `inherit` below third, so this needs no branch on
+          `you` — and branching on it was what took the metal off a podium row
+          the moment its own stall opened the board. */}
+      <span className="market-rank" style={{ color: rankInk(rank) }}>
         {rank}
       </span>
       <span className="market-logo">

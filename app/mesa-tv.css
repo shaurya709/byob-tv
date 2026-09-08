@@ -2685,22 +2685,91 @@
     padding: var(--s-3) var(--s-mkt-pad-x);
   }
 
-  /* The stall picker is the wall's one control, and it exists only on a phone.
-     A corridor screen belongs to nobody, so there is nothing for it to ask. */
-  .market-picker { display: none; }
+  /* The way to `/stall`, and the wall's only link. Phone only: a corridor
+     screen belongs to nobody, so there is no stall for it to be. */
+  .market-change { display: none; }
 
-  .market-picker-select {
+  /* ── The stall picker page ── */
+
+  .stall-frame {
+    height: 100dvh;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    overflow: hidden;
+    background: var(--bg);
+  }
+
+  .stall-head {
+    background: var(--deep-forest-green);
+    color: var(--white);
+    padding: 18px var(--s-4) 20px;
+  }
+
+  .stall-title {
+    font: var(--t-mkt-word);
+    letter-spacing: var(--track-snug);
+    color: var(--white);
+    margin: 14px 0 0;
+  }
+
+  .stall-sub {
     font: var(--t-mkt-sub);
     letter-spacing: var(--track-wide);
-    color: var(--deep-forest-green);
-    background: var(--soft-mint);
-    border: 1px solid var(--border-mint);
+    text-transform: uppercase;
+    color: var(--bright-green);
+    margin: 8px 0 0;
+  }
+
+  /* The list scrolls; `body { overflow: hidden }` in globals.css is untouched,
+     exactly as on the board. */
+  .stall-list {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: var(--s-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--s-2);
+  }
+
+  .stall-option {
+    display: flex;
+    /* Centred, not baseline. Baseline aligns the name to the code beside it and
+       then hangs the pair off the top of the button, which reads as a list of
+       things that did not quite load. */
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--s-3);
+    /* 44px is the floor for anything a thumb has to hit; this one gets tapped
+       while its owner is holding something else. */
+    min-height: 56px;
+    padding: 0 var(--s-4);
+    text-align: left;
+    background: var(--tv-card-fill-quiet);
+    border: 1px solid var(--tv-card-stroke-quiet);
     border-radius: var(--radius-sm);
-    /* 44px is the floor for anything a thumb has to hit, and this one gets
-       tapped mid-transaction. */
-    min-height: 44px;
-    padding: 0 10px;
-    max-width: 62vw;
+    color: var(--tv-card-fig-ink-quiet);
+    cursor: pointer;
+  }
+
+  .stall-option:active { background: var(--green-200); }
+
+  /* Phone-first, but it has to be legible if somebody opens it on a laptop to
+     check — a centred column rather than forty full-width bars. */
+  @media (min-width: 901px) {
+    .stall-head, .stall-list { max-width: 640px; margin-inline: auto; width: 100%; }
+    .stall-head { border-radius: 0 0 var(--radius-md) var(--radius-md); }
+  }
+
+  .stall-option-name {
+    font: var(--t-mkt-name);
+    letter-spacing: var(--track-snug);
+    text-transform: uppercase;
+  }
+
+  .stall-option-id {
+    font: var(--t-mkt-id);
+    letter-spacing: var(--track-wide);
+    color: var(--green-600);
   }
 
   /* The viewer's own row. */
@@ -2780,7 +2849,21 @@
     .market-figures { justify-content: space-between; gap: 12px; }
 
     .market-foot { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
-    .market-picker { display: flex; align-items: center; gap: 10px; width: 100%; }
+    .market-change {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 44px;
+      font: var(--t-mkt-label);
+      letter-spacing: var(--track-overline);
+      text-transform: uppercase;
+      color: var(--deep-forest-green);
+      background: var(--soft-mint);
+      border: 1px solid var(--border-mint);
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+    }
     .market-pinned { padding: 14px 16px; }
 
     :root {

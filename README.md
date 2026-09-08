@@ -239,13 +239,25 @@ of the countdown can be watched rather than waited for.
 
 ### The phone view
 
-`/flea?team=SLE-C407` is the same board with that stall's row highlighted. No
-login and no backend — the team id is a query parameter, so each stall gets its
-own link.
+**Send the cohort to `/stall`.** It lists every venture as a tap target; tapping
+one opens `/flea?team=SLE-C407` — that stall's board — and remembers the choice
+on the device, so it is a one-time step. That is the whole instruction: *open
+this and tap your stall*. The alternative was asking forty people to type a
+team code into a URL correctly, on a phone, on the busiest day of the
+programme.
+
+`/flea?team=SLE-C407` still works directly, and is what a stallholder ends up
+holding: a normal, shareable board URL that says which stall it is for. No login
+and no backend — the team id is a query parameter.
 
 Three states, and the third is the common one:
 
-- **In the top 20** — the row is highlighted in place.
+- **In the top 20** — the row is highlighted in place. **Except the top three**,
+  which keep their Deep Forest whoever is looking: the podium treatment is the
+  board's statement about the standings, not about the viewer, and turning first
+  place pale because its own stallholder opened the page would take the loudest
+  thing on the board away from the person who earned it. The `YOU` chip marks
+  them instead.
 - **Outside it** — the row pins to the bottom with what it has to make up.
 - **No sales yet** — it says so, rather than showing a rank. On the sample day
   seventeen of forty stalls were on ₹0 well into the evening; their "rank" is a
