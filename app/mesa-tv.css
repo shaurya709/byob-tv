@@ -2777,6 +2777,38 @@
     margin: 8px 0 0;
   }
 
+  .stall-search {
+    display: block;
+    width: 100%;
+    margin-top: 14px;
+    /* **16px is a hard floor, not a preference.** iOS Safari zooms the whole
+       page when an input smaller than that takes focus, and the page it would
+       zoom is a fixed 100dvh frame — so it never zooms back out and the list
+       ends up half off the screen. */
+    font: 500 16px / 1.2 var(--font-sans);
+    min-height: 48px;
+    padding: 0 14px;
+    color: var(--deep-forest-green);
+    background: var(--white);
+    border: 1px solid var(--border-mint);
+    border-radius: var(--radius-sm);
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .stall-search::placeholder { color: var(--tv-card-sub-ink-quiet); }
+  .stall-search:focus-visible { outline: 2px solid var(--bright-green); outline-offset: 2px; }
+
+  .stall-empty {
+    font: var(--t-mkt-sub);
+    letter-spacing: var(--track-wide);
+    text-transform: uppercase;
+    color: var(--tv-card-sub-ink-quiet);
+    text-align: center;
+    padding: var(--s-8) var(--s-4);
+    margin: 0;
+  }
+
   /* The list scrolls; `body { overflow: hidden }` in globals.css is untouched,
      exactly as on the board. */
   .stall-list {

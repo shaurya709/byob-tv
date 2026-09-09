@@ -2,8 +2,10 @@
 
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 import { rankMarket } from '@/lib/marketRanking'
+import { filterStalls } from '@/lib/stallSearch'
 import { writeMarketTeam } from '@/lib/storage'
 import { nameOf } from '@/lib/team'
 import { useMarketData } from '@/lib/useMarketData'
@@ -33,11 +35,12 @@ import { useMarketData } from '@/lib/useMarketData'
 export default function StallPage() {
   const { snapshot } = useMarketData()
   const router = useRouter()
+  const [query, setQuery] = useState('')
 
   // Ranked rather than alphabetical: on flea day a stallholder is at least as
   // likely to know roughly where they stand as to scan for a letter, and it
   // makes the page worth reading on its own.
-  const stalls = rankMarket(snapshot?.rows ?? [])
+  const stalls = filterStalls(rankMarket(snapshot?.rows ?? []), query)
 
   const choose = (teamId: string) => {
     writeMarketTeam(teamId)
@@ -57,12 +60,35 @@ export default function StallPage() {
         />
         <h1 className="stall-title">Which stall are you?</h1>
         <p className="stall-sub">Tap your venture to open your leaderboard.</p>
+
+        <input
+          className="stall-search"
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search name or team number"
+          aria-label="Search for your stall by venture name or team number"
+          // Team codes are not words. Left to itself a phone keyboard
+          // capitalises them, autocorrects them into something else, and
+          // underlines them in red while it does it.
+          autoCapitalize="off"
+          autoCorrect="off"
+          spellCheck={false}
+          // **Not autofocused.** On a phone that opens the keyboard on arrival
+          // and covers the list this page exists to show, so the first thing a
+          // stallholder sees is a form rather than their own venture.
+        />
       </header>
 
       {/* Empty is a valid state here too. Before the tab carries anything there
           is nothing to choose, and a spinner would be a promise this wall does
           not make anywhere else. */}
       <div className="stall-list">
+        {/* A query that finds nothing says so. Silence would read as a page
+            that had stopped working. */}
+        {stalls.length === 0 && query.trim() !== '' && (
+          <p className="stall-empty">No stall matches “{query.trim()}”.</p>
+        )}
         {stalls.map((row) => (
           <button
             key={row.teamId}
