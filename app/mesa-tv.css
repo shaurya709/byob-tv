@@ -1114,9 +1114,29 @@
       --t-mkt-stat: 700 clamp(15px, 5vw, 20px) / 1 var(--font-serif);
       --t-mkt-clock: 700 clamp(16px, 5.6vw, 24px) / 1 var(--font-serif);
       --t-mkt-label: 700 9px / 1 var(--font-sans);
-      --t-mkt-word: 400 42px / 1 var(--font-impact);
-      /* Bumped with the wordmark: a 20px lockup beside 48px caps reads as an
-         afterthought rather than as the other half of a masthead. */
+      /* ── Bundled, not the system stack, and this is the bug it fixes ──
+         `--font-impact` is `Impact, Haettenschweiler, Arial Narrow Bold,
+         <bundled>, sans-serif`. macOS and iOS ship Impact, so an iPhone got a
+         very condensed face. **Android ships none of the first three** and fell
+         through to the bundled Archivo Black, which measures **57% wider at the
+         same size** — 266px against 169px for "MESA FLEA" at 42px. With the
+         1.2x stretch that put the wordmark 36px into the lockup. It rendered
+         perfectly on every device we happened to test on.
+
+         So this one names the bundled face outright. Forty stallholders are on
+         forty unknown phones, and a masthead whose width depends on what the
+         phone happens to have installed is the same failure `layout.tsx` argues
+         at length about for the serif. Sized for Archivo Black's own width, so
+         every phone now renders the same masthead at the same size.
+         7vw is solved from measurement rather than from the face's advance
+         widths: the tracking on `.market-word` adds enough that estimating from
+         glyph widths came out 18px short at 360. Clears the lockup from 320 to
+         430 with 12-53px to spare. */
+      --t-mkt-word: 400 clamp(20px, 7vw, 34px) / 1 var(--font-display-black);
+      /* Sized against the wordmark beside it: a 20px lockup next to a 30px
+         Archivo Black cap reads as an afterthought rather than as the other
+         half of a masthead. Fixed rather than fluid, which is what makes the
+         wordmark's fit solvable — the space it has to clear is a constant. */
       --h-mkt-logo: 26px;
       --s-mkt-pad-x: 16px;
   }
